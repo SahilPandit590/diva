@@ -1,0 +1,132 @@
+Diva — Memory Engine
+Conceptual architecture established
+1. Memory categories
+Diva will support all five memory types:
+Memory type	Purpose
+Episodic	Specific experiences and events
+Semantic	Facts, concepts and acquired knowledge
+Autobiographical	Diva's own history and development
+Relationship	Information about people and relationships
+Working / Immediate	Recently received and currently relevant information
+
+These are logical memory categories. A single experience might contribute to multiple categories.
+2. Memory lifecycle
+Your retention mechanism can be represented as follows:
+1. Memory creation
+
+Create detailed memory with source references, labels and associations.
+
+2. Passive recall period
+
+Keep detailed memory and original conversation links available for retrieval.
+
+3. Summarization and consolidation
+
+Extract important information, facts, associations and higher-level summaries.
+
+4. Store consolidated memory
+
+Preserve the resulting information in its appropriate memory location.
+
+5. Garbage collection
+
+Remove obsolete detailed records and unnecessary original conversation links.
+
+
+An important safeguard: summarization must be verified and successfully stored before the original detailed record is removed.
+3. Three retention periods
+You've established that Diva needs three memory retention periods.
+Period	Intended representation
+Primary	Detailed memories and original references
+Secondary	Consolidated memories and summaries
+Tertiary	Long-term important facts and higher-level knowledge
+
+The exact durations remain undecided.
+
+The periods should determine how information is represented and retained, not simply impose automatic deletion dates.
+4. Memory classification and reliability
+Your distinction between facts and hypotheses is important.
+
+A memory should carry a classification label.
+
+For example:
+Example memory
+
+An interaction with a person
+FACT
+The person did not respond to Diva's message.
+
+HYPOTHESIS
+The person might be upset.
+
+INTERPRETATION
+The lack of response may indicate a change in the relationship.
+
+
+When new evidence arrives, Diva should preserve the original information and record the revised interpretation and supporting evidence rather than silently rewriting history.
+5. Emotional memory associations
+This is one of the most interesting parts of your architecture.
+
+Instead of recalculating the emotional significance of every memory whenever it is retrieved, memories will carry emotional tags.
+
+The process:
+Memory retrieval
+
+Retrieve stored emotional tags
+
+Emotion Engine reassessment
+
+Updated emotional tags
+
+Update memory associations
+
+
+This means emotional associations can evolve.
+
+A memory that once produced happiness might later evoke sadness, affection or nostalgia.
+
+The stored tag is a previous emotional appraisal, not a permanent truth.
+6. Inputs and outputs
+Inputs
+- Experiences and events.
+- Conversations and user messages.
+- Thoughts and reflections.
+- Decisions and actions.
+- Emotional tags from the Emotion Engine.
+- Importance signals from other engines.
+- Memory retrieval and maintenance requests.
+Outputs
+- Newly created memories.
+- Retrieved memories.
+- Summarized context.
+- Consolidated memories.
+- Facts, hypotheses and interpretations.
+- Emotional and relationship associations.
+- Memory updates and garbage-collection results.
+- Proactively surfaced relevant memories.
+7. Internal components
+Component	Responsibility
+Memory Creation Manager	Creates and classifies memories
+Storage Manager	Stores and organizes memories
+Retrieval Manager	Finds relevant memories
+Summarization Manager	Produces memory summaries
+Consolidation Manager	Converts detailed memories into compact representations
+Context Assembly Manager	Constructs relevant context for other engines
+Association Manager	Maintains relationships between memories, people and emotions
+Importance Manager	Evaluates memory importance
+Retention Manager	Manages the three retention periods
+Garbage Collector	Removes obsolete detailed records
+Memory Update Manager	Handles corrections and new evidence
+
+These are proposed logical components, not necessarily independent processes.
+
+8. Three remaining decisions
+I think we've established the main conceptual architecture. Before moving to the next engine, I want to settle three technical-behaviour questions.
+
+1. Memory importance: Should importance be dynamic? For example, an ordinary interaction could become important after repeated similar experiences.
+
+2. Memory retrieval: Should the engine support semantic similarity, exact keyword search, chronological search and relationship-based search together?
+
+3. Consolidation safety: If the summarizer is uncertain about a detail, should it preserve that detail separately rather than risk losing it during compression?
+
+My recommendations are yes to all three.

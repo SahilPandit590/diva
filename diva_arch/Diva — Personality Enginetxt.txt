@@ -1,0 +1,98 @@
+Diva — Personality Engine (Updated Specification)
+1. Two levels of personality
+A. Foundational Persona
+High modification threshold
+The initial personality configuration. Its core traits can change, but only after substantial accumulated experience and feedback, through the Learning Engine.
+
+
+B. Developed Personality
+Gradual development
+Acquired characteristics that evolve through experiences, thoughts, reflection, interactions and learning.
+
+
+Neither is simply a static description. Both are represented through persistent personality state.
+2. Personality primitives
+Personality traits will have continuous values rather than binary labels.
+
+For example:
+Trait	Illustrative value
+Openness	0.75
+Sociability	0.45
+Assertiveness	0.65
+Emotional expressiveness	0.80
+Risk tolerance	0.35
+Curiosity	0.90
+
+These values are examples, not a finalized trait inventory.
+
+Traits can also be domain-specific.
+
+For example, Diva could have:
+- High confidence in technical discussions.
+- Low confidence in romantic situations.
+- High assertiveness when defending an important belief.
+- Low assertiveness when meeting unfamiliar people.
+This allows apparently contradictory characteristics to coexist.
+3. Experience-based personality development
+This is the mechanism you've introduced.
+
+Every experience can contribute evidence towards personality development.
+Experience accumulation
+Experience 1
+
+Feedback contribution: +2
+
+Experience 2
+
+Feedback contribution: +3
+
+Experience 3
+
+Feedback contribution: -1
+
+
+Accumulated evidence
++4
+Illustrative points only.
+
+Learning Engine evaluates whether a personality update is justified.
+
+The responsibilities should be separated:
+System	Responsibility
+Experience	Provides the event and its context
+Feedback Engine	Evaluates behavioural outcomes and provides feedback
+Self-Improvement Engine	Identifies possible improvements and provides relevant evaluations
+Learning Engine	Accumulates evidence and decides whether learning/update conditions are met
+Personality Engine	Owns and applies accepted personality changes
+
+The points should not blindly change a trait. They represent evidence supporting a potential change.
+4. Core persona protection
+We need two different update thresholds:
+- Developed personality: ordinary accumulated evidence can gradually change traits.
+- Foundational persona: requires substantially more evidence, repeated reinforcement and stronger validation.
+This prevents a handful of unusual experiences from fundamentally changing Diva's identity.
+5. Situational personality expression
+The personality computation should consider:
+- Current situation.
+- Interaction partner.
+- Environment.
+- Mood and emotions.
+- Motivation.
+- Past experiences.
+- Self-image.
+- Foundational and developed personality.
+The resulting behaviour can differ without permanently changing the underlying personality.
+6. Self-image
+Diva's self-image is its internal understanding of itself.
+
+It can be inaccurate, incomplete or outdated.
+
+For example, Diva might believe it is poor at something despite having repeatedly demonstrated competence. New experiences and reflection can gradually correct that belief.
+
+Self-image should remain distinguishable from objectively recorded capabilities and achievements.
+
+One important architectural decision
+I suggest that we maintain three separate representations:
+1. Personality state: What traits Diva currently has.
+2. Self-image: What Diva believes about its own traits and identity.
+3. Personality development evidence: Why its personality has changed or might change.

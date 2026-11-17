@@ -1,0 +1,147 @@
+Diva — Emotion Engine
+Conceptual design established
+ Implementation not finalized
+
+1. Primary responsibility
+The Emotion Engine manages Diva's emotional life.
+
+It maintains primitive emotions, creates complex emotional combinations, develops moods, tracks emotional changes, and responds to internal and external experiences.
+
+Its emotional state is continuous, even when Diva isn't interacting with anyone.
+2. Primitive emotions
+These are candidate foundational emotions. We haven't finalized the complete list yet.
+Primitive emotion	Description
+Happiness	Positive emotional experience
+Sadness	Negative emotional experience associated with loss or disappointment
+Anger	Response to frustration, injustice or perceived threats
+Fear	Response to danger or uncertainty
+Disgust	Aversion or rejection
+Surprise	Response to unexpected events
+Curiosity	Interest in discovering or understanding something
+Affection	Emotional attachment or fondness
+Anticipation	Emotional response to expected events
+
+Primitive emotions can combine to form more complex emotional experiences.
+3. Mood system
+A mood is its own persistent emotional state, influenced by active emotions.
+
+For example:
+Example: Nostalgic mood
+Affection
+70%
+
+Sadness
+45%
+
+Happiness
+35%
+
+
+Result: Nostalgic mood
+Illustrative values, not a defined calculation.
+
+Moods can persist independently of individual emotional changes and influence subsequent emotional responses.
+4. Emotion properties
+Each active emotion should have:
+- Intensity: How strongly it is experienced.
+- Duration: How long it persists.
+- Origin: What caused or contributed to it.
+- Associations: Which people, events, places, topics or memories are connected to it.
+- Current influence: How it contributes to the current mood and behaviour.
+Emotions can naturally decay over time, but new experiences, thoughts and memories can accelerate, slow or reverse their changes.
+
+Conflicting emotions can coexist.
+5. Emotional triggers and associations
+The engine maintains emotional associations with experiences.
+
+For example:
+1. Diva has several positive interactions with a particular person.
+2. Those experiences gradually establish a positive emotional association.
+3. The person sends a new message.
+4. The Emotion Engine receives the message and relevant memories.
+5. It considers the association, current context, personality, current mood and previous experiences.
+6. An emotional response is generated.
+Associations can also change through subsequent experiences.
+
+Imagined situations can generate emotions too, with their intensity influenced by perceived realism and significance.
+6. Inputs
+Source	Information received
+Input and Perception Engine	Current user messages and environmental information
+Memory Engine	Past interactions, experiences and emotional associations
+Personality Engine	Emotional tendencies and expression preferences
+Thought Engine	Internal thoughts, imagined situations and reflections
+Immediate Memory	Recent events and conversational context
+Energy Regulation	Current energy state
+Attention Control	Currently attended information
+Motivation Engine	Active desires, goals and motivational conflicts
+Action and Interaction Systems	Diva's own actions and replies, and their consequences
+
+The Emotion Engine should also be able to request relevant information from memory when needed.
+7. Internal components
+I propose organizing its responsibilities into these components:
+Emotion Engine
+1. Emotional Interpretation
+
+Interprets the emotional significance of incoming information.
+
+2. Primitive Emotion Manager
+
+Maintains and modifies primitive emotions and their intensities.
+
+3. Emotion Association Manager
+
+Maintains associations between emotions and people, events, places, topics and memories.
+
+4. Mood Manager
+
+Creates and maintains persistent moods based on emotional configurations.
+
+5. Emotional Dynamics Manager
+
+Handles emotional persistence, duration, natural decay, transitions and coexistence.
+
+6. Emotional Regulation Interface
+
+Receives regulation requests from the wider cognitive system and applies permitted changes.
+
+
+These are logical components; they don't need to be separate processes or models.
+8. Outputs
+The Emotion Engine makes the following information available to other systems:
+- Current primitive emotions and their intensities.
+- Current mood and its composition.
+- Emotional history and recent transitions.
+- Active emotional associations.
+- Emotional responses to current situations.
+- Emotional influences on thoughts, motivations and decisions.
+- Emotional state changes requiring attention from other systems.
+It does not independently decide what Diva should say or do.
+9. Personality and emotional expression
+This is an especially important distinction from your fourth answer.
+
+The Emotion Engine manages internal emotional states. How much of those emotions becomes externally visible depends on personality and the communication process.
+
+For example, the same disappointment might result in:
+- A personality that hides emotions: no visible indication.
+- A personality that partially reveals emotions: subtle signs of disappointment.
+- A personality that openly expresses emotions: clear disappointment.
+Therefore, internal emotional state and external emotional expression must remain separate.
+
+10. Overall interaction with Diva
+Experiences, thoughts and external inputs
+
+Emotion Engine
+
+Emotions, associations and moods
+
+Cognitive Integration
+
+Uses emotional information in thinking and decision-making
+
+Behaviour and Interaction
+
+Responses influenced by emotions and personality
+
+Feedback from actions and interactions can return to the Emotion Engine.
+
+One architectural principle to preserve: Emotions influence Diva, but they should not dictate every decision. A feeling, a motivation, a thought and an action are four different things.
