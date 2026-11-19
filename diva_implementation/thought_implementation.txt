@@ -1,0 +1,579 @@
+================================================================================
+DIVA COGNITIVE ARCHITECTURE — THOUGHT ENGINE SPECIFICATION & SYSTEM DESIGN
+Document Version: 2.0.0 (Enterprise Refinement · Autonomous Cognition & Reasoning)
+Target Framework: Python 3.12+ (Asyncio) / Pydantic v2 / NetworkX / SQLite Checkpoints
+Status: Approved Architectural Blueprint — 100% Checklist & Refinement Compliance
+================================================================================
+
+TABLE OF CONTENTS
+1. ARCHITECTURAL CHECKPOINT COMPLIANCE MATRIX (ALL 6 DOMAINS)
+2. SYSTEM ARCHITECTURE & EXPLICIT INTER-ENGINE BOUNDARIES
+3. CORE DATA STRUCTURES & SCHEMAS (ALL 14 ENTITIES REFINED)
+4. THE SEVEN THOUGHT GENERATION PATHWAYS & AUTONOMOUS SCHEDULER
+5. REASONING DAG, BRANCHING, MERGING & EPISTEMIC SEPARATION
+6. ATTENTION ARBITRATION, ANTI-MONOPOLIZATION & RUMINATION BREAKERS
+7. THOUGHT LIFECYCLE STATE MACHINE & TRANSITION RULES
+8. MEMORY INTEGRATION, SELECTIVE ARCHIVING & SOVEREIGN RETENTION
+9. RECOVERY & PERSISTENCE ENGINE (CRASH-RESILIENT THOUGHT STATE)
+10. INTER-ENGINE COMMUNICATION CONTRACTS & COGNITIVE INTEGRATION
+11. RESOURCE GOVERNANCE, ENERGY PACING & FAILURE MODES
+12. END-TO-END COGNITIVE WALKTHROUGHS (BRANCHING, MERGING, RESUMPTION)
+
+================================================================================
+1. ARCHITECTURAL CHECKPOINT COMPLIANCE MATRIX
+================================================================================
+
+[x] Category 1: Thought Generation
+    - [x] All 7 generation pathways supported: Perceptual, Memory Recall, Emotional, Motivational, Counterfactual, Spontaneous Associative Drift, and Meta-Thought.
+    - [x] Explicit separation of Triggers (`ThoughtOrigin`, `TriggerEvent`) from Generated Thoughts (`ThoughtInstance`).
+    - [x] Support for multiple contributing origins (e.g. perceptual trigger reinforced by memory recall).
+    - [x] Autonomous, periodic, and reactive generation governed by a formal 3-tier cognitive scheduler.
+
+[x] Category 2: Thought Development
+    - [x] Multiple thoughts structured within a cohesive thread.
+    - [x] Full DAG branching (forking alternative hypotheses) and merging (reconciling parallel insights).
+    - [x] Thoughts dynamically generate follow-up thoughts, questions, and evaluations.
+    - [x] First-class associations between independent threads (`ThoughtAssociation`).
+    - [x] Preservation of unresolved questions (`UnresolvedQuestion`) and competing hypotheses.
+
+[x] Category 3: Reasoning and Epistemology
+    - [x] All 6 reasoning mechanisms supported: Deductive, Inductive, Abductive, Causal, Analogical, Counterfactual.
+    - [x] Orthogonal separation of `thought_type`, `epistemic_status`, `confidence_score`, and `evidence_graph`.
+    - [x] Independent tracking of supporting and contradicting evidence for every claim.
+    - [x] Traceable reasoning chains (`ReasoningTrace`) with step-by-step inference rules.
+    - [x] Counterfactuals strictly quarantined (`is_quarantined = True`) to prevent contamination of established beliefs.
+
+[x] Category 4: Attention and Threads
+    - [x] Concurrent maintenance of multiple independent threads.
+    - [x] Serial focal spotlight (`ActiveThoughtContext`) with parallel background incubation.
+    - [x] Multi-dimensional dynamic priority formula with preemption gate ($\Delta P > 0.25$).
+    - [x] Anti-monopolization penalty and automated rumination breaker (detects loops, enforces cooldowns).
+    - [x] Suspended and abandoned threads automatically re-evaluated and resumed when relevant evidence arrives.
+
+[x] Category 5: Lifecycle and Memory
+    - [x] Formal 8-state lifecycle state machine with explicit transition conditions.
+    - [x] Strict decoupling of thought completion from memory archival.
+    - [x] Selective memory submission gate ($P \ge 0.65$ or novel verified belief).
+    - [x] Full persistence of active and pending thought states in SQLite checkpoint tables across restarts.
+    - [x] Sovereign Memory Engine control: Memory Engine decides retention tier, classification, and consolidation.
+
+[x] Category 6: Engine Integration & Architectural Boundaries
+    - [x] Strongly typed input and output contracts for all connected engines.
+    - [x] Emotional evaluation owned exclusively by Emotion Engine.
+    - [x] Motivations and goals owned exclusively by Motivation Engine.
+    - [x] Final executive decisions owned exclusively by Cognitive Integration / Appraisal Engine.
+    - [x] External actions executed exclusively through shared Execution / Action infrastructure.
+
+================================================================================
+2. SYSTEM ARCHITECTURE & EXPLICIT INTER-ENGINE BOUNDARIES
+================================================================================
+
+2.1 Internal Component Architecture (8 Core Subsystems)
+
+                      [ Incoming Triggers & Autonomous Cycles ]
+                                         │
+                                         ▼
+                   ┌──────────────────────────────────────────┐
+                   │        1. Cognitive Scheduler            │
+                   │ (Reactive, Periodic & Idle Drift Pacing) │
+                   └─────────────────────┬────────────────────┘
+                                         │
+                                         ▼
+                   ┌──────────────────────────────────────────┐
+                   │        2. Thought Generator              │
+                   │ (7 Pathways, Trigger Ingestion, Sparks)  │
+                   └─────────────────────┬────────────────────┘
+                                         │
+                                         ▼
+                   ┌──────────────────────────────────────────┐
+                   │     3. Thread DAG & Branch Manager       │
+                   │ (Branching, Merging, Sub-queries, Trees) │
+                   └─────────────────────┬────────────────────┘
+                                         │
+                                         ▼
+                   ┌──────────────────────────────────────────┐
+                   │     4. Attention & Priority Arbitrator   │
+                   │ (Dynamic Priority, Anti-Monopolization,  │
+                   │  Preemption Gate, Rumination Breaker)    │
+                   └─────────────────────┬────────────────────┘
+                                         │
+                     ┌───────────────────┴───────────────────┐
+                     ▼                                       ▼
+        ┌──────────────────────────┐            ┌──────────────────────────┐
+        │   5. Reasoning Engine    │            │ 6. Association & Graph   │
+        │ (Deductive, Inductive,   │            │ (Spreading Activation,   │
+        │  Abductive, Causal,      │            │  Inter-Thread Links,     │
+        │  Analogical, Counterf.)  │            │  Evidence Bindings)      │
+        └────────────┬─────────────┘            └────────────┬─────────────┘
+                     │                                       │
+                     └───────────────────┬───────────────────┘
+                                         ▼
+                   ┌──────────────────────────────────────────┐
+                   │       7. Lifecycle & Checkpoint Mgr      │
+                   │ (State Machine, SQLite WAL Persistence)  │
+                   └─────────────────────┬────────────────────┘
+                                         │
+                     ┌───────────────────┴───────────────────┐
+                     ▼                                       ▼
+        ┌──────────────────────────┐            ┌──────────────────────────┐
+        │ 8A. Selective Memory     │            │ 8B. Cognitive Proposal   │
+        │     Archiving Bridge     │            │     Interface            │
+        │ (Submit Significant Ts)  │            │ (Candidate Options to    │
+        │                          │            │  Cognitive Integration)  │
+        └──────────────────────────┘            └──────────────────────────┘
+
+2.2 Strict Inter-Engine Boundaries (Negative Constraints)
+- Thoughts are NOT Actions: The Thought Engine develops hypotheses, explores consequences, and formulates candidate options; it NEVER triggers tool execution or external dialogue.
+- Decisions Belong to Cognitive Integration: When a thought reaches a conclusion (e.g. "We should apologize to Alex"), it emits a proposal to Cognitive Integration. It cannot unilaterally commit Diva.
+- Emotion Belongs to Emotion Engine: The Thought Engine does not set Diva's mood; it receives mood context and sends cognitive reframings.
+- Motivation Belongs to Motivation Engine: The Thought Engine decomposes active goals; it cannot invent primary drives or motivations.
+- Memory Belongs to Memory Engine: The Thought Engine maintains active reasoning context; long-term persistent storage is owned strictly by Memory.
+
+================================================================================
+3. CORE DATA STRUCTURES & SCHEMAS (ALL 14 ENTITIES REFINED)
+================================================================================
+
+All models are strictly typed and immutable via Pydantic v2 (`frozen=True`).
+
+```python
+from datetime import datetime
+from enum import Enum
+from typing import Any, Literal
+from uuid import UUID
+from pydantic import BaseModel, Field
+
+# 1. Thought State
+class ThoughtState(str, Enum):
+    GENERATED = "GENERATED"
+    EVALUATING = "EVALUATING"
+    ACTIVE = "ACTIVE"                 # In focal spotlight
+    SUSPENDED = "SUSPENDED"           # Preempted; incubating in background
+    SUSPENDED_RUMINATION = "SUSPENDED_RUMINATION" # Enforced loop cooldown
+    RESUMED = "RESUMED"
+    COMPLETED = "COMPLETED"           # Reached sound conclusion or answer
+    ABANDONED = "ABANDONED"           # Stalled, decayed, or superseded
+    ARCHIVED = "ARCHIVED"             # Successfully committed to Memory Engine
+
+# 2. Epistemic Status & Thought Type
+class EpistemicStatus(str, Enum):
+    FACT = "FACT"                     # Ground truth or sound deductive proof
+    ASSUMPTION = "ASSUMPTION"         # Working premise taken without proof
+    POSSIBLE_HYPOTHESIS = "POSSIBLE_HYPOTHESIS" # Plausible candidate explanation
+    PROBABLE_CONCLUSION = "PROBABLE_CONCLUSION" # Strongly supported inference
+    REFUTED = "REFUTED"               # Falsified by counter-evidence
+    COUNTERFACTUAL_FICTION = "COUNTERFACTUAL"   # Sandbox simulation (quarantined)
+
+class ThoughtType(str, Enum):
+    OBSERVATION = "OBSERVATION"
+    QUESTION = "QUESTION"
+    HYPOTHESIS = "HYPOTHESIS"
+    EVALUATION = "EVALUATION"
+    PLAN_OPTION = "PLAN_OPTION"
+    COUNTERFACTUAL = "COUNTERFACTUAL"
+    META_REFLECTION = "META_REFLECTION"
+
+# 3. Thought Origin (Multi-Trigger Support)
+class TriggerChannel(str, Enum):
+    PERCEPTUAL_INGRESS = "PERCEPTUAL_INGRESS"
+    MEMORY_SPREADING = "MEMORY_SPREADING"
+    EMOTIONAL_SPIKE = "EMOTIONAL_SPIKE"
+    MOTIVATION_GOAL = "MOTIVATION_GOAL"
+    COUNTERFACTUAL_EXPLORATION = "COUNTERFACTUAL_EXPLORATION"
+    SPONTANEOUS_ASSOCIATIVE_DRIFT = "SPONTANEOUS_ASSOCIATIVE_DRIFT"
+    META_COGNITIVE_RECURSION = "META_COGNITIVE_RECURSION"
+
+class ContributingTrigger(BaseModel, frozen=True):
+    channel: TriggerChannel
+    source_reference_id: UUID | None
+    weight: float = Field(ge=0.0, le=1.0)
+    context_snippet: str
+
+class ThoughtOrigin(BaseModel, frozen=True):
+    primary_channel: TriggerChannel
+    contributing_triggers: list[ContributingTrigger]
+    created_at: datetime
+
+# 4. Thought Priority
+class ThoughtPriority(BaseModel, frozen=True):
+    urgency: float = Field(ge=0.0, le=1.0)
+    goal_relevance: float = Field(ge=0.0, le=1.0)
+    emotional_salience: float = Field(ge=0.0, le=1.0)
+    novelty: float = Field(ge=0.0, le=1.0)
+    attentional_fatigue: float = Field(default=0.0, ge=0.0)
+    monopoly_penalty: float = Field(default=0.0, ge=0.0)
+    composite_priority: float = Field(ge=0.0, le=1.0)
+
+# 5. Evidence Graph & Hypothesis
+class ThoughtHypothesis(BaseModel, frozen=True):
+    hypothesis_id: UUID
+    statement: str
+    epistemic_status: EpistemicStatus
+    probability: float = Field(ge=0.0, le=1.0)
+    supporting_evidence_ids: list[UUID]
+    contradicting_evidence_ids: list[UUID]
+    falsification_criteria: str | None
+    is_quarantined: bool = False      # True for counterfactual sandboxes
+
+# 6. Reasoning Trace
+class ReasoningTrace(BaseModel, frozen=True):
+    trace_id: UUID
+    thought_id: UUID
+    reasoning_type: Literal["DEDUCTIVE", "INDUCTIVE", "ABDUCTIVE", "CAUSAL", "ANALOGICAL", "COUNTERFACTUAL"]
+    premises: list[str]
+    inference_rules_applied: list[str]
+    intermediate_steps: list[str]
+    conclusion: str
+    uncertainties_noted: list[str]
+    deductive_validity: bool = False
+
+# 7. Thought Instance
+class ThoughtInstance(BaseModel, frozen=True):
+    thought_id: UUID
+    thread_id: UUID
+    parent_thought_ids: list[UUID]    # DAG parentage
+    child_thought_ids: list[UUID]     # DAG branches
+    content_text: str
+    thought_type: ThoughtType
+    epistemic_status: EpistemicStatus
+    state: ThoughtState
+    origin: ThoughtOrigin
+    priority: ThoughtPriority
+    confidence: float = Field(ge=0.0, le=1.0)
+    hypothesis: ThoughtHypothesis | None
+    reasoning_trace: ReasoningTrace | None
+    associated_memory_ids: list[UUID]
+    created_at: datetime
+
+# 8. Unresolved Question
+class UnresolvedQuestion(BaseModel, frozen=True):
+    question_id: UUID
+    thread_id: UUID
+    question_text: str
+    urgency: float
+    blocked_by: str | None
+    created_at: datetime
+
+# 9. Thought Chain
+class ThoughtChain(BaseModel, frozen=True):
+    chain_id: UUID
+    thread_id: UUID
+    chain_name: str
+    ordered_thought_ids: list[UUID]
+    chain_type: Literal["DEDUCTIVE_PROOF", "EXPLORATORY_STREAM", "PROBLEM_SOLVING", "COUNTERFACTUAL_SANDBOX"]
+    terminal_conclusion: str | None
+    is_resolved: bool
+
+# 10. Thought Context
+class ThoughtContext(BaseModel, frozen=True):
+    context_id: UUID
+    thread_id: UUID
+    ambient_mood_vector: dict[str, float]
+    active_goals: list[str]
+    focal_entities: list[UUID]
+    retrieved_memory_ids: list[UUID]
+    active_assumptions: list[str]
+    unresolved_questions: list[UnresolvedQuestion]
+
+# 11. Thought Thread (The Reasoning DAG)
+class ThoughtThread(BaseModel, frozen=True):
+    thread_id: UUID
+    title: str
+    theme: Literal["USER_INTERACTION", "SELF_REFLECTION", "KNOWLEDGE_EXPLORATION", "PROBLEM_SOLVING", "CREATIVE_DAYDREAM"]
+    state: ThoughtState
+    focal_thought_id: UUID | None
+    thought_ids: list[UUID]           # Nodes in thread DAG
+    chains: list[ThoughtChain]
+    context: ThoughtContext
+    priority: ThoughtPriority
+    depth: int = 1
+    consecutive_focal_ticks: int = 0  # Used for anti-monopolization
+    created_at: datetime
+    last_updated_at: datetime
+
+# 12. Thought Association (Inter-Thread Linkage)
+class ThoughtAssociation(BaseModel, frozen=True):
+    association_id: UUID
+    source_thread_id: UUID
+    target_thread_id: UUID
+    association_type: Literal["SHARED_GOAL", "COMMON_ENTITY", "CONTRADICTORY_PREMISE", "ANALOGOUS_PATTERN"]
+    strength: float = Field(ge=0.0, le=1.0)
+    discovered_at: datetime
+
+# 13. Pending Thought Queue
+class PendingThoughtQueue(BaseModel):
+    queue_id: UUID
+    pending_thread_ids: list[UUID]
+    total_waiting: int
+
+# 14. Active Thought Context (Focal Consciousness)
+class ActiveThoughtContext(BaseModel):
+    active_thread_id: UUID | None
+    active_thought: ThoughtInstance | None
+    focal_started_at: datetime | None
+    allocated_cognitive_energy: float = 1.0
+```
+
+================================================================================
+4. THE SEVEN THOUGHT GENERATION PATHWAYS & AUTONOMOUS SCHEDULER
+================================================================================
+
+4.1 The Formal 3-Tier Cognitive Scheduler
+Diva does not wait passively for a prompt. Her cognitive loop runs continuously under an adaptive 3-tier scheduler:
+
+1. Reactive Execution (Immediate Event Priority):
+   - Triggered instantaneously by high-priority `ThoughtPerceptionEnvelope` or acute emotional spikes.
+   - Evaluates preemption against current focal thread in $<5\text{ms}$.
+2. Periodic Cognition (Active Pacing: 50ms Tick):
+   - Advances active focal reasoning chains, steps through sub-queries, and updates working memory context.
+3. Autonomous Idle Drift (Idle Pacing: 500ms–2000ms Tick):
+   - Operates when no user interaction occurs.
+   - Paced by `InternalState.cognitive_energy`:
+     * High Energy (0.8–1.0): Full speculative drift and deep counterfactual modeling.
+     * Moderate Energy (0.4–0.7): Maintenance, consolidation reflection, and knowledge reconciliation.
+     * Low Energy / Rest (0.1–0.3): Idle drift throttled; system enters cognitive rest.
+
+4.2 Algorithmic Implementation of the 7 Pathways
+
+1. Perceptual Ingress Pathway:
+   Ingests normalized speech acts and ambiguity DAGs from Perception. If user asks a question or states a problem, spawns a `PROBLEM_SOLVING` thread.
+2. Memory Spreading Activation Pathway:
+   Queries Memory Engine for unintegrated episodes; recalls emotionally unresolved events and spawns retrospective inquiries.
+3. Emotional Spike Pathway:
+   Surges in curiosity, frustration, or affection inject direct attentional bias, compelling the Thought Engine to analyze the emotional cause.
+4. Motivational Goal Pathway:
+   Decomposes goals from the Motivation Engine into structured reasoning sub-goals (`UnresolvedQuestion`).
+5. Counterfactual Exploration Pathway:
+   Quarantined sandbox generator. Negates a known fact ("What if the user had stayed?") and projects alternative historical trajectories.
+6. Spontaneous Associative Drift Pathway:
+   Walks edges in the Semantic Knowledge Graph using biased random walks, connecting disparate concepts during quiet periods.
+7. Meta-Cognitive Recursion Pathway:
+   Monitors Diva's own thought chains; detects biases, circular arguments, or overconfidence, and generates corrective questions.
+
+================================================================================
+5. REASONING DAG, BRANCHING, MERGING & EPISTEMIC SEPARATION
+================================================================================
+
+5.1 The Reasoning Directed Acyclic Graph (DAG)
+Reasoning is not a linear chain. It branches when multiple hypotheses exist and merges when evidence converges:
+
+```mermaid
+flowchart TD
+    T0["Root Thought: 'Why did Alex sound upset today?'"] --> BranchFork{{"Hypothesis Branching Gate"}}
+    
+    BranchFork --> B1["Branch A (Work Stress)\nPremise: Alex mentioned deadline\nInductive Confidence: 0.65"]
+    BranchFork --> B2["Branch B (Interpersonal Conflict)\nPremise: Diva made a blunt comment\nAbductive Confidence: 0.35"]
+
+    B1 --> B1_1["Step A1: Retrieve past deadline episodes\nEvidence: Alex was terse on 3 past deadlines"]
+    B2 --> B2_1["Step B1: Retrieve blunt comment episode\nEvidence: Alex laughed at the comment earlier"]
+
+    B1_1 --> MergeNode{{"Reconciliation & Merge Node"}}
+    B2_1 --> MergeNode
+
+    MergeNode --> Conclusion["Synthesized Conclusion:\n'Alex is under deadline pressure, not angry with Diva.\nConfidence: 0.85 (Probable Conclusion)'"]
+```
+
+5.2 Branching & Merging Algorithms
+- Branching Algorithm:
+  When an abductive reasoning step produces $M \ge 2$ competing hypotheses with confidence margin $\Delta < 0.30$:
+  1. The thread creates child branches: `Branch_A` and `Branch_B`.
+  2. Each branch inherits the parent context but pursues its own evidence queries independently.
+- Merging Algorithm:
+  When evidence refutes one branch or when both branches reveal complementary facets:
+  1. Synthesize a `MergeNode` thought instance.
+  2. Map both branches to the merge node with relationships `RESOLVES` and `INTEGRATES`.
+  3. Close child branches and resume the main thread.
+
+5.3 Counterfactual Sandbox Quarantine
+- Counterfactual simulations operate with `is_quarantined = True`.
+- Invariant: A quarantined thought cannot write to the Memory Engine's Semantic or Fact tables, and cannot modify Diva's established belief state.
+- When the simulation ends, it produces an `EVALUATION` thought summarizing the lesson learned, leaving the fictional premise discarded.
+
+================================================================================
+6. ATTENTION ARBITRATION, ANTI-MONOPOLIZATION & RUMINATION BREAKERS
+================================================================================
+
+6.1 Multi-Dimensional Dynamic Priority Formula
+At each cognitive cycle, all candidate threads $k$ are scored:
+
+$$P(k) = w_u \cdot U(k) + w_g \cdot G(k) + w_e \cdot E(k) + w_n \cdot N(k) - w_d \cdot D(k) - w_m \cdot M(k)$$
+
+Where:
+- $U(k)$: Urgency (time sensitivity).
+- $G(k)$: Goal Relevance (alignment with Motivation Engine).
+- $E(k)$: Emotional Salience (absolute affective intensity).
+- $N(k)$: Novelty (unexplored ideas vs. familiar concepts).
+- $D(k)$: Attentional Fatigue ($D(k) = 1.0 - e^{-\lambda \cdot t_{\text{elapsed}}}$).
+- $M(k)$: Monopoly Penalty ($M(k) = \beta \cdot (\text{consecutive\_ticks} / 100)^2$).
+- Weights: $w_u = 0.30, w_g = 0.25, w_e = 0.20, w_n = 0.15, w_d = 0.05, w_m = 0.05$.
+
+6.2 Preemption & Suspension Gate
+- If an incoming thread satisfies $P(k_{\text{new}}) > P(k_{\text{current}}) + 0.25$:
+  1. Current active thread is cleanly suspended: `state = ThoughtState.SUSPENDED`.
+  2. Context snapshot is persisted in SQLite checkpoint table.
+  3. Thread $k_{\text{new}}$ is bound to `ActiveThoughtContext` and takes the focal spotlight.
+
+6.3 Rumination Breaker & Monopolization Lockout
+- Infinite loop detection: If the last 4 thoughts in a thread have semantic cosine similarity $> 0.88$ with no new conclusions or evidence:
+  1. Trigger: `RUMINATION_DETECTED`.
+  2. Transition thread to `SUSPENDED_RUMINATION`.
+  3. Apply an attentional lockout timer of 15 minutes.
+  4. Inject meta-thought: *"I am ruminating on this question without new evidence. Setting it aside until new information arrives."*
+
+6.4 Resumption of Suspended and Abandoned Threads
+- A suspended or abandoned thread is automatically re-evaluated and resumed if:
+  1. An incoming perceptual event or memory recall matches the thread's `focal_entities` with semantic similarity $> 0.80$.
+  2. The thread's urgency or goal relevance increases due to external changes.
+  3. The rumination lockout timer expires and new evidence has become available.
+
+================================================================================
+7. THOUGHT LIFECYCLE STATE MACHINE & TRANSITION RULES
+================================================================================
+
+```mermaid
+stateDiagram-v2
+    [*] --> GENERATED: Origin Trigger Fired
+    GENERATED --> EVALUATING: Enters Priority Queue
+    
+    EVALUATING --> ACTIVE: Wins Focal Spotlight
+    EVALUATING --> SUSPENDED: Lower Priority than Active
+    
+    ACTIVE --> SUSPENDED: Preempted by High-Priority Thread
+    ACTIVE --> SUSPENDED_RUMINATION: Loop Detected (Cosine > 0.88)
+    
+    SUSPENDED --> RESUMED: Re-promoted by Priority / New Evidence
+    SUSPENDED_RUMINATION --> RESUMED: Cooldown Expired + New Evidence
+    RESUMED --> ACTIVE
+    
+    ACTIVE --> COMPLETED: Conclusion / Proof Reached
+    ACTIVE --> ABANDONED: Decay, Stalled, or Disproven
+    
+    COMPLETED --> ARCHIVED: Meets Retention Policy (P >= 0.65)
+    COMPLETED --> [*]: Transient Conclusion (Discarded from RAM)
+    ABANDONED --> [*]: Context Purged from RAM
+    ARCHIVED --> [*]: Stored in Memory Engine
+```
+
+================================================================================
+8. MEMORY INTEGRATION, SELECTIVE ARCHIVING & SOVEREIGN RETENTION
+================================================================================
+
+8.1 Strict Decoupling of Completion from Archival
+A completed thought thread does NOT automatically become a permanent memory. Most everyday thoughts are transient reasoning steps.
+
+8.2 The Selective Archiving Gate
+A completed thread is submitted to the Memory Engine for persistent retention ONLY if:
+1. High Significance: Composite priority $P \ge 0.65$.
+2. Epistemic Milestone: Establishes a verified novel belief, resolves an open contradiction, or forms an autobiographical self-realization (`ThoughtType.META_REFLECTION`).
+3. Core Relationship Insight: Resolves an interpersonal uncertainty regarding a user.
+
+8.3 Sovereign Memory Engine Authority
+- The Thought Engine submits an archival package containing: the synthesized conclusion, the complete `ReasoningTrace`, constituent evidence IDs, and proposed categories (`AUTOBIOGRAPHICAL` or `SEMANTIC`).
+- The Memory Engine retains absolute sovereign authority: it validates the proposal, checks against existing knowledge graphs, assigns retention tiers, and executes consolidation.
+
+================================================================================
+9. RECOVERY & PERSISTENCE ENGINE (CRASH-RESILIENT THOUGHT STATE)
+================================================================================
+
+Thoughts survive application restarts and power crashes via SQLite WAL checkpointing:
+
+9.1 Database Tables
+```sql
+CREATE TABLE thought_threads_checkpoint (
+    thread_id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    theme TEXT NOT NULL,
+    state TEXT NOT NULL,
+    priority_json TEXT NOT NULL,
+    context_json TEXT NOT NULL,
+    focal_thought_id TEXT,
+    depth INTEGER NOT NULL,
+    last_updated_at DATETIME NOT NULL
+);
+
+CREATE TABLE thought_instances_checkpoint (
+    thought_id TEXT PRIMARY KEY,
+    thread_id TEXT NOT NULL,
+    parent_thought_ids_json TEXT NOT NULL,
+    content_text TEXT NOT NULL,
+    thought_type TEXT NOT NULL,
+    epistemic_status TEXT NOT NULL,
+    confidence REAL NOT NULL,
+    hypothesis_json TEXT,
+    reasoning_trace_json TEXT,
+    created_at DATETIME NOT NULL,
+    FOREIGN KEY(thread_id) REFERENCES thought_threads_checkpoint(thread_id)
+);
+```
+
+9.2 Restart Recovery Protocol
+Upon startup:
+1. `ThoughtLifecycleManager.initialize()` queries `thought_threads_checkpoint`.
+2. Inspects elapsed time since `last_updated_at`:
+   - If $\Delta t < 2\text{ hours}$: Restores active focal thread and pending queue directly into RAM; Diva resumes her exact train of thought.
+   - If $\Delta t \ge 2\text{ hours}$: Marks previous active thread as `SUSPENDED`; initializes fresh focal context with acknowledgment: *"I was pondering X earlier; let me set that aside and see what's happening now."*
+
+================================================================================
+10. INTER-ENGINE COMMUNICATION CONTRACTS & COGNITIVE INTEGRATION
+================================================================================
+
+10.1 Egress to Cognitive Integration / Decision Engine
+When thinking produces candidate courses of action or evaluations:
+```python
+class CandidateCognitiveProposal(BaseModel, frozen=True):
+    proposal_id: UUID
+    originating_thread_id: UUID
+    candidate_options: list[str]       # e.g., ["Ask clarifying question", "Acknowledge empathetically"]
+    evaluations: dict[str, float]      # Option -> Utility score
+    reasoning_trace_summary: str
+    confidence: float
+```
+Cognitive Integration makes the final decision; Thought Engine NEVER triggers actions directly.
+
+10.2 Bilateral Contracts Matrix
+- Perception -> Thought: Delivers `ThoughtPerceptionEnvelope`.
+- Thought -> Emotion: Delivers cognitive reframing packages to modulate mood.
+- Motivation <-> Thought: Motivation injects goals; Thought returns feasibility and subgoal decomposition.
+- Social Cognition <-> Thought: Social Cognition supplies user models; Thought simulates perspective-taking.
+
+================================================================================
+11. RESOURCE GOVERNANCE, ENERGY PACING & FAILURE MODES
+================================================================================
+
+11.1 Dynamic Energy Pacing
+The Thought Engine dynamically adjusts its depth based on `InternalState.cognitive_energy`:
+- Full Energy (0.8–1.0): Max 5 background incubating threads, full DAG branching, deep counterfactuals.
+- Low Energy (0.2–0.4): Max 1 incubating thread, branching disabled, simple linear chains only.
+- Exhaustion (<0.2): Pure reactive mode; all background threads suspended.
+
+11.2 Graceful Degradation on Neural SLM Timeout
+- Generative thought expansions are capped at a strict 400ms timeout on local hardware.
+- If the neural model times out, the engine falls back to deterministic symbolic graph rules (NetworkX deduction) and flags `inference_degraded = True`.
+
+================================================================================
+12. END-TO-END COGNITIVE WALKTHROUGHS
+================================================================================
+
+Walkthrough 1: Branching & Merging on Ambiguous Perception
+- Turn 1: User says: *"I don't think I can do this project anymore."*
+- Generation: Perceptual trigger spawns thread *"Analyzing User Burnout vs Technical Blocker"*.
+- Branching:
+  * Branch A: User is experiencing psychological exhaustion (Inductive Conf: 0.60).
+  * Branch B: User hit an intractable software architecture defect (Abductive Conf: 0.55).
+- Reasoning Steps:
+  * Branch A queries Memory for emotional precedents; finds user worked 60 hours this week.
+  * Branch B queries Memory for git commit history; finds recent merge conflict.
+- Merging:
+  * Both branches converge: *"The technical merge conflict was the catalyst, but chronic exhaustion is the root cause."*
+- Downstream Proposal:
+  * Emits proposal to Cognitive Integration: *"Recommend taking a break before debugging the merge conflict."*
+
+Walkthrough 2: Anti-Rumination Lockout and Resumption
+- Diva begins wondering why a third-party API returned an unexpected error code 503.
+- After 4 thoughts cycling over the same documentation premises without new data, the Rumination Breaker detects cosine similarity $0.94$.
+- Thread is transitioned to `SUSPENDED_RUMINATION` with a 15-minute cooldown.
+- 10 minutes later, the Perception Engine ingests a tool notification: *"API provider reported cloud outage"*.
+- The thread is immediately re-promoted to `RESUMED`, reaches `COMPLETED` state, and closes cleanly.
+
+================================================================================
+END OF SPECIFICATION
+================================================================================

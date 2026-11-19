@@ -1,0 +1,476 @@
+================================================================================
+DIVA COGNITIVE ARCHITECTURE — MEMORY ENGINE SPECIFICATION & SYSTEM DESIGN
+Document Version: 2.0.0 (Enterprise Refinement)
+Target Framework: Python 3.12+ / SQLite-vec + FTS5 / Pydantic v2 / FastEmbed
+Status: Approved Architectural Blueprint (Incorporating All Refinement Mandates)
+================================================================================
+
+TABLE OF CONTENTS
+1. EXECUTIVE ARCHITECTURAL SUMMARY & TECHNOLOGY STACK DECISIONS
+2. MULTI-CATEGORY MEMORY ARCHITECTURE & MEMORY OWNERSHIP MODEL
+3. CLAIM-LEVEL ARCHITECTURE (THE ATOMIC CLAIM ENGINE)
+4. IMPORTANCE VERSUS ACTIVATION DYNAMICS (MATHEMATICAL FORMULATIONS)
+5. PERSISTENT WORKING MEMORY ENGINE & RESTART RECOVERY
+6. RETENTION ENGINE (DEPENDENCY-DRIVEN, NON-CALENDAR TIERS)
+7. TRACEABLE EMOTIONAL APPRAISAL & REAPPRAISAL LIFECYCLE
+8. ENHANCED CONSOLIDATION VERIFICATION (THE 5-TIER SAFETY GATE)
+9. INVARIANT RETRIEVAL, METADATA FILTERING & TOKEN-BUDGET ASSEMBLY
+10. HISTORICAL INTEGRITY, VERSIONING, TEMPORAL VALIDITY & CORRECTIONS
+11. RELIABILITY, AUDITING & DATA INTEGRITY GUARANTEES
+
+================================================================================
+1. EXECUTIVE ARCHITECTURAL SUMMARY & TECHNOLOGY STACK DECISIONS
+================================================================================
+
+1.1 Core Architectural Principles
+- Multi-Category Support: Experiences are not pigeonholed into a single category ENUM. A single experience naturally populates multiple memory categories (Episodic, Semantic, Autobiographical, Relationship, Working).
+- Atomic Claim-Level Epistemology: Memories are containers of discrete, verifiable claims. Classification (FACT, HYPOTHESIS, etc.), confidence scores, provenance, temporal validity, and contradiction links reside at the Claim level.
+- Strict Memory Ownership: Every memory explicitly distinguishes Diva's direct experiences, the user's reported experiences, third-party experiences, and internally inferred models.
+- Decoupled Importance vs. Activation: Permanent importance, temporary importance, and dynamic ACT-R retrieval activation are kept mathematically and conceptually distinct.
+- Persistent Working Memory: Working memory maintains crash-resilient checkpoints in SQLite, preserving active goals, unresolved commitments, and conversational threads across restarts.
+- Dependency-Driven Retention: Retirement and consolidation of detailed memories are governed by structural dependencies, importance, and consolidation validation—never by arbitrary calendar expiration.
+- Invariant Retrieval with HyDE Safeguard: HyDE is strictly an ephemeral query-vector projection technique to locate existing evidence; hallucinated documents are NEVER treated as evidence or returned to requesting engines.
+- Token-Budget-Aware Assembly: Context is assembled using a greedy knapsack algorithm constrained by engine-specific token limits.
+
+1.2 Recommended Technology Stack Matrix
+
++-------------------------+-----------------------------------+-------------------------------------------------------------+
+| Layer / Capability      | Chosen Technology                 | Justification & Role in Architecture                        |
++-------------------------+-----------------------------------+-------------------------------------------------------------+
+| Core Programming Lang   | Python 3.12+ (Typed, Asyncio)     | Native fit for Diva's cognitive engine, rich ML/NLP ecosystem|
+| Primary Database Engine | SQLite 3.45+ (WAL Mode)           | Embedded ACID relational database, zero-latency local IPC,  |
+|                         | PRAGMA foreign_keys = ON;         | single-file portability, high concurrency with WAL mode.    |
+| Vector Index & Search   | sqlite-vec extension              | Native C-extension for vector KNN/cosine search in SQLite.  |
+|                         | (or LanceDB embedded fallback)    | Eliminates external vector database network hops.           |
+| Full-Text Search (FTS)  | SQLite FTS5 (BM25 Tokenizer)      | Microsecond exact keyword, name, and jargon retrieval.      |
+| Graph & Associative     | Relational Adjacency Tables +     | Adjacency list in SQLite for ACID persistence; NetworkX for |
+| Processing              | In-Memory NetworkX Projections    | spreading activation, PageRank, and community clustering.   |
+| Embedding Model         | BAAI/bge-small-en-v1.5 or         | 384-dim (or 768-dim), fast (<10ms CPU inference via ONNX),  |
+|                         | nomic-embed-text-v1.5             | high MTEB retrieval performance, supports Matryoshka dims.  |
+| Embedding Inference Eng | FastEmbed (ONNX Runtime)          | Pure C++ ONNX runtime; avoids heavy PyTorch dependencies.   |
+| Serialization & Schema  | Pydantic v2                       | Strict compile/runtime type validation and microsecond JSON.|
+| Working Memory Engine   | In-Memory Ring Buffer + SQLite    | Hot memory for turn execution; periodic SQLite WAL snapshot |
+|                         | Checkpoint Table                  | for crash-resilience across restarts.                       |
+| Background Orchestration| Asyncio Event Loop + SQLite Queue | Crash-safe persistent background job processing.            |
++-------------------------+-----------------------------------+-------------------------------------------------------------+
+
+================================================================================
+2. MULTI-CATEGORY MEMORY ARCHITECTURE & MEMORY OWNERSHIP MODEL
+================================================================================
+
+2.1 Multi-Category Memory Model
+A single experience often spans multiple cognitive domains. Rather than forcing a single `category: ENUM`, memories maintain a set of categories:
+
+```python
+class MemoryCategory(str, Enum):
+    EPISODIC = "EPISODIC"                   # Specific experiential event with temporal boundaries
+    SEMANTIC = "SEMANTIC"                   # Generalized world facts, concepts, and rules
+    AUTOBIOGRAPHICAL = "AUTOBIOGRAPHICAL"   # Diva's own personal history, identity, and growth
+    RELATIONSHIP = "RELATIONSHIP"           # Social models, interpersonal dynamics, and shared history
+    WORKING = "WORKING"                     # Active reasoning context and immediate goals
+
+class MemoryRecord(BaseModel, frozen=True):
+    memory_id: UUID
+    categories: set[MemoryCategory]         # A memory belongs to 1..N categories simultaneously
+    ownership: MemoryOwnership              # Explicit epistemic origin
+    retention_tier: RetentionTier           # PRIMARY, SECONDARY, TERTIARY
+    created_at: datetime
+    last_accessed_at: datetime
+    access_count: int
+    permanent_importance: float             # [0.0, 1.0] Inherent structural significance
+    temporary_importance: float             # [0.0, 1.0] Task/context-dependent relevance
+    claims: list[MemoryClaim]               # Constituent atomic claims
+    verbatim_content: str | None            # Raw text or sensory snapshot
+    provenance_event_id: UUID               # Backlink to InputEvent
+    version: int = 1
+    parent_version_id: UUID | None = None
+```
+
+Multi-Category Example:
+User says: *"I lost my job at Acme today, Diva. I feel lost."*
+This single experience contributes to:
+1. `EPISODIC`: Exact dialogue turn, user distress tone, timestamp `2026-11-17T22:20:00Z`.
+2. `WORKING`: Active topic = job loss; immediate need = empathetic support.
+3. `RELATIONSHIP`: User is vulnerable with Diva; trust indicator; bond strengthened.
+4. `SEMANTIC`: Fact: `User employment_status = UNEMPLOYED`.
+5. `AUTOBIOGRAPHICAL`: Milestone in Diva's role supporting a human through major adversity.
+
+2.2 Explicit Memory Ownership Model
+To prevent epistemic contamination, every memory explicitly declares its ownership:
+
+```python
+class MemoryOwnership(str, Enum):
+    DIVA_EXPERIENCE = "DIVA_EXPERIENCE"
+    # Diva's own first-person actions, internal reflections, tool executions, and decisions.
+    
+    USER_EXPERIENCE = "USER_EXPERIENCE"
+    # Experiences, events, and feelings reported directly by the user about themselves.
+    
+    THIRD_PARTY_EXPERIENCE = "THIRD_PARTY_EXPERIENCE"
+    # Information reported about third parties, documents, web pages, or external systems.
+    
+    INFERRED_BY_DIVA = "INFERRED_BY_DIVA"
+    # Deductions, hypotheses, and synthetic models generated by Diva's internal cognitive engines.
+```
+
+================================================================================
+3. CLAIM-LEVEL ARCHITECTURE (THE ATOMIC CLAIM ENGINE)
+================================================================================
+
+A memory record acts as an experiential envelope containing one or more atomic claims. Epistemic classification, confidence, provenance, and contradiction status live at the individual claim level.
+
+3.1 Atomic Memory Claim Schema
+```python
+class ClaimClassification(str, Enum):
+    FACT = "FACT"                     # Unambiguous directly observed or stated invariant
+    HYPOTHESIS = "HYPOTHESIS"         # Inferred proposition requiring verification
+    INTERPRETATION = "INTERPRETATION" # Evaluative framing or pragmatic reading
+    OPINION = "OPINION"               # Value-laden stance or aesthetic preference
+    UNKNOWN = "UNKNOWN"               # Acknowledged gap or unresolved ambiguity
+
+class ClaimTruthStatus(str, Enum):
+    ESTABLISHED = "ESTABLISHED"       # High confidence, verified by multiple sources
+    PROBABLE = "PROBABLE"             # Likely true, single reliable source
+    DISPUTED = "DISPUTED"             # Direct contradictory evidence exists
+    REFUTED = "REFUTED"               # Conclusively disproven
+    HISTORICAL = "HISTORICAL"         # Was true during [valid_from, valid_to], now superseded
+
+class MemoryClaim(BaseModel, frozen=True):
+    claim_id: UUID
+    memory_id: UUID                   # Parent memory record
+    subject: str                      # Entity UUID or canonical name
+    predicate: str                    # Standardized relation ontology
+    object_value: str                 # Target entity UUID or literal value
+    canonical_statement: str          # "User was laid off by Acme on 2026-11-17"
+    classification: ClaimClassification
+    confidence: float                 # Scalar [0.0, 1.0] (orthogonal to classification)
+    truth_status: ClaimTruthStatus
+    
+    # Provenance and Character-Span Lineage
+    origin_actor: str                 # "user", "diva_thought_engine", "web_tool"
+    derived_from_spans: list[tuple[int, int]] # Exact char offsets in raw text
+    
+    # Temporal Validity & Versioning
+    valid_from: datetime | None       # When this claim became true in the world
+    valid_to: datetime | None         # When this claim ceased being true
+    recorded_at: datetime             # When Diva learned of this claim
+    
+    # Contradiction & Association Tracking
+    contradicts_claim_ids: list[UUID] # Pointers to opposing claims
+    supports_claim_ids: list[UUID]    # Pointers to corroborating claims
+    superseded_by_claim_id: UUID | None
+    corrected_by_claim_id: UUID | None
+```
+
+3.2 Contradiction Handling via Claim DAG
+When a new claim $C_2$ contradicts existing active claim $C_1$:
+1. $C_1$ is NEVER silently overwritten or deleted.
+2. An explicit bidirectional contradiction is linked:
+   `C2.contradicts_claim_ids.append(C1.claim_id)`
+   `C1.contradicts_claim_ids.append(C2.claim_id)`
+3. Temporal Check:
+   - If $C_2$ represents an update over time (e.g., $C_1$: "User lives in New York" [2024], $C_2$: "User moved to London" [2026]):
+     - Set $C_1.\text{valid\_to} = C_2.\text{valid\_from}$.
+     - Set $C_1.\text{truth\_status} = \text{HISTORICAL}$.
+     - Set $C_1.\text{superseded\_by\_claim\_id} = C_2.\text{claim\_id}$.
+     - Set $C_2.\text{truth\_status} = \text{ESTABLISHED}$.
+   - If simultaneous contradictory assertions exist:
+     - Set both $C_1.\text{truth\_status} = \text{DISPUTED}$ and $C_2.\text{truth\_status} = \text{DISPUTED}$.
+     - Dispatch event `memory.contradiction_detected` to Thought and Social Cognition engines for interactive resolution.
+
+================================================================================
+4. IMPORTANCE VERSUS ACTIVATION DYNAMICS (MATHEMATICAL FORMULATIONS)
+================================================================================
+
+To ensure cognitive fidelity, the architecture cleanly decouples structural importance from retrieval activation:
+
+```
++-----------------------------------------------------------------------------+
+|                               MEMORY STRENGTH                               |
++------------------------------------+----------------------------------------+
+|        IMPORTANCE (Structural)     |         ACTIVATION (Dynamic)           |
+|  - Inherent, durable significance  |  - Ephemeral cognitive availability    |
+|  - Governs retention & pruning     |  - Governs instant recall probability  |
+|  - Permanent vs. Temporary         |  - ACT-R Base-Level Learning + Context |
++------------------------------------+----------------------------------------+
+```
+
+4.1 Permanent vs. Temporary Importance
+- Permanent Importance ($I_{\text{perm}} \in [0.0, 1.0]$):
+  Structural, intrinsic floor. Represents foundational identity memories, core user safety facts, traumatic or transformative life events.
+  $$I_{\text{perm}} = \max(I_{\text{baseline}}, P_{\text{floor}})$$
+  $I_{\text{perm}}$ NEVER decays with time.
+
+- Temporary Importance ($I_{\text{temp}} \in [0.0, 1.0]$):
+  Contextual significance tied to active tasks, current projects, or temporary user situations (e.g., "User is traveling this week").
+  $$I_{\text{temp}}(t) = I_{\text{init\_temp}} \cdot e^{-\lambda_{\text{task}} \cdot (t - t_0)}$$
+  Decays as the active task or temporary context reaches completion.
+
+- Overall Importance Metric:
+  $$I_{\text{total}}(M, t) = \max \left( I_{\text{perm}}(M), I_{\text{temp}}(M, t) \right)$$
+
+4.2 ACT-R Inspired Dynamic Retrieval Activation
+Activation $A(M, t)$ represents the *accessibility* of memory $M$ at time $t$ given current consciousness. It does NOT represent importance:
+
+$$A(M, t) = B(M, t) + S(M, t)$$
+
+1. Base-Level Activation $B(M, t)$ (Power-Law of Practice & Forgetting):
+   $$B(M, t) = \ln \left( \sum_{k=1}^{n} (t - t_k)^{-d} \right)$$
+   - $t_k$: Timestamps of past recall/access events ($k = 1 \dots n$).
+   - $d \approx 0.5$: Power decay parameter.
+   - Every recall reinforces memory activation and slows future decay (Spacing Effect).
+
+2. Spreading Activation $S(M, t)$ (Associative Contextual Priming):
+   $$S(M, t) = \sum_{j \in \text{WM}} W_j \cdot S_{jm}$$
+   - $j \in \text{WM}$: Concepts and entities currently active in Working Memory.
+   - $W_j$: Attentional weight allocated to working memory concept $j$.
+   - $S_{jm}$: Associative strength between working entity $j$ and memory $M$ (derived from knowledge graph edge weights).
+
+================================================================================
+5. PERSISTENT WORKING MEMORY ENGINE & RESTART RECOVERY
+================================================================================
+
+Working memory is Diva's active consciousness. While fast in-turn processing requires sub-millisecond in-memory speeds, Diva must NOT suffer complete amnesia if the application crashes or restarts.
+
+5.1 Dual-Layer Working Memory Architecture
+1. Layer 1 (Hot In-Memory State):
+   - Fast `asyncio`-locked Python singleton backed by an LRU-K cache and active priority queues.
+   - Holds sliding dialogue turns, immediate pronoun anchors, and active reasoning scratchpads.
+2. Layer 2 (Persistent WAL Checkpoint Table):
+   - Dedicated SQLite table `working_memory_state` storing serialized active contexts, open tasks, unfulfilled commitments, and conversational threads.
+   - Updated asynchronously at the conclusion of every dialogue turn.
+
+5.2 Persistent Working Memory Schema
+```sql
+CREATE TABLE working_memory_checkpoint (
+    session_id TEXT PRIMARY KEY,
+    active_dialogue_window_json TEXT NOT NULL,
+    active_goal_stack_json TEXT NOT NULL,
+    unresolved_commitments_json TEXT NOT NULL,
+    open_topic_threads_json TEXT NOT NULL,
+    focus_of_attention_entity_id TEXT,
+    last_checkpoint_at DATETIME NOT NULL
+);
+```
+
+5.3 Crash Recovery & Restart Protocol
+Upon application startup:
+1. `WorkingMemoryManager.initialize()` scans `working_memory_checkpoint`.
+2. Restores active goals and unfulfilled commitments into active queues.
+3. Inspects elapsed time since `last_checkpoint_at`:
+   - If $\Delta t < 2\text{ hours}$: Restores recent dialogue turns into active context; Diva can seamlessly resume mid-conversation.
+   - If $\Delta t \ge 2\text{ hours}$: Moves old dialogue turns into episodic consolidation queue; preserves unfulfilled commitments and goals; initializes fresh dialogue window with acknowledgment (*"Welcome back. Last time we were discussing..."*).
+
+================================================================================
+6. RETENTION ENGINE (DEPENDENCY-DRIVEN, NON-CALENDAR TIERS)
+================================================================================
+
+6.1 Abolition of Fixed Calendar Expiration
+Fixed 7–30 day deletion timers are strictly forbidden. Information is never destroyed merely because a clock ticked.
+Instead, retention transitions are determined dynamically by four interacting factors:
+1. Structural Dependencies: Are active tasks, open commitments, or disputed claims pointing to this record?
+2. Multi-Factor Importance: Is $I_{\text{perm}} \ge \theta_{\text{permanent}}$ or $I_{\text{temp}} \ge \theta_{\text{active}}$?
+3. Consolidation Status: Has a validated consolidated representation successfully subsumed this detailed record?
+4. Category Retention Policies: Customized rules per memory category (e.g., Autobiographical memories are never pruned).
+
+6.2 The Three Retention Tiers (Representation-Based, Not Calendar-Based)
+
++---------------+-------------------------+---------------------------------+------------------------------------------+
+| Tier          | Target Representation   | Retention Qualification         | Storage Location & Indexing              |
++---------------+-------------------------+---------------------------------+------------------------------------------+
+| 1. Primary    | Full granular episodes, | Active, unconsolidated, or high | Hot SQLite DB, FTS5 index, full vector   |
+|               | raw transcripts, tokens | temporary importance records.   | embeddings active in sqlite-vec.         |
++---------------+-------------------------+---------------------------------+------------------------------------------+
+| 2. Secondary  | Consolidated summaries, | Successfully consolidated; all  | Hot SQLite DB, FTS5 index, full vector   |
+|               | generalized patterns    | source claims verified.         | embeddings active.                       |
++---------------+-------------------------+---------------------------------+------------------------------------------+
+| 3. Tertiary   | Core facts, identity,   | Foundational knowledge,         | Core Knowledge Graph & Canonical beliefs;|
+|               | autobiographical roots  | $I_{\text{perm}} \ge 0.80$.     | Guaranteed persistent indices.           |
++---------------+-------------------------+---------------------------------+------------------------------------------+
+
+6.3 The 4-Phase Dependency-Aware Pruning Algorithm
+Detailed records in Primary storage are eligible for compaction/archiving ONLY when:
+- Rule 1 (Consolidation Verified): `status == 'CONSOLIDATED'` and parent consolidation has passed the 5-Tier Verification Gate.
+- Rule 2 (Zero Active Dependencies):
+  - No active goal or task in Working Memory references this memory ID.
+  - No pending commitment in Relationship Memory references this memory ID.
+  - No active disputed claim in the Claim DAG references claims in this memory.
+- Rule 3 (Low Importance): $I_{\text{perm}} < 0.80$ and $I_{\text{temp}} < 0.20$.
+- Execution: De-index from vector and FTS5 search; move raw transcript to compressed zstd cold archive `archived_episodic_payloads`.
+
+================================================================================
+7. TRACEABLE EMOTIONAL APPRAISAL & REAPPRAISAL LIFECYCLE
+================================================================================
+
+Diva treats emotional appraisals as historical cognitive events, completely decoupled from her current emotional state.
+
+7.1 Dedicated Emotional Appraisal Schema
+```python
+class AppraisalType(str, Enum):
+    INITIAL = "INITIAL"             # Immediate appraisal at time of experience
+    REAPPRAISAL = "REAPPRAISAL"     # Retrospective re-evaluation during reflection
+
+class MemoryAppraisalRecord(BaseModel, frozen=True):
+    appraisal_id: UUID
+    memory_id: UUID
+    appraisal_type: AppraisalType
+    appraised_at: datetime
+    evaluating_engine_version: str  # e.g., "EmotionEngine-v1.2"
+    
+    # Dimensional & Categorical Affect
+    valence: float                  # [-1.0, 1.0] (Displeasure to Pleasure)
+    arousal: float                  # [0.0, 1.0] (Calm to Excited)
+    dominance: float                # [0.0, 1.0] (Submissive to In-Control)
+    discrete_emotions: list[str]    # e.g., ["grief", "shock"]
+    
+    # State Context & Cognitive Rationale
+    diva_mood_at_time: dict[str, float] # Mood vector when appraisal occurred
+    cognitive_reframe_rationale: str | None # "Time provided perspective on the failure"
+```
+
+7.2 Non-Overwriting Reappraisal Protocol
+- The `initial_appraisal` is IMMUTABLE. It is never edited, averaged, or overwritten.
+- When Diva reflects on a past memory (prompted by the Thought or Learning Engine), the Emotion Engine assesses the memory in light of her current maturity and state.
+- If the appraisal changes, a new `MemoryAppraisalRecord` with `appraisal_type = REAPPRAISAL` is created and appended to the memory's appraisal history.
+- Result: Diva can explicitly articulate: *"At the time, I felt humiliated and terrified, but today I look back on that event with deep gratitude and pride."*
+
+================================================================================
+8. ENHANCED CONSOLIDATION VERIFICATION (THE 5-TIER SAFETY GATE)
+================================================================================
+
+Before a cluster of episodic memories can be converted into a consolidated representation and marked eligible for detailed archiving, it MUST pass the 5-Tier Verification Gate:
+
+```
+[Candidate Consolidated Record]
+               │
+               ▼
+   ┌───────────────────────┐
+   │ 1. Entity Preservation│  --> Fail: Reject synthesis
+   └───────────┬───────────┘
+               ▼
+   ┌───────────────────────┐
+   │2. Contradiction Check │  --> Fail: Reject; preserve dispute
+   └───────────┬───────────┘
+               ▼
+   ┌───────────────────────┐
+   │3. Claim Coverage Check│  --> Fail: Unaccounted claims found
+   └───────────┬───────────┘
+               ▼
+   ┌───────────────────────┐
+   │4. Source Traceability │  --> Fail: Broken provenance links
+   └───────────┬───────────┘
+               ▼
+   ┌───────────────────────┐
+   │5. Residual Info Check │  --> Pass: Extract residual claims;
+   └───────────┬───────────┘            Commit atomic transaction
+               ▼
+   [Verified Consolidated Memory]
+```
+
+8.1 The 5 Verification Gates
+1. Entity & Relation Preservation:
+   - All named entities present in the source episodes must exist in the consolidated summary or extracted semantic triplets.
+2. Contradiction Preservation:
+   - The synthesizer must NEVER smooth over a contradiction. If source episode A states "User is vegetarian" and episode B states "User ordered steak", the consolidation MUST explicitly state the contradiction or contextual divergence.
+3. Claim Coverage Check:
+   - Every single `MemoryClaim` in the source memories must be tagged as:
+     (a) `SUBSUMED`: Directly expressed in the consolidated claim set.
+     (b) `GENERALIZED`: Merged into a higher-level pattern.
+     (c) `RESIDUAL`: Specific detail not fitting the generalization.
+4. Source Traceability Check:
+   - Every consolidated claim must maintain direct graph backlinks `wasDerivedFrom` pointing to the exact source claim IDs and raw input event IDs.
+5. Residual Information Check:
+   - Any claim marked `RESIDUAL` cannot be discarded. It is extracted into a dedicated `ResidualClaimNode` linked to the consolidated record, guaranteeing zero information loss.
+
+================================================================================
+9. INVARIANT RETRIEVAL, METADATA FILTERING & TOKEN-BUDGET ASSEMBLY
+================================================================================
+
+9.1 Chronological & Metadata-Filtered Retrieval
+Retrieval supports multi-faceted structured filtering prior to ranking:
+- Time Windows: `valid_from <= T_end AND (valid_to IS NULL OR valid_to >= T_start)`
+- Chronological Sweeps: Strict timestamp ordering forward (`ASC`) or backward (`DESC`) for narrative reconstruction.
+- Category Filters: `categories OVERLAPS {'RELATIONSHIP', 'SEMANTIC'}`
+- Ownership Filters: `ownership IN {'USER_EXPERIENCE', 'DIVA_EXPERIENCE'}`
+- Epistemic Filters: `classification = 'FACT' AND confidence >= 0.80`
+
+9.2 Multi-Strategy Fusion & Reranking Pipeline
+1. Candidate Generation:
+   - Dense Vector (`sqlite-vec` Cosine Similarity).
+   - Lexical Search (`SQLite FTS5` BM25 on text & claims).
+   - Graph Neighborhood Traversal (1-2 hop spreading activation from seed entities).
+2. Reciprocal Rank Fusion (RRF):
+   $$RRF(d) = \sum_{m \in \{\text{vec}, \text{bm25}, \text{graph}\}} \frac{w_m}{k + \text{rank}_m(d)}$$
+3. Dynamic Activation Reranker:
+   Ranks candidates using combined activation and importance:
+   $$\text{FinalScore}(d) = RRF(d) \cdot \left[ 1.0 + \alpha \cdot I_{\text{total}}(d) \right] \cdot \left[ 1.0 + \beta \cdot A(d, t) \right] \cdot \text{Confidence}(d)$$
+
+9.3 The HyDE Safeguard (Strict Boundary Constraint)
+- Principle: **HyDE should ONLY help locate evidence, NEVER create or substitute for evidence.**
+- Pipeline Rule:
+  1. Hypothetical Document Embeddings (HyDE) generate a speculative passage to bridge vocabulary gaps.
+  2. The generated vector is used EXCLUSIVELY to query the vector index (`sqlite-vec`).
+  3. The hypothetical text is IMMEDIATELY discarded from memory.
+  4. It is NEVER returned to the requesting engine, NEVER injected into context, and NEVER stored as a fact.
+
+9.4 Token-Budget-Aware Context Assembly
+Context delivery is strictly bounded by the requesting engine's token capacity ($B_{\text{limit}}$):
+- Algorithm (Greedy Priority Knapsack):
+  1. Retrieve ranked candidate list $\{d_1, d_2, \dots, d_m\}$.
+  2. For each candidate $d_i$, determine required token cost $T(d_i)$.
+  3. If $\sum T(d_i) > B_{\text{limit}}$:
+     - Check if candidate has a Secondary Consolidated representation $d_i^{\text{consolidated}}$.
+     - If so, swap granular episode for consolidated representation to save tokens.
+     - Continue packing until token ceiling is reached without truncation of individual claims.
+
+================================================================================
+10. HISTORICAL INTEGRITY, VERSIONING, TEMPORAL VALIDITY & CORRECTIONS
+================================================================================
+
+10.1 Memory & Claim Versioning Schema
+Memories and claims are append-only. When an update occurs:
+- `version`: Monotonically increasing integer ($1, 2, 3 \dots$).
+- `parent_version_id`: Pointer to previous version UUID.
+- `superseded_by_id`: Pointer to succeeding version UUID.
+- `modified_at`: Timestamp of modification.
+- `modification_reason`: Textual justification from requesting engine.
+
+10.2 Explicit Correction Relationships
+When an erroneous fact is corrected:
+- Edge: `(NewClaim) --[CORRECTS {reason, error_type, authoring_engine}]--> (OldClaim)`
+- `error_type`: `PERCEPTUAL_MISHEARING`, `USER_RETRACTED`, `INFERENCE_ERROR`, `TEMPORAL_OBSOLESCENCE`
+- The old claim is marked `truth_status = 'REFUTED'` or `'HISTORICAL'`, preserving the audit trail of what Diva previously believed and why she changed her mind.
+
+10.3 Bitemporal Modeling
+Every claim tracks two independent temporal dimensions:
+1. Assertion Time (World Time): `valid_from` to `valid_to` (when the event was true in reality).
+2. Transaction Time (Diva Time): `recorded_at` to `superseded_at` (when Diva believed it).
+This enables Diva to answer: *"What did I believe about Alex's job on May 1st?"* versus *"Where was Alex actually working on May 1st?"*
+
+================================================================================
+11. RELIABILITY, AUDITING & DATA INTEGRITY GUARANTEES
+================================================================================
+
+11.1 Provenance Traceability Invariant
+From any delivered fact or claim in context, a complete backward traversal graph is available:
+$$\text{Claim} \xrightarrow{\text{wasDerivedFrom}} \text{MemoryRecord} \xrightarrow{\text{wasGeneratedBy}} \text{InputEvent} \xrightarrow{\text{rawRef}} \text{RawInputBytes}$$
+
+11.2 Atomic Multi-Table SQLite Transactions
+Every memory creation or update executes within an immediate transaction:
+```sql
+BEGIN IMMEDIATE TRANSACTION;
+-- 1. Insert Base Memory Record
+-- 2. Insert Category Mappings
+-- 3. Insert Atomic Claims
+-- 4. Insert Graph Associations
+-- 5. Insert Vector Embeddings
+COMMIT;
+```
+Ensures zero partial writes or orphan embeddings.
+
+11.3 Idempotent Background Maintenance
+Background workers (consolidation, compaction, vacuuming) operate under a distributed lease table `background_leases` with 30-second heartbeats. If Diva crashes during consolidation, the lease expires and resumes safely on reboot without duplicate claim generation.
+
+================================================================================
+END OF SPECIFICATION
+================================================================================

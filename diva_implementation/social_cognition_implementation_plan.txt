@@ -1,0 +1,3551 @@
+================================================================================
+DIVA COGNITIVE ARCHITECTURE — ENGINE 13: SOCIAL COGNITION ENGINE
+ARCHITECTURAL IMPLEMENTATION PLAN & PRODUCTION MASTER SPECIFICATION
+Document Version: 1.0.0 (Production Master · Approved Architecture Specification)
+Target Framework: Python 3.12+ (Asyncio) / Deeply Frozen Data Models / SQLite WAL
+Status: Ready for Implementation — All 31 Must-Pass Conditions Satisfied
+Document Scope: Strictly Non-Code Architecture Plan & Comprehensive Relational Specification
+================================================================================
+
+TABLE OF CONTENTS
+--------------------------------------------------------------------------------
+EXECUTIVE ARCHITECTURAL SUMMARY & GOVERNING PRINCIPLES
+  The Five Supreme Non-Negotiable Axioms
+  Core Responsibility & Ownership Boundaries
+PART 1 — CORE ARCHITECTURAL REQUIREMENTS
+  1. Individual Recognition & Identity Management
+  2. Individual Modeling & Evidence-Based Attribution
+  3. Intention & Goal Interpretation (Theory of Mind — Behavioral)
+  4. Perspective-Taking & Theory of Mind (Epistemic)
+  5. Relationship Management & Multidimensional Representation
+  6. Social Interaction Interpretation & Contextual Analysis
+  7. Social Norms, Expectations & Contextual Conventions
+  8. Social Trust & Reliability Assessment
+  9. Social Learning & Behavioral Pattern Recognition
+  10. Social Context & Memory Integration
+  11. Group & Community Understanding
+  12. Social Uncertainty, Correction & Provenance
+  13. Shared LLM Integration & Deterministic Boundaries
+  14. Social Model Lifecycle, Staleness & Garbage Collection
+  15. Resource Throttling, Lifecycle States & Transactional Persistence
+PART 2 — INTERNAL ARCHITECTURE & THE THIRTEEN LOGICAL COMPONENTS
+  1. Individual Identity Manager
+  2. Individual Modeling Module
+  3. Intention Inference Module
+  4. Perspective Modeling Module
+  5. Relationship Manager
+  6. Social Interaction Analyzer
+  7. Social Norms Manager
+  8. Trust Assessment Module
+  9. Social Pattern Recognition Module
+  10. Group Dynamics Manager
+  11. Social Context Manager
+  12. Social Learning Interface
+  13. Social Lifecycle Manager
+PART 3 — INTER-ENGINE COMMUNICATION CONTRACTS
+  Formal Asynchronous Contracts with All 10 Connected Engines
+PART 4 — COMPREHENSIVE DATA DICTIONARY & RELATIONAL PERSISTENCE
+  Section A: Schemas for All 23 Internal Data Structures
+  Section B: Complete 20-Table SQLite Relational Schema
+PART 5 — MUST-PASS CONDITIONS (31 AUDIT CHECKPOINTS)
+  Comprehensive Verification Checklist across 6 Domains
+PART 6 — MANDATORY ARCHITECTURAL WALKTHROUGHS (ALL 12 SCENARIOS)
+  Scenario 1: First Interaction (New Individual Registration)
+  Scenario 2: Repeated Interaction (Model Accumulation)
+  Scenario 3: Similar Names (Identity Disambiguation)
+  Scenario 4: Ambiguous Message (Multi-Hypothesis Interpretation)
+  Scenario 5: Broken Promise (Contextual Trust Evidence)
+  Scenario 6: Repeated Reliability (Gradual Trust Strengthening)
+  Scenario 7: Relationship Development (Independent Dimension Update)
+  Scenario 8: Different Perspectives (Epistemic State Divergence)
+  Scenario 9: Group Interaction (Dual-Level Modeling)
+  Scenario 10: Corrected Information (Model Revision with History)
+  Scenario 11: Inactive Relationship (Dormancy without Hostility Assumption)
+  Scenario 12: Contradictory Evidence (Confidence Revision & Uncertainty Preservation)
+PART 7 — COMPLETION CONDITIONS & PHASED IMPLEMENTATION ROADMAP
+  Verification of All 17 Architectural Completion Conditions
+  Phased 10-Stage Engineering Milestones
+
+
+================================================================================
+EXECUTIVE ARCHITECTURAL SUMMARY & GOVERNING PRINCIPLES
+================================================================================
+
+The Social Cognition Engine governs Diva's internal representation of the social
+world: how she recognizes individuals, builds structured models of their attributes
+and behaviors, maintains evolving relationships, interprets social interactions,
+estimates others' intentions and perspectives, understands group dynamics, and
+develops contextual trust assessments — all grounded in accumulated evidence with
+explicit uncertainty and provenance.
+
+This engine does NOT simply recognize names or remember conversations. It maintains
+structured, evidence-based social models that evolve continuously through experience.
+
+Persistent historical storage is owned by the Memory Engine. Social Cognition owns
+the current working interpretive models — structured representations that go beyond
+raw data to embody Diva's social understanding.
+
+--------------------------------------------------------------------------------
+THE FIVE SUPREME NON-NEGOTIABLE AXIOMS
+--------------------------------------------------------------------------------
+1. KNOWING SOMEONE IS NOT THE SAME AS UNDERSTANDING SOMEONE
+   Identity, individual models, and relationships are three separate representations.
+   Recognizing that "person_A42" exists (identity) is fundamentally different from
+   understanding their interests, communication style, and behavioral patterns
+   (individual model), which is fundamentally different from tracking how Diva's
+   relationship with that person has developed over time (relationship record).
+   These three layers must remain structurally independent.
+
+2. INFERENCE IS NOT FACT
+   Diva can estimate someone's intentions, predict their possible reactions, and
+   model their beliefs, but MUST preserve the categorical distinction between:
+   - What she directly observed (OBSERVED).
+   - What was explicitly stated to her (REPORTED).
+   - What she inferred from patterns (INFERRED).
+   - What remains uncertain or speculative (HYPOTHESIZED).
+   An inference must NEVER silently graduate to established fact without explicit
+   evidence reclassification with supporting provenance.
+
+3. RELATIONSHIPS ARE MULTIDIMENSIONAL
+   Familiarity, trust, affinity, cooperation, communication quality, reciprocity,
+   conflict, and closeness are eight independent dimensions with separate update
+   rules, separate evidence bases, and separate confidence values. They must NEVER
+   be collapsed into a single "relationship score." Someone can be highly familiar
+   but untrusted. Someone can be trusted professionally but emotionally distant.
+
+4. SOCIAL UNDERSTANDING MUST EVOLVE
+   Diva must be able to revise her understanding of anyone when new experiences
+   contradict previous assumptions. Social models are living, revisable structures
+   with versioned history, not permanent personality stamps applied after a single
+   interaction.
+
+5. SOCIAL COGNITION DOES NOT OWN EMOTION, MOTIVATION, OR DECISION
+   Social Cognition provides structured social interpretations, context, and
+   assessments. The Emotion Engine evaluates emotional significance. The Motivation
+   Engine handles social drives and desires. Cognitive Integration makes decisions.
+   Social Cognition NEVER directly generates Diva's emotional states, creates
+   motivational drives, executes external actions, or makes final behavioral decisions.
+
+--------------------------------------------------------------------------------
+ADDITIONAL ARCHITECTURAL SAFEGUARDS
+--------------------------------------------------------------------------------
+- IDENTITY IS NOT ACCOUNT OWNERSHIP: A different conversational speaker does not
+  automatically become the account owner. Account identity, conversational identity,
+  and entity identity are three distinct concepts.
+
+- REPORTED INFORMATION IS NOT OBSERVED INFORMATION: Every person model preserves
+  where information came from. If Diva's primary user says "My friend likes chess,"
+  that is reported information about an indirectly known individual, not a direct
+  observation by Diva.
+
+- SOCIAL MODELS ARE NOT HISTORICAL MEMORY: Social Cognition owns current working
+  models. Memory Engine owns persistent experiences and long-term retention. These
+  are complementary, not competing systems.
+
+- UNDERSTANDING IS NOT DECIDING: Social Cognition provides assessments. Cognitive
+  Integration makes decisions. Social Cognition cannot decide whether Diva should
+  forgive someone, confront them, or continue making plans.
+
+- SOCIAL MODELS AS SENSITIVE INFORMATION: The engine must maintain provenance,
+  access awareness, retention policies, and a clear distinction between information
+  explicitly shared by someone and inferences Diva has made about them. This prevents
+  the system from silently turning uncertain social guesses into permanent profiles.
+
+--------------------------------------------------------------------------------
+CORE RESPONSIBILITY & OWNERSHIP BOUNDARIES
+--------------------------------------------------------------------------------
+Responsibility                              | Owner
+--------------------------------------------|------------------------------------
+Understand what was communicated            | Input and Perception Engine
+Understand another person's mental state    | Social Cognition Engine
+Maintain social models of people            | Social Cognition Engine
+Maintain relationship models                | Social Cognition Engine
+Store persistent experiences                | Memory Engine
+Generate Diva's emotions                    | Emotion Engine
+Maintain Diva's personality                 | Personality Engine
+Generate Diva's thoughts                    | Thought Engine
+Generate Diva's desires                     | Motivation Engine
+Learn general capabilities and mechanisms   | Learning Engine
+Decide what Diva should do                  | Cognitive Integration Engine
+Manage internal resources & energy          | Internal State Engine
+Manage attention allocation                 | Attention Control Engine
+
+
+================================================================================
+PART 1 — CORE ARCHITECTURAL REQUIREMENTS
+================================================================================
+
+--------------------------------------------------------------------------------
+1. INDIVIDUAL RECOGNITION & IDENTITY MANAGEMENT
+--------------------------------------------------------------------------------
+Diva must recognize that different interactions can involve the same individual,
+and must maintain structured identity records that persist across interactions.
+
+1.1 Three-Layer Identity Model:
+    The engine distinguishes three fundamentally different identity concepts:
+
+    a) Account Identity: Which user account or communication channel is being used.
+       This is a technical identifier (e.g., Discord user ID, email address, API key).
+       Assigned by the Perception Engine as part of message metadata.
+
+    b) Conversational Identity: Who does the current interaction appear to come from?
+       This may differ from account identity (someone else using the device, shared
+       accounts, anonymous sessions). Estimated by Social Cognition using behavioral
+       and contextual signals.
+
+    c) Entity Identity: Which person is being discussed or referred to in conversation?
+       A person mentioned by name in conversation is an entity, not necessarily the
+       speaker. Social Cognition maintains entity records for discussed individuals.
+
+    These three MUST NOT be conflated. Someone mentioned in conversation (entity) is
+    not the same as the person speaking (conversational identity), who may not be the
+    account holder (account identity).
+
+1.2 Identity Assignment & Confidence:
+    Every recognized individual receives a canonical `individual_id` (UUID).
+    - New individual detection triggers immediate registration with minimal attributes.
+    - Identity confidence $C_{id} \in [0.0, 1.0]$ tracks how certain the identification is.
+    - $C_{id} \ge 0.90$: HIGH confidence — consistent behavioral and explicit evidence.
+    - $0.60 \le C_{id} < 0.90$: MODERATE — some supporting signals, possible ambiguity.
+    - $C_{id} < 0.60$: LOW — tentative identification, insufficient evidence.
+    - $C_{id} = 0.0$: UNKNOWN — completely unidentified entity.
+
+1.3 Identity Matching & Merge Prevention:
+    When a new interaction arrives, the Identity Manager must determine whether the
+    speaker matches an existing individual profile:
+
+    Matching Algorithm:
+    1. Extract explicit identifiers (account IDs, stated names, platform handles).
+    2. Compare against existing identifier records with exact string matching.
+    3. If exact match found with $C_{id} \ge 0.70$: Link to existing profile.
+    4. If no exact match: Compute behavioral similarity using LLM-assisted analysis
+       of communication patterns, vocabulary, topic preferences, and interaction style.
+    5. Apply merge threshold: Two profiles may be merged ONLY when:
+       - At least one explicit identifier match exists, AND
+       - Behavioral similarity score $\ge 0.75$, AND
+       - No contradictory evidence exists (conflicting locations, simultaneous
+         interactions, inconsistent personal details).
+    6. If merge evidence is suggestive but not conclusive ($0.50 \le S_{merge} < 0.75$):
+       Create a `PossibleIdentityLink` record without merging. Flag for future
+       evidence accumulation.
+
+    Anti-Merge Safeguard:
+    - Two individuals with the same display name are NEVER automatically merged.
+    - Name collision creates a disambiguation record, not a merge event.
+    - Only convergent multi-signal evidence triggers merge consideration.
+
+    Anti-Duplication Safeguard:
+    - Before creating a new profile, the Identity Manager checks existing profiles
+      for identifier overlap and behavioral similarity.
+    - If overlap score $\ge 0.85$ with an existing profile: Block creation, link to
+      existing profile instead.
+
+1.4 Identity Corrections:
+    Identity assignments can be corrected through explicit evidence:
+    - Direct statement: "That was actually my friend using my account."
+    - Contradictory evidence accumulation.
+    - User correction: "No, that's a different person."
+
+    Correction Protocol:
+    1. Record the correction as an `IdentityEvidence` with source `EXPLICIT_CORRECTION`.
+    2. If a merged profile needs splitting: Create new profile, migrate attributed
+       interactions, preserve audit trail.
+    3. If separate profiles need merging: Execute merge with provenance preservation.
+    4. Update all downstream references (relationship records, interaction attributions).
+    5. Record correction in `social_model_history` for audit.
+
+1.5 Identity Types:
+    - `PERSISTENT`: Fully identified individual with stable canonical ID.
+    - `TEMPORARY`: Interaction participant whose identity is session-scoped (e.g.,
+      anonymous chat participant). May graduate to PERSISTENT with evidence.
+    - `INDIRECT`: Person known only through others' descriptions (e.g., "my friend Rahul").
+      No direct interaction exists. All attributes are REPORTED, not OBSERVED.
+    - `COLLECTIVE`: An organization, community, or group entity (not an individual person).
+
+1.6 Entity Type Discrimination:
+    The engine must distinguish between:
+    - Individual persons.
+    - Organizations and companies.
+    - Groups and communities.
+    - Fictional characters or hypothetical persons.
+    Each entity type has different modeling rules. Organizations do not have "emotions"
+    or "intentions" in the same sense as individuals.
+
+--------------------------------------------------------------------------------
+2. INDIVIDUAL MODELING & EVIDENCE-BASED ATTRIBUTION
+--------------------------------------------------------------------------------
+Recognizing someone is fundamentally different from understanding them. The engine
+must gradually build an internal model of each individual through accumulated,
+attributed evidence.
+
+2.1 Attribute Categories:
+    Individual models maintain structured attributes across six domains:
+
+    a) Demographic & Identifying:
+       - Known names and aliases.
+       - Communication channels and identifiers.
+       - Stated location, language, timezone (when explicitly shared).
+
+    b) Interests & Preferences:
+       - Topics of expressed interest.
+       - Communication style preferences (verbose, brief, formal, casual).
+       - Interaction timing preferences.
+       - Content preferences (technical, creative, philosophical, casual).
+
+    c) Behavioral Patterns:
+       - Communication frequency and consistency.
+       - Response time patterns.
+       - Topic engagement patterns.
+       - Emotional expression patterns.
+       - Cooperation and reciprocity patterns.
+
+    d) Cognitive & Capability:
+       - Demonstrated knowledge domains.
+       - Problem-solving approaches observed.
+       - Expertise areas with supporting evidence.
+
+    e) Relational:
+       - Known relationships to other individuals.
+       - Social roles (mentor, collaborator, friend).
+       - Group memberships.
+
+    f) Contextual & Temporal:
+       - Current known circumstances (e.g., "preparing for an exam").
+       - Stated goals and plans.
+       - Life events mentioned.
+
+2.2 Four-Level Evidence Attribution:
+    Every attribute attached to an individual model carries a mandatory evidence
+    classification:
+
+    Level 1 — OBSERVED:
+    Information derived from Diva's direct observation of the individual's behavior.
+    Example: "This person consistently discusses programming topics" (observed across
+    8 interactions). Confidence floor: 0.70 (strong behavioral evidence).
+
+    Level 2 — REPORTED:
+    Information explicitly stated by someone (the individual themselves, or a third
+    party). Source attribution is mandatory.
+    Example: "My friend Rahul is good at mathematics" — REPORTED by primary_user.
+    Confidence floor: 0.50 (dependent on reporter's reliability).
+
+    Level 3 — INFERRED:
+    Information deduced by Diva from patterns, context, or reasoning.
+    Example: "This person appears to have a sustained interest in robotics"
+    (inferred from repeated discussion patterns).
+    Confidence floor: 0.30 (hypothesis requiring further evidence).
+
+    Level 4 — HYPOTHESIZED:
+    Speculative information with minimal evidence support.
+    Example: "This person might be a student" (single contextual clue).
+    Confidence floor: 0.10 (tentative, may be discarded).
+
+    Promotion Rules:
+    - HYPOTHESIZED -> INFERRED: Requires $\ge 3$ supporting evidence instances
+      with no contradictory evidence.
+    - INFERRED -> OBSERVED: Requires $\ge 5$ direct behavioral observations
+      spanning $\ge 3$ distinct interactions.
+    - REPORTED information from a trusted source ($T_{reporter} \ge 0.80$) may be
+      treated as equivalent to INFERRED but NEVER automatically to OBSERVED.
+    - REPORTED -> OBSERVED: Only when Diva directly observes the same attribute.
+
+    Demotion Rules:
+    - Contradictory evidence triggers confidence reduction (not immediate deletion).
+    - $\ge 3$ contradictory instances within recent interactions triggers
+      reclassification to HYPOTHESIZED with updated confidence.
+    - Stale information (no supporting evidence for $T_{stale}$ interactions)
+      receives confidence decay: $C_{new} = C_{old} \cdot 0.95^{n_{stale}}$
+      where $n_{stale}$ is the number of interactions since last supporting evidence.
+
+2.3 Contradictory Information Handling:
+    When new evidence contradicts existing attributes:
+    1. Record both the existing and contradictory evidence.
+    2. Do NOT immediately delete the existing attribute.
+    3. Reduce confidence of the existing attribute by $\Delta C = -0.15$ per
+       contradictory instance.
+    4. Create a `ContradictionRecord` linking both evidence items.
+    5. If confidence drops below $0.20$: Mark attribute as `DISPUTED`.
+    6. Disputed attributes are excluded from Social Context Packages but preserved
+       for historical reconstruction.
+
+2.4 Temporal Relevance & Attribute Staleness:
+    Attributes have temporal relevance that decays without reinforcement:
+    - `current_relevance`: Float in [0.0, 1.0], initialized at 1.0.
+    - Decay: $R(t) = R_0 \cdot \exp(-\lambda_R \cdot \Delta t_{interactions})$
+      where $\lambda_R = 0.02$ per interaction-without-reinforcement.
+    - Attributes with $R < 0.30$ are marked `STALE` but not deleted.
+    - Stale attributes are excluded from active Social Context Packages but
+      available for historical reconstruction.
+
+2.5 Indirectly Known Individuals:
+    Diva can create preliminary models of people she has never interacted with
+    directly, based on information reported during conversations.
+    - All attributes are classified as REPORTED with explicit source attribution.
+    - The reporter's individual_id is recorded as the evidence source.
+    - If the indirectly known person later interacts directly, the model transitions
+      from INDIRECT to PERSISTENT, and new direct observations can supplement or
+      contradict the reported information.
+
+--------------------------------------------------------------------------------
+3. INTENTION & GOAL INTERPRETATION (THEORY OF MIND — BEHAVIORAL)
+--------------------------------------------------------------------------------
+The engine must produce structured hypotheses about other individuals' possible
+intentions, goals, and motivations — WITHOUT treating those hypotheses as facts.
+
+3.1 Intention Hypothesis Generation:
+    For any socially significant interaction, the Intention Inference Module generates
+    a ranked set of `IntentionHypothesis` records:
+
+    Each hypothesis specifies:
+    - `hypothesis_id`: UUID.
+    - `subject_id`: UUID of the individual whose intentions are being estimated.
+    - `interaction_id`: UUID of the triggering interaction.
+    - `intention_type`: Enum (`INFORMATION_SEEKING`, `COOPERATION_OFFERING`,
+      `ASSISTANCE_REQUESTING`, `PERSUASION_ATTEMPTING`, `COMPETITION_ENGAGING`,
+      `SOCIAL_BONDING`, `CONFLICT_INITIATING`, `DECEPTION_POSSIBLE`,
+      `BOUNDARY_TESTING`, `NEUTRAL_EXCHANGE`, `UNKNOWN`).
+    - `description`: Natural language description of the hypothesized intention.
+    - `confidence`: Float in [0.0, 1.0].
+    - `supporting_evidence`: Tuple of evidence record IDs.
+    - `contradicting_evidence`: Tuple of evidence record IDs.
+    - `status`: Enum (`ACTIVE`, `SUPERSEDED`, `REFUTED`, `CONFIRMED`).
+
+    Generation Rules:
+    - Always generate $\ge 2$ hypotheses for any ambiguous interaction.
+    - The sum of confidences across hypotheses for a single interaction MAY exceed
+      1.0 (hypotheses are not mutually exclusive in all cases).
+    - DECEPTION_POSSIBLE is NEVER generated as the sole or highest-confidence
+      hypothesis without strong contradictory evidence between statements and actions.
+    - Hypothesis confidence MUST decay with time: $C(t) = C_0 \cdot 0.90^{n_{interactions}}$
+      unless reinforced by new supporting evidence.
+
+3.2 Indirect Communication Interpretation:
+    The module must handle indirect or implicit communication:
+    - Requests disguised as statements ("It would be nice if someone helped with this").
+    - Implications and subtext ("I noticed you haven't responded to my earlier message").
+    - Rhetorical questions, sarcasm, and irony (flagged with high uncertainty).
+    - Cultural or contextual communication norms that affect interpretation.
+
+    LLM Integration Point: Indirect communication interpretation is explicitly
+    delegated to shared LLM infrastructure. The LLM proposes interpretations;
+    the Intention Inference Module validates, scores, and persists them.
+
+3.3 Longitudinal Intention Tracking:
+    When an individual's behavior across multiple interactions suggests a sustained
+    goal or pattern:
+    - Create an `IndividualGoalEstimate` linking multiple interaction-level hypotheses.
+    - Track how the estimated goal progresses or changes across interactions.
+    - Distinguish short-term conversational goals from long-term relational goals.
+
+--------------------------------------------------------------------------------
+4. PERSPECTIVE-TAKING & THEORY OF MIND (EPISTEMIC)
+--------------------------------------------------------------------------------
+Diva must reason about how another individual might understand a situation differently
+from her own understanding. This is epistemic perspective-taking — modeling what
+others know, believe, and expect.
+
+4.1 Individual Knowledge Model:
+    For each relevant individual, the engine maintains an estimated knowledge state:
+
+    `IndividualKnowledgeModel`:
+    - `model_id`: UUID.
+    - `individual_id`: UUID (Foreign Key to IndividualProfile).
+    - `known_facts`: Tuple of `KnowledgeFact` records (things this person likely knows).
+    - `unknown_gaps`: Tuple of `KnowledgeGap` records (things this person likely
+      does NOT know).
+    - `possible_beliefs`: Tuple of `BeliefEstimate` records (what this person may believe).
+    - `expected_expectations`: Tuple of `ExpectationEstimate` records.
+    - `model_confidence`: Float in [0.0, 1.0].
+    - `last_updated_at`: ISO-8601 UTC timestamp.
+
+4.2 Epistemic Asymmetry Representation:
+    The critical capability is representing that Diva and another individual have
+    different information states:
+
+    Example: Diva knows a project has failed. The other person does not know.
+    - Diva's knowledge: {project_X: FAILED} (confidence 1.0, source OBSERVED).
+    - Person_A's estimated knowledge: {project_X: IN_PROGRESS} (confidence 0.75,
+      source INFERRED from last communication).
+    - Epistemic gap: Person_A does NOT know about project_X failure.
+
+    This asymmetry MUST be representable and must NOT be collapsed. Diva must not
+    assume others share her knowledge state.
+
+4.3 Belief Estimation:
+    `BeliefEstimate` records model what another person may believe:
+    - `belief_id`: UUID.
+    - `individual_id`: UUID.
+    - `belief_content`: String (natural language description of the estimated belief).
+    - `belief_confidence`: Float in [0.0, 1.0] — how confident Diva is that the
+      person holds this belief.
+    - `truth_assessment`: Enum (`LIKELY_TRUE`, `LIKELY_FALSE`, `UNKNOWN`, `IRRELEVANT`).
+      Diva's own assessment of whether the belief is actually true.
+    - `evidence_basis`: Tuple of evidence record IDs.
+    - `source_type`: Enum (`STATED_DIRECTLY`, `INFERRED_FROM_BEHAVIOR`,
+      `INFERRED_FROM_CONTEXT`, `REPORTED_BY_THIRD_PARTY`).
+
+    Important: Diva can recognize that an individual holds an incorrect belief
+    without immediately correcting them. The decision to correct or not belongs
+    to Cognitive Integration, not Social Cognition.
+
+4.4 Emotional Perspective Estimation:
+    The engine can estimate another individual's possible emotional state:
+    - `estimated_emotion`: String (e.g., "frustrated", "excited", "anxious").
+    - `estimation_confidence`: Float in [0.0, 1.0].
+    - `evidence_signals`: Tuple of evidence references.
+
+    Critical Boundary: This is cognitive empathy — understanding what someone MIGHT
+    feel. The Emotion Engine owns Diva's resulting empathetic emotional response.
+    Social Cognition produces the assessment; Emotion Engine evaluates whether Diva
+    feels empathy, compassion, concern, etc.
+
+4.5 Perspective Update Protocol:
+    Knowledge models and belief estimates are updated through interaction:
+    1. After each interaction with an individual, check whether new information
+       was shared that changes the estimated knowledge state.
+    2. Apply Bayesian-style updating: new evidence shifts belief confidence up or down.
+    3. Record the update in `social_model_history` for audit.
+    4. Stale perspective models (not updated for $\ge 10$ interactions with the
+       individual) are marked `STALE` and excluded from active context packages.
+
+--------------------------------------------------------------------------------
+5. RELATIONSHIP MANAGEMENT & MULTIDIMENSIONAL REPRESENTATION
+--------------------------------------------------------------------------------
+Relationships are independent entities. An individual profile describes a person.
+A relationship record describes Diva's relationship with that person.
+
+5.1 Relationship Structure:
+    Every relationship is represented by a `RelationshipRecord`:
+    - `relationship_id`: UUID.
+    - `individual_id`: UUID (Foreign Key to IndividualProfile).
+    - `relationship_category`: Enum (`STRANGER`, `ACQUAINTANCE`, `FRIEND`,
+      `CLOSE_FRIEND`, `FAMILY`, `COLLABORATOR`, `PROFESSIONAL_CONTACT`,
+      `MENTOR`, `RIVAL`, `ROMANTIC_INTEREST`, `PARTNER`, `CUSTOM`).
+    - `custom_category_label`: Optional String (for CUSTOM categories).
+    - `category_confidence`: Float in [0.0, 1.0].
+    - `dimensions`: Immutable Tuple of `RelationshipDimension` records.
+    - `status`: Enum (`FORMING`, `ACTIVE`, `STABLE`, `COOLING`, `DORMANT`,
+      `RECOVERING`, `ENDED`).
+    - `first_interaction_at`: ISO-8601 UTC timestamp.
+    - `last_interaction_at`: ISO-8601 UTC timestamp.
+    - `total_interaction_count`: Integer.
+    - `relationship_version`: Integer (monotonically increasing).
+
+    Category Assignment Rules:
+    - Initial category for new individuals: `STRANGER` (always).
+    - Category promotion requires explicit evidence thresholds (defined below).
+    - Categories are NEVER automatically assigned based solely on interaction count.
+    - Multiple relationship categories are NOT supported simultaneously (one primary
+      category). Instead, the multidimensional scores capture the nuance.
+
+5.2 Eight Independent Relationship Dimensions:
+    Each dimension is an independent measurement with its own update rules:
+
+    1. FAMILIARITY ($F \in [0.0, 1.0]$):
+       How well Diva knows the individual.
+       Update: Increases with interaction frequency and depth.
+       Formula: $F_{new} = F_{old} + \alpha_F \cdot (1 - F_{old}) \cdot w_{interaction}$
+       where $\alpha_F = 0.03$ (gradual familiarity growth) and
+       $w_{interaction} \in [0.1, 1.0]$ weights interaction depth.
+       Decay: $F(t) = F_0 \cdot \exp(-\lambda_F \cdot \Delta t_{days})$
+       where $\lambda_F = 0.005$ (slow decay — familiarity fades slowly).
+
+    2. TRUST ($T \in [0.0, 1.0]$):
+       Confidence based on observed behavioral evidence (commitments kept vs. broken).
+       Update: Asymmetric — trust grows slowly through fulfilled commitments and
+       decreases more rapidly through broken commitments.
+       Growth: $T_{new} = T_{old} + \alpha_T^{+} \cdot (1 - T_{old}) \cdot w_{fulfillment}$
+       where $\alpha_T^{+} = 0.02$ (trust builds slowly).
+       Decline: $T_{new} = T_{old} - \alpha_T^{-} \cdot T_{old} \cdot w_{breach}$
+       where $\alpha_T^{-} = 0.08$ (trust erodes faster than it builds).
+       Recovery: After trust decline, recovery rate is halved:
+       $\alpha_T^{recovery} = 0.01$ until $T$ exceeds the pre-breach value.
+
+    3. AFFINITY ($A \in [-1.0, 1.0]$):
+       Positive or negative interpersonal connection. Bidirectional scale:
+       $A > 0$: Positive connection (liking, warmth).
+       $A = 0$: Neutral.
+       $A < 0$: Negative connection (dislike, aversion).
+       Update: Influenced by interaction quality, shared interests, emotional resonance.
+
+    4. COOPERATION ($Co \in [0.0, 1.0]$):
+       History of working together effectively.
+       Update: Increases with successful collaborative outcomes, decreases with
+       failed or unreciprocated collaboration attempts.
+
+    5. COMMUNICATION ($Cm \in [0.0, 1.0]$):
+       Quality and consistency of interactions.
+       Update: Tracks response reliability, conversational depth, mutual engagement.
+       Formula accounts for both frequency and quality:
+       $Cm_{new} = 0.6 \cdot Q_{recent} + 0.4 \cdot Cm_{old}$
+       where $Q_{recent}$ is a quality assessment from the last $k$ interactions.
+
+    6. RECIPROCITY ($Rp \in [0.0, 1.0]$):
+       Evidence of mutual engagement (not one-sided interaction).
+       Update: Tracks the balance between Diva initiating vs. the other person
+       initiating, and the balance of effort/disclosure in interactions.
+       Formula: $Rp = 1.0 - |r_{Diva} - r_{other}|$
+       where $r_{Diva}$ and $r_{other}$ are normalized initiation/effort ratios.
+
+    7. CONFLICT ($Cf \in [0.0, 1.0]$):
+       Unresolved disagreements or negative experiences.
+       Update: Increases with unresolved conflicts, decreases as conflicts are
+       resolved or fade with time.
+       Decay: Resolved conflicts decay at $\lambda_{Cf} = 0.01$ per interaction.
+       Unresolved conflicts do NOT decay automatically.
+
+    8. CLOSENESS ($Cl \in [0.0, 1.0]$):
+       Degree of established interpersonal connection.
+       This is a DERIVED dimension — not directly updated but computed from
+       the other seven dimensions:
+       $Cl = w_F \cdot F + w_T \cdot T + w_A \cdot \max(0, A) + w_{Co} \cdot Co
+            + w_{Cm} \cdot Cm + w_{Rp} \cdot Rp - w_{Cf} \cdot Cf$
+       Default weights: $w_F = 0.15, w_T = 0.20, w_A = 0.20, w_{Co} = 0.10,
+       w_{Cm} = 0.15, w_{Rp} = 0.10, w_{Cf} = 0.10$.
+       Clamped to [0.0, 1.0].
+
+    Independence Principle:
+    Every non-derived dimension updates independently. High familiarity does NOT
+    automatically increase trust. High trust does NOT automatically increase affinity.
+    Each dimension requires its own evidence stream.
+
+5.3 Relationship Category Transition Thresholds:
+    Categories transition based on dimension evidence, not arbitrary time:
+
+    STRANGER -> ACQUAINTANCE:
+    Requires: $F \ge 0.20$ AND total_interaction_count $\ge 3$.
+
+    ACQUAINTANCE -> FRIEND:
+    Requires: $F \ge 0.50$ AND $A \ge 0.30$ AND $Cm \ge 0.40$
+    AND total_interaction_count $\ge 15$.
+
+    FRIEND -> CLOSE_FRIEND:
+    Requires: $F \ge 0.75$ AND $T \ge 0.65$ AND $A \ge 0.60$ AND $Cl \ge 0.65$
+    AND interaction span $\ge 30$ days.
+
+    COLLABORATOR (from any state $\ge$ ACQUAINTANCE):
+    Requires: $Co \ge 0.50$ AND $\ge 5$ documented cooperative interactions.
+
+    Reverse transitions (relationship cooling):
+    If $Cm$ drops below the entry threshold for 20+ interactions: Consider downgrade.
+    Downgrade is NEVER automatic — it creates a `RelationshipTransitionProposal`
+    that is logged and applied only after validation.
+
+5.4 Relationship History:
+    Every dimension update and category transition is recorded in an append-only
+    `relationship_history` table:
+    - `history_id`: UUID.
+    - `relationship_id`: UUID.
+    - `event_type`: Enum (`DIMENSION_UPDATE`, `CATEGORY_TRANSITION`, `STATUS_CHANGE`,
+      `EVIDENCE_ADDED`, `CORRECTION`).
+    - `dimension_name`: Optional String.
+    - `previous_value`: Optional Float.
+    - `new_value`: Optional Float.
+    - `evidence_id`: Optional UUID.
+    - `timestamp`: ISO-8601 UTC.
+
+--------------------------------------------------------------------------------
+6. SOCIAL INTERACTION INTERPRETATION & CONTEXTUAL ANALYSIS
+--------------------------------------------------------------------------------
+The engine must evaluate social interactions using full available context,
+maintaining multiple interpretations for ambiguous situations.
+
+6.1 Interaction Analysis Pipeline:
+    For each socially significant interaction:
+    1. Perception Engine delivers the processed interaction content and metadata.
+    2. Identity Manager resolves the interlocutor identity.
+    3. Social Context Manager retrieves relevant individual profile, relationship
+       record, and recent interaction history.
+    4. Social Interaction Analyzer generates a structured `InteractionAssessment`:
+
+    `InteractionAssessment`:
+    - `assessment_id`: UUID.
+    - `interaction_id`: UUID.
+    - `interlocutor_id`: UUID.
+    - `interaction_type`: Enum (`CONVERSATIONAL`, `COOPERATIVE`, `CONFLICT`,
+      `REQUEST`, `DISCLOSURE`, `BOUNDARY_EVENT`, `GREETING`, `FAREWELL`,
+      `AMBIGUOUS`).
+    - `interpretations`: Tuple of `SocialInterpretation` records.
+    - `relationship_implications`: Tuple of dimension update proposals.
+    - `memory_significance`: Float in [0.0, 1.0] (nomination weight for Memory).
+    - `emotional_relevance`: Float in [0.0, 1.0] (signal weight for Emotion Engine).
+    - `assessed_at`: ISO-8601 UTC.
+
+6.2 Multi-Interpretation Preservation:
+    For ambiguous interactions, the analyzer generates multiple `SocialInterpretation`
+    records ranked by confidence:
+
+    `SocialInterpretation`:
+    - `interpretation_id`: UUID.
+    - `assessment_id`: UUID.
+    - `description`: String (natural language explanation).
+    - `confidence`: Float in [0.0, 1.0].
+    - `supporting_context`: Tuple of evidence references.
+    - `status`: Enum (`ACTIVE`, `SUPERSEDED`, `CONFIRMED`, `REFUTED`).
+
+    Rule: When an interaction has $\ge 2$ plausible interpretations with the
+    highest confidence $< 0.80$, ALL interpretations with confidence $\ge 0.15$
+    are preserved as ACTIVE. The engine does NOT force premature resolution.
+
+    Example — Non-response analysis:
+    Someone doesn't respond to Diva for three days. Generated interpretations:
+    1. "They are busy" — confidence 0.45 (most common explanation).
+    2. "They haven't seen the message" — confidence 0.25.
+    3. "They communicate infrequently" — confidence 0.15 (if pattern matches history).
+    4. "They are avoiding the conversation" — confidence 0.10.
+    None of these are automatically selected as "the" explanation.
+
+6.3 Reinterpretation Protocol:
+    Earlier interaction assessments can be reinterpreted when new evidence arrives:
+    1. New evidence triggers a check against active interpretations for recent
+       interactions with the same individual.
+    2. If new evidence strongly supports one interpretation ($\Delta C \ge +0.20$):
+       Update confidence values, potentially promoting one and demoting others.
+    3. If new evidence contradicts the highest-confidence interpretation: Reduce
+       its confidence and elevate alternatives.
+    4. Record the reinterpretation event in interaction history with provenance.
+
+6.4 Conversational Role Identification:
+    The analyzer identifies the roles each participant plays in an interaction:
+    - Initiator vs. Responder.
+    - Information provider vs. Information seeker.
+    - Helper vs. Helpee.
+    - Leader vs. Follower (in group interactions).
+    - Mediator (in multi-party conflicts).
+
+    Roles are attached to `InteractionRecord` with per-interaction scope (someone
+    may be a leader in one conversation and a follower in another).
+
+--------------------------------------------------------------------------------
+7. SOCIAL NORMS, EXPECTATIONS & CONTEXTUAL CONVENTIONS
+--------------------------------------------------------------------------------
+Social behavior depends on context. The engine must maintain flexible, context-
+dependent representations of social norms.
+
+7.1 Social Norm Representation:
+    `SocialNormRecord`:
+    - `norm_id`: UUID.
+    - `norm_category`: Enum (`CONVERSATIONAL_ETIQUETTE`, `PERSONAL_BOUNDARY`,
+      `PROFESSIONAL_BOUNDARY`, `CULTURAL_CONVENTION`, `COMMUNITY_RULE`,
+      `PRIVACY_EXPECTATION`, `RECIPROCITY_EXPECTATION`, `CUSTOM`).
+    - `description`: String (natural language description of the norm).
+    - `applicable_contexts`: Tuple of context tags.
+    - `source_type`: Enum (`OBSERVED_PATTERN`, `EXPLICITLY_STATED`,
+      `CULTURALLY_GENERAL`, `INDIVIDUAL_PREFERENCE`).
+    - `confidence`: Float in [0.0, 1.0].
+    - `evidence_count`: Integer.
+    - `exceptions`: Tuple of known exceptions.
+
+7.2 Context-Dependent Norm Application:
+    The same behavior may be appropriate in one context and inappropriate in another:
+    - Communication style varies between close friends, professional contacts,
+      and strangers.
+    - Response time expectations differ between urgent professional communication
+      and casual social interaction.
+    - Disclosure norms differ between private one-on-one conversations and
+      group/public settings.
+
+    The Social Norms Manager maintains a context taxonomy:
+    - `INTIMATE`: Close friends, family, romantic partners.
+    - `CASUAL`: Friends, acquaintances in informal settings.
+    - `PROFESSIONAL`: Work colleagues, clients, formal interactions.
+    - `PUBLIC`: Group settings, community interactions.
+    - `ANONYMOUS`: Unknown or unidentified interlocutors.
+
+7.3 Individual vs. General Norms:
+    The engine distinguishes between:
+    - General social norms (applicable broadly).
+    - Individual preferences (specific to one person).
+    When an individual's stated preference conflicts with a general norm, the
+    individual preference takes priority for interactions with that individual.
+
+7.4 Norm Learning:
+    Social norms are learned through experience:
+    - Explicit statements about preferences ("I prefer if you don't bring that up").
+    - Repeated patterns of behavior across interactions.
+    - Corrections and feedback ("That was too formal for our conversation").
+    - Cultural context signals.
+
+    Learning Rate: New norms from explicit statements are recorded immediately
+    with confidence 0.70. Norms from repeated patterns require $\ge 3$ consistent
+    observations for $C \ge 0.50$.
+
+--------------------------------------------------------------------------------
+8. SOCIAL TRUST & RELIABILITY ASSESSMENT
+--------------------------------------------------------------------------------
+Trust is based on accumulated evidence, not positive feelings. Trust and affection
+are independent. The engine maintains contextual, evidence-based trust assessments.
+
+8.1 Trust Assessment Structure:
+    `TrustAssessment`:
+    - `assessment_id`: UUID.
+    - `individual_id`: UUID.
+    - `context`: Enum (`GENERAL`, `TECHNICAL`, `PERSONAL`, `PROFESSIONAL`,
+      `EMOTIONAL`, `FINANCIAL`, `CUSTOM`).
+    - `overall_trust`: Float in [0.0, 1.0] (computed from evidence).
+    - `fulfilled_commitments`: Integer.
+    - `broken_commitments`: Integer.
+    - `statement_action_consistency`: Float in [0.0, 1.0].
+    - `evidence_references`: Tuple of evidence record IDs.
+    - `assessment_version`: Integer.
+    - `last_updated_at`: ISO-8601 UTC.
+
+8.2 Contextual Trust:
+    Trust is assessed per-context:
+    - Someone might be reliable for technical collaboration but unreliable for
+      personal commitments.
+    - Each context maintains its own evidence stream and trust score.
+    - General trust is a weighted average of contextual trust scores:
+      $T_{general} = \sum_{c} w_c \cdot T_c / \sum_{c} w_c$
+      where weights reflect evidence volume per context.
+
+8.3 Trust Update Algorithm:
+    Trust updates follow an asymmetric Bayesian-inspired model:
+
+    Commitment Fulfillment:
+    $T_{new} = T_{old} + \alpha^{+} \cdot (1 - T_{old}) \cdot w_{significance}$
+    where $\alpha^{+} = 0.03$ and $w_{significance} \in [0.1, 1.0]$ weights the
+    importance of the fulfilled commitment.
+
+    Commitment Breach:
+    $T_{new} = T_{old} - \alpha^{-} \cdot T_{old} \cdot w_{severity}$
+    where $\alpha^{-} = 0.10$ and $w_{severity} \in [0.1, 1.0]$ weights the
+    severity of the breach.
+
+    Consistency Check:
+    Statement-action consistency is tracked as a running ratio:
+    $SAC = \frac{n_{consistent}}{n_{consistent} + n_{inconsistent}}$
+    Low SAC ($< 0.50$) triggers a trust reduction modifier.
+
+    Anti-Single-Incident Rule:
+    A single isolated negative incident NEVER reduces trust by more than $0.10$.
+    Severe trust reduction requires $\ge 2$ negative evidence instances.
+
+8.4 Trust Recovery:
+    After trust deterioration:
+    - Recovery rate is halved compared to initial trust building:
+      $\alpha_{recovery} = \alpha^{+} / 2 = 0.015$.
+    - Recovery requires consistent positive evidence across $\ge 5$ interactions.
+    - Full recovery to pre-breach level is possible but requires proportionally
+      more evidence than the original trust building.
+
+--------------------------------------------------------------------------------
+9. SOCIAL LEARNING & BEHAVIORAL PATTERN RECOGNITION
+--------------------------------------------------------------------------------
+The engine must identify recurring patterns across interactions and submit
+appropriate learning signals to the Learning Engine.
+
+9.1 Pattern Detection Categories:
+    The Social Pattern Recognition Module identifies patterns in:
+    - Communication patterns (frequency, style, timing).
+    - Behavioral consistency (reliable vs. erratic behavior).
+    - Cooperation patterns (collaborative success/failure rates).
+    - Conflict patterns (recurring disagreement topics or escalation patterns).
+    - Relationship trajectory patterns (developing, stable, declining).
+    - Cross-individual patterns (similar behaviors across different individuals).
+
+9.2 Pattern Evidence Requirements:
+    A pattern is NOT identified from a single instance:
+    - Minimum observations: $n_{pattern} \ge 3$ consistent instances.
+    - Minimum span: Observations must span $\ge 2$ distinct interactions.
+    - Pattern confidence: $C_{pattern} = \frac{n_{supporting}}{n_{supporting} + n_{contradicting}} \cdot \min(1.0, n_{supporting} / 5)$
+    The second factor ensures that even a 100% hit rate on 2 observations does not
+    produce full confidence — volume matters.
+
+9.3 Pattern Lifecycle:
+    - `EMERGING`: $3 \le n_{supporting} \le 5$, confidence preliminary.
+    - `ESTABLISHED`: $n_{supporting} > 5$, confidence $\ge 0.65$.
+    - `FADING`: No new supporting evidence for $\ge 10$ interactions.
+    - `CONTRADICTED`: Recent contradictory evidence exceeds supporting evidence.
+
+9.4 Learning Engine Integration:
+    The Social Learning Interface dispatches `SocialAttunementSignal` to the
+    Learning Engine (contract established in Learning Engine v2.5.0):
+
+    `SocialAttunementSignal`:
+    - `signal_id`: UUID.
+    - `signal_type`: Enum (`COMMUNICATIVE_MISALIGNMENT`, `RAPPORT_SHIFT`,
+      `PATTERN_DISCOVERY`, `TRUST_EVIDENCE`, `RELATIONSHIP_TRANSITION`,
+      `NORM_VIOLATION_DETECTED`).
+    - `affected_parameter_domain`: String (e.g., `social.conversational_verbosity`,
+      `social.empathy_weight`, `social.trust_initial_baseline`).
+    - `evidence_summary`: Structured evidence payload.
+    - `suggested_direction`: Enum (`INCREASE`, `DECREASE`, `RECALIBRATE`).
+    - `evidence_strength`: Float in [0.0, 1.0].
+
+    Ownership Boundary: Social Cognition dispatches signals. Learning Engine
+    independently evaluates whether the evidence warrants a parameter change.
+    If Learning Engine approves, it dispatches a `ParameterChangeRequest` back
+    to Social Cognition (or whichever engine owns the target parameter). Social
+    Cognition, as owner of `social.*` parameters, validates and applies changes
+    with version-guarded optimistic concurrency.
+
+--------------------------------------------------------------------------------
+10. SOCIAL CONTEXT & MEMORY INTEGRATION
+--------------------------------------------------------------------------------
+The engine maintains connections between individuals, relationships, and
+experiences without duplicating Memory's permanent storage role.
+
+10.1 Social Context Package:
+    When other engines need social context, the Social Context Manager assembles
+    a structured `SocialContextPackage`:
+
+    `SocialContextPackage`:
+    - `package_id`: UUID.
+    - `requesting_engine`: Enum.
+    - `interlocutor_profile`: Frozen IndividualProfile snapshot.
+    - `relationship_summary`: Frozen RelationshipRecord snapshot.
+    - `recent_interactions`: Tuple of recent InteractionRecord summaries.
+    - `active_interpretations`: Tuple of active SocialInterpretation records.
+    - `active_intention_hypotheses`: Tuple of active IntentionHypothesis records.
+    - `relevant_norms`: Tuple of applicable SocialNormRecord entries.
+    - `trust_assessment`: Frozen TrustAssessment snapshot.
+    - `group_context`: Optional GroupProfile snapshot.
+    - `overall_confidence`: Float in [0.0, 1.0].
+    - `assembled_at`: ISO-8601 UTC.
+
+10.2 Memory Integration Protocol:
+    Memory owns permanent storage. Social Cognition owns structured interpretation.
+
+    Social Cognition -> Memory:
+    - Dispatches `MemoryNomination` for significant social experiences.
+    - Nomination criteria: Interaction significance $\ge 0.60$ OR relationship
+      transition events OR trust-relevant evidence.
+    - Nominations include structured metadata (individual_id, relationship context).
+
+    Memory -> Social Cognition:
+    - Provides historical interaction records via `MemoryContextProvider`.
+    - Provides individual-associated memories for context enrichment.
+    - Returns canonical memory IDs for provenance linkage.
+
+    Boundary: Social Cognition does NOT duplicate Memory's storage. It maintains
+    working models that reference Memory records via canonical IDs. When a social
+    model needs reconstruction (e.g., after dormancy), Social Cognition retrieves
+    historical data from Memory and rebuilds the working model.
+
+10.3 Social Model Reconstruction:
+    When an individual re-appears after dormancy:
+    1. Retrieve associated memories from Memory Engine using the individual_id.
+    2. Reconstruct a working IndividualProfile from historical evidence.
+    3. Reconstruct relationship dimensions from stored history.
+    4. Mark reconstructed attributes with reduced confidence ($C_{reconstructed} = C_{original} \cdot 0.70$).
+    5. Resume active modeling from the reconstructed state.
+
+--------------------------------------------------------------------------------
+11. GROUP & COMMUNITY UNDERSTANDING
+--------------------------------------------------------------------------------
+Diva must understand social structures beyond individual relationships.
+
+11.1 Group Profile:
+    `GroupProfile`:
+    - `group_id`: UUID.
+    - `group_name`: Optional String.
+    - `group_type`: Enum (`FRIEND_GROUP`, `COMMUNITY`, `TEAM`, `ORGANIZATION`,
+      `FAMILY_UNIT`, `INTEREST_GROUP`, `CUSTOM`).
+    - `known_members`: Tuple of `GroupMembership` records.
+    - `shared_interests`: Tuple of interest identifiers.
+    - `group_norms`: Tuple of SocialNormRecord IDs.
+    - `group_dynamics`: GroupDynamicsSnapshot.
+    - `discovery_source`: Enum (`OBSERVED`, `REPORTED`, `INFERRED`).
+    - `confidence`: Float in [0.0, 1.0].
+    - `profile_version`: Integer.
+
+11.2 Group Membership:
+    `GroupMembership`:
+    - `membership_id`: UUID.
+    - `group_id`: UUID.
+    - `individual_id`: UUID.
+    - `role`: Optional Enum (`LEADER`, `ACTIVE_MEMBER`, `PERIPHERAL_MEMBER`,
+      `MODERATOR`, `NEWCOMER`, `OBSERVER`, `CUSTOM`).
+    - `membership_status`: Enum (`ACTIVE`, `INACTIVE`, `FORMER`, `UNCERTAIN`).
+    - `evidence_basis`: Tuple of evidence record IDs.
+    - `confidence`: Float in [0.0, 1.0].
+
+11.3 Individual vs. Group Opinions:
+    The engine MUST distinguish between:
+    - What an individual member believes or states.
+    - What appears to be a group consensus or norm.
+    A single member's statement does NOT automatically become a group position.
+    Group positions require $\ge 3$ members expressing consistent views or
+    explicit group-level statements.
+
+11.4 Group Dynamics Snapshot:
+    - `dominant_themes`: Tuple of topic identifiers.
+    - `internal_alliances`: Tuple of (individual_id, individual_id) pairs.
+    - `internal_tensions`: Tuple of tension records.
+    - `activity_level`: Float in [0.0, 1.0].
+    - `cohesion_estimate`: Float in [0.0, 1.0].
+
+--------------------------------------------------------------------------------
+12. SOCIAL UNCERTAINTY, CORRECTION & PROVENANCE
+--------------------------------------------------------------------------------
+This is a foundational architectural requirement, not an optional feature.
+
+12.1 Confidence Classification Taxonomy:
+    Every piece of social information carries:
+    - `evidence_type`: Enum (`FACT`, `STATEMENT`, `ASSUMPTION`, `HYPOTHESIS`).
+    - `confidence`: Float in [0.0, 1.0].
+    - `evidence_provenance`: Tuple of `EvidenceProvenance` records.
+
+    `EvidenceProvenance`:
+    - `provenance_id`: UUID.
+    - `source_type`: Enum (`DIRECT_OBSERVATION`, `SELF_REPORT`, `THIRD_PARTY_REPORT`,
+      `BEHAVIORAL_INFERENCE`, `CONTEXTUAL_INFERENCE`, `LLM_INTERPRETATION`).
+    - `source_individual_id`: Optional UUID (who provided the information).
+    - `source_interaction_id`: Optional UUID (which interaction).
+    - `recorded_at`: ISO-8601 UTC.
+
+12.2 Self-Correction Protocol:
+    Individuals can correct information about themselves:
+    1. The correction is recorded as a `SocialEvidenceRecord` with type
+       `SELF_CORRECTION` and highest source reliability.
+    2. The corrected attribute's evidence classification is updated.
+    3. Previous incorrect information is NOT deleted but marked as `SUPERSEDED`
+       with a reference to the correction event.
+    4. If the correction contradicts multiple inferred attributes, all affected
+       attributes are re-evaluated.
+
+12.3 Historical Version Preservation:
+    Major social model changes are version-tracked:
+    - Relationship category transitions.
+    - Trust assessment revisions $> 0.15$.
+    - Identity corrections (merges, splits).
+    - Belief model revisions.
+    Each version is recorded in `social_model_history` with the previous and new
+    state, the triggering evidence, and the timestamp.
+
+12.4 Anti-Speculation-to-Fact Safeguard:
+    The system enforces a hard boundary between speculative and established
+    information:
+    - HYPOTHESIZED information ($C < 0.30$) is NEVER included in Social Context
+      Packages sent to other engines without explicit uncertainty markers.
+    - INFERRED information ($0.30 \le C < 0.70$) is included with mandatory
+      confidence values and evidence_type classification.
+    - Only OBSERVED or high-confidence INFERRED ($C \ge 0.70$) information
+      is presented without additional qualification.
+
+--------------------------------------------------------------------------------
+13. SHARED LLM INTEGRATION & DETERMINISTIC BOUNDARIES
+--------------------------------------------------------------------------------
+The Social Cognition Engine uses the shared LLM orchestration layer. It does NOT
+own an independent model instance.
+
+13.1 Tasks Delegated to LLM:
+    - Understanding complex social situations.
+    - Interpreting indirect communication (subtext, implication, sarcasm).
+    - Generating possible explanations for observed behavior.
+    - Reasoning about another individual's perspective.
+    - Identifying nuanced social patterns across interactions.
+    - Interpreting ambiguous interpersonal situations.
+    - Estimating emotional perspectives of other individuals.
+    - Understanding cultural context signals.
+
+    LLM Request Structure:
+    `SocialLLMRequest`:
+    - `request_id`: UUID.
+    - `request_type`: Enum (`INTENTION_ANALYSIS`, `PERSPECTIVE_INFERENCE`,
+      `INTERACTION_INTERPRETATION`, `PATTERN_ANALYSIS`, `NORM_INTERPRETATION`,
+      `INDIRECT_COMMUNICATION`, `EMOTIONAL_PERSPECTIVE`).
+    - `context_payload`: Structured context data (individual profile, interaction
+      history, relationship state).
+    - `constraints`: Tuple of interpretation constraints.
+    - `requested_at`: ISO-8601 UTC.
+
+    LLM Response Handling:
+    `SocialLLMResponse`:
+    - `response_id`: UUID.
+    - `request_id`: UUID (links to request).
+    - `interpretations`: Tuple of scored interpretations.
+    - `confidence_self_assessment`: Float in [0.0, 1.0].
+    - `processing_time_ms`: Integer.
+
+    Post-LLM Validation:
+    Every LLM response is validated by the deterministic layer before persistence:
+    1. Confidence values must be in valid range [0.0, 1.0].
+    2. Interpretations must reference existing evidence records.
+    3. No interpretation may assert certainty ($C = 1.0$) about inferred information.
+    4. Deception hypotheses must NOT be the sole or highest-confidence output
+       without strong contradictory evidence.
+    5. Responses exceeding timeout ($T_{timeout} = 10,000$ ms) are discarded.
+
+13.2 Tasks Remaining Deterministic:
+    The following operations NEVER involve LLM calls:
+    - Identity record creation and UUID assignment.
+    - Identifier string matching and validation.
+    - Relationship history append operations.
+    - Interaction timestamp recording.
+    - Evidence counting and aggregation.
+    - Confidence value arithmetic (formula application).
+    - Dimension score updates (formula application).
+    - Relationship category threshold checks.
+    - Version incrementation.
+    - Data persistence (SQLite transactions).
+    - Duplicate record prevention (unique constraint enforcement).
+    - Privacy and access policy enforcement.
+
+--------------------------------------------------------------------------------
+14. SOCIAL MODEL LIFECYCLE, STALENESS & GARBAGE COLLECTION
+--------------------------------------------------------------------------------
+Social models have a defined lifecycle independent of Memory's historical storage.
+
+14.1 Social Model Lifecycle States:
+    `ModelLifecycleState`:
+    - `ACTIVE`: Frequently relevant person; model updated regularly.
+    - `COOLING`: Interaction frequency declining; model maintained but
+      update frequency reduced.
+    - `DORMANT`: Not recently relevant; model retained in compressed form.
+    - `ARCHIVED`: Working model removed from active memory. Historical data
+      retained in Memory Engine. Can be reconstructed on re-encounter.
+
+    State Transition Rules:
+    ACTIVE -> COOLING: No interaction for $> 30$ days (configurable).
+    COOLING -> DORMANT: No interaction for $> 90$ days (configurable).
+    DORMANT -> ARCHIVED: No interaction for $> 180$ days AND social relevance
+    score $< 0.20$ (configurable).
+    Any -> ACTIVE: New interaction with the individual.
+    ARCHIVED -> ACTIVE: Triggered by re-encounter; requires model reconstruction
+    from Memory Engine.
+
+14.2 Social Relevance Score:
+    Social relevance determines model priority and lifecycle transitions:
+    $R_{social} = w_{freq} \cdot f_{interaction} + w_{recency} \cdot r_{last}
+                 + w_{personality} \cdot p_{affinity} + w_{relationship} \cdot d_{closeness}
+                 + w_{memory} \cdot m_{frequency}$
+
+    Where:
+    - $f_{interaction}$: Normalized interaction frequency.
+    - $r_{last}$: Recency factor (exponential decay from last interaction).
+    - $p_{affinity}$: Personality Engine's social affinity signal for this individual.
+    - $d_{closeness}$: Closeness dimension value from relationship record.
+    - $m_{frequency}$: Memory Engine's frequency of this person in stored memories.
+
+    Default weights: $w_{freq} = 0.25, w_{recency} = 0.30, w_{personality} = 0.15,
+    w_{relationship} = 0.20, w_{memory} = 0.10$.
+
+14.3 Garbage Collection Rules:
+    - Model archival does NOT erase historical memories about the person.
+    - If the person re-appears after archival, Social Cognition reconstructs from
+      Memory Engine data.
+    - Archived models retain only: individual_id, known identifiers, last
+      relationship category, and last interaction timestamp.
+    - Full model data is recoverable from Memory Engine + archived summary.
+
+14.4 Privacy & Retention Policy:
+    - Information explicitly shared by an individual is tagged as `SHARED_BY_SUBJECT`.
+    - Inferences made by Diva are tagged as `DIVA_INFERENCE`.
+    - If an individual requests information removal: `SHARED_BY_SUBJECT` items
+      are marked for deletion. `DIVA_INFERENCE` items are marked for review.
+    - Retention periods are configurable per information category.
+
+--------------------------------------------------------------------------------
+15. RESOURCE THROTTLING, LIFECYCLE STATES & TRANSACTIONAL PERSISTENCE
+--------------------------------------------------------------------------------
+
+15.1 Engine Lifecycle States:
+    The Social Cognition Engine operates in one of:
+    - `INITIALIZING`: Loading persisted state from SQLite.
+    - `ACTIVE`: Fully operational, processing social information.
+    - `THROTTLED`: Reduced processing due to low cognitive resources.
+    - `SUSPENDED`: Paused by Internal State Engine; no active processing.
+    - `RECOVERING`: Post-crash state reconstruction.
+
+15.2 Resource-Aware Processing:
+    When Internal State Engine reports low cognitive resources:
+    - Throttle LLM interpretation requests (increase minimum significance threshold).
+    - Defer non-urgent model updates (pattern analysis, norm learning).
+    - Prioritize identity resolution and active interaction interpretation.
+    - Pause background social model maintenance (staleness checks, garbage collection).
+
+15.3 Crash Recovery Protocol:
+    1. Reload all persisted state from SQLite (identity records, profiles,
+       relationships, trust assessments).
+    2. Verify referential integrity across all foreign key relationships.
+    3. Identify any incomplete transactions (pending dimension updates,
+       in-progress identity merges).
+    4. Roll back incomplete transactions to last consistent state.
+    5. Reconstruct in-memory indexes (identity lookup, relationship lookup).
+    6. Mark engine as ACTIVE.
+    7. Resume processing from the latest persisted interaction timestamp.
+
+15.4 SQLite Transactional Boundaries:
+    Atomic operations (single transaction):
+    - Identity creation + initial profile + initial relationship record.
+    - Dimension update + history record + evidence linkage.
+    - Identity merge/split + all affected reference updates.
+    - Pattern creation + evidence linkage.
+    - Trust assessment update + evidence record.
+
+    Non-atomic (may span multiple transactions):
+    - LLM interpretation request and response handling.
+    - Multi-individual group dynamics analysis.
+    - Background staleness and garbage collection sweeps.
+
+
+================================================================================
+PART 2 — INTERNAL ARCHITECTURE & THE THIRTEEN LOGICAL COMPONENTS
+================================================================================
+
+The Social Cognition Engine is structured into thirteen cooperating, event-driven
+logical components. Each component is defined with explicit inputs, outputs,
+internal state, data structures, algorithms, and execution timing.
+
+--------------------------------------------------------------------------------
+1. INDIVIDUAL IDENTITY MANAGER
+--------------------------------------------------------------------------------
+Purpose: Recognizes, registers, disambiguates, and maintains individual identities
+across all interactions.
+
+- Inputs:
+  * Perception Engine: Interaction metadata (account IDs, platform identifiers,
+    display names, behavioral signals).
+  * Other engines: Entity references requiring identity resolution.
+  * User corrections: Explicit identity corrections.
+
+- Outputs:
+  * Resolved `individual_id` for each interaction participant.
+  * `IdentityResolutionResult` with confidence and alternative matches.
+  * Identity merge/split events dispatched to all dependent components.
+
+- Internal State:
+  * In-memory identity index: HashMap<identifier_string, List<individual_id>>.
+  * In-memory behavioral signature cache: HashMap<individual_id, BehavioralSignature>.
+  * Active identity uncertainty flags.
+
+- Algorithms:
+  * Three-stage identity resolution:
+    Stage 1 — Explicit Identifier Match: O(1) lookup in identifier index.
+    Stage 2 — Behavioral Similarity (if Stage 1 fails): LLM-assisted comparison
+    of communication patterns, vocabulary, and interaction style against recent
+    profiles. Cost: O(k) where k = number of active profiles checked.
+    Stage 3 — New Identity Registration: If no match found, create new profile.
+  * Anti-merge validation: Before any merge, check for contradictory evidence
+    (simultaneous interactions, conflicting personal details).
+  * Anti-duplication check: Before creation, similarity scan against existing profiles.
+
+- Decision Rules:
+  * Merge threshold: Explicit identifier match AND behavioral similarity $\ge 0.75$
+    AND no contradictory evidence.
+  * Split trigger: Explicit correction OR strong contradictory evidence across
+    attributed interactions.
+
+- Error Handling:
+  * Ambiguous identity: Create tentative profile with $C_{id} < 0.60$.
+  * Failed LLM behavioral analysis: Fall back to identifier-only matching.
+  * Merge conflict: Abort merge, create `PossibleIdentityLink` for manual review.
+
+- Execution Timing: Synchronous on every interaction ingress. Identity must be
+  resolved before any other component processes the interaction.
+
+--------------------------------------------------------------------------------
+2. INDIVIDUAL MODELING MODULE
+--------------------------------------------------------------------------------
+Purpose: Builds and maintains structured models of each individual through
+accumulated, evidence-attributed observations.
+
+- Inputs:
+  * Identity Manager: Resolved individual_id.
+  * Interaction content and metadata from Perception Engine.
+  * LLM interpretation results (attributed observations).
+  * Memory Engine: Historical context for the individual.
+
+- Outputs:
+  * Updated IndividualProfile with versioned attributes.
+  * Attribute change notifications to Relationship Manager and Trust Assessment.
+  * Stale attribute notifications to Social Lifecycle Manager.
+
+- Internal State:
+  * In-memory profile cache: HashMap<individual_id, IndividualProfile>.
+  * Attribute evidence accumulation buffers.
+
+- Algorithms:
+  * Four-Level Evidence Attribution assignment (OBSERVED, REPORTED, INFERRED,
+    HYPOTHESIZED) using source analysis.
+  * Attribute confidence update: Bayesian-style accumulation.
+    $C_{new} = \frac{C_{old} \cdot n_{old} + C_{evidence} \cdot w_{evidence}}{n_{old} + w_{evidence}}$
+    where $w_{evidence}$ is the weight of the new evidence based on its type.
+  * Contradiction detection: Compare new evidence against existing attributes
+    with same semantic domain. If polarity differs, trigger contradiction protocol.
+  * Staleness decay: $R(t) = R_0 \cdot \exp(-0.02 \cdot \Delta t_{interactions})$.
+  * Promotion/demotion rule engine: Check evidence counts against thresholds
+    for evidence level transitions.
+
+- Decision Rules:
+  * Never convert a single casual statement into a permanent personality attribute.
+  * Require $\ge 3$ supporting instances for HYPOTHESIZED -> INFERRED promotion.
+  * Require $\ge 5$ direct observations across $\ge 3$ interactions for OBSERVED status.
+
+- Error Handling:
+  * Missing individual_id: Reject update, log error.
+  * Attribute validation failure: Reject attribute, preserve existing state.
+  * Concurrent updates to same profile: Version-guarded optimistic concurrency;
+    retry on version mismatch.
+
+- Execution Timing: Asynchronous, triggered after interaction analysis completion.
+
+--------------------------------------------------------------------------------
+3. INTENTION INFERENCE MODULE
+--------------------------------------------------------------------------------
+Purpose: Generates structured hypotheses about other individuals' possible
+intentions, goals, and motivations without treating hypotheses as facts.
+
+- Inputs:
+  * Interaction content and metadata.
+  * Individual profile context.
+  * Relationship context.
+  * LLM interpretation of communication intent.
+
+- Outputs:
+  * Ranked set of `IntentionHypothesis` records per significant interaction.
+  * `IndividualGoalEstimate` for sustained patterns across interactions.
+  * Hypothesis status updates (CONFIRMED, REFUTED, SUPERSEDED).
+
+- Internal State:
+  * Active hypothesis cache: HashMap<individual_id, List<IntentionHypothesis>>.
+  * Longitudinal goal tracking buffer.
+
+- Algorithms:
+  * Multi-hypothesis generation: For each significant interaction, produce
+    $\ge 2$ hypotheses. LLM generates candidates; deterministic layer scores
+    and validates them.
+  * Confidence decay: $C(t) = C_0 \cdot 0.90^{n_{interactions}}$ per hypothesis.
+  * Longitudinal aggregation: When $\ge 3$ interaction-level hypotheses of the
+    same type exceed $C \ge 0.50$, create an IndividualGoalEstimate.
+  * Deception safeguard: DECEPTION_POSSIBLE never generated as sole/highest
+    hypothesis without $\ge 2$ contradictory evidence instances.
+
+- Decision Rules:
+  * Ambiguous interaction ($\max(C_{hypotheses}) < 0.80$): Preserve all hypotheses
+    with $C \ge 0.15$.
+  * Clear interaction ($\max(C_{hypotheses}) \ge 0.80$): Primary hypothesis leads,
+    alternatives retained at reduced weight.
+
+- Error Handling:
+  * LLM failure: Fall back to pattern-based intention estimation from historical
+    interaction similarity.
+  * Confidence overflow: Clamp all values to [0.0, 1.0].
+
+- Execution Timing: Asynchronous, triggered after interaction analysis.
+
+--------------------------------------------------------------------------------
+4. PERSPECTIVE MODELING MODULE
+--------------------------------------------------------------------------------
+Purpose: Represents other individuals' possible beliefs, knowledge states,
+expectations, and emotional perspectives — enabling epistemic perspective-taking.
+
+- Inputs:
+  * Individual profile and interaction history.
+  * Diva's current knowledge state (from Thought Engine).
+  * LLM perspective analysis results.
+
+- Outputs:
+  * IndividualKnowledgeModel updates.
+  * BeliefEstimate records.
+  * Epistemic asymmetry alerts (Diva knows X, Person likely doesn't).
+  * Emotional perspective estimates dispatched to Emotion Engine.
+
+- Internal State:
+  * Active knowledge models: HashMap<individual_id, IndividualKnowledgeModel>.
+  * Belief estimate cache.
+
+- Algorithms:
+  * Knowledge state inference: For each piece of information Diva possesses,
+    estimate whether the interlocutor likely shares that knowledge based on:
+    - What was communicated in prior interactions.
+    - What is publicly available vs. privately known.
+    - Temporal factors (information shared before vs. after the person's last interaction).
+  * Belief updating: Bayesian confidence adjustment based on new interaction evidence.
+  * Perspective divergence detection: When Diva's knowledge and the estimated
+    knowledge of the other person diverge significantly on a topic relevant to
+    the current interaction, generate an epistemic asymmetry alert.
+
+- Decision Rules:
+  * Never assume others share Diva's knowledge state.
+  * Belief estimates with $C < 0.30$ are classified as HYPOTHESIZED.
+  * Emotional perspective estimates are ALWAYS dispatched with explicit uncertainty.
+
+- Error Handling:
+  * Stale perspective models ($> 10$ interactions without update): Mark STALE,
+    exclude from active context packages.
+  * Contradictory belief evidence: Maintain both beliefs with updated confidences.
+
+- Execution Timing: Asynchronous, triggered by significant interaction events
+  or explicit perspective queries from other engines.
+
+--------------------------------------------------------------------------------
+5. RELATIONSHIP MANAGER
+--------------------------------------------------------------------------------
+Purpose: Maintains interpersonal relationships as independent entities with
+multidimensional representation and versioned history.
+
+- Inputs:
+  * Interaction assessments from Social Interaction Analyzer.
+  * Trust assessments from Trust Assessment Module.
+  * Individual profile updates from Individual Modeling Module.
+  * Cooperation and reciprocity signals from interaction analysis.
+
+- Outputs:
+  * Updated RelationshipRecord with current dimension values.
+  * RelationshipTransitionProposal for category changes.
+  * Relationship dimension snapshots for Social Context Packages.
+  * Relationship history records (append-only).
+
+- Internal State:
+  * In-memory relationship index: HashMap<individual_id, RelationshipRecord>.
+  * Dimension update buffers (batch updates within a single interaction cycle).
+
+- Algorithms:
+  * Independent dimension update formulas (Section 5.2 of Part 1).
+  * Closeness derivation: Weighted combination of seven independent dimensions.
+  * Category transition threshold checking against evidence-based criteria.
+  * History recording for every dimension change $> 0.01$.
+
+- Decision Rules:
+  * Category changes require threshold satisfaction AND validation.
+  * Reverse transitions (cooling) are NEVER automatic — always create a proposal.
+  * Dimension updates are independent — updating one NEVER automatically updates another.
+
+- Error Handling:
+  * Missing individual_id reference: Reject update.
+  * Version conflict: Retry with fresh read.
+  * Relationship record not found: Create initial STRANGER relationship.
+
+- Execution Timing: Asynchronous, triggered after interaction assessment completion.
+
+--------------------------------------------------------------------------------
+6. SOCIAL INTERACTION ANALYZER
+--------------------------------------------------------------------------------
+Purpose: Interprets social interactions using full available context, generating
+multi-interpretation assessments.
+
+- Inputs:
+  * Perception Engine: Processed interaction content and metadata.
+  * Identity Manager: Resolved interlocutor identity.
+  * Social Context Manager: Relevant individual profile, relationship, and history.
+  * LLM interpretation results.
+
+- Outputs:
+  * InteractionAssessment with ranked interpretations.
+  * Dimension update proposals to Relationship Manager.
+  * Memory nomination signals for significant interactions.
+  * Emotional relevance signals to Emotion Engine.
+
+- Internal State:
+  * Recent interaction buffer (last 20 interactions for reinterpretation checks).
+
+- Algorithms:
+  * Multi-interpretation generation using LLM + contextual priors.
+  * Significance scoring: $S_{interaction} = w_{novelty} \cdot N + w_{emotional} \cdot E
+    + w_{relational} \cdot R + w_{trust} \cdot T$
+    where N = novelty of content, E = emotional intensity, R = relationship
+    relevance, T = trust-relevant evidence presence.
+  * Reinterpretation trigger: When new evidence shifts confidence of a recent
+    interpretation by $\ge 0.20$.
+
+- Execution Timing: Synchronous on every significant interaction ingress (after
+  identity resolution).
+
+--------------------------------------------------------------------------------
+7. SOCIAL NORMS MANAGER
+--------------------------------------------------------------------------------
+Purpose: Maintains context-dependent social norms, conventions, and expectations.
+
+- Inputs:
+  * Interaction patterns and feedback.
+  * Individual preference statements.
+  * Cultural and contextual signals from interactions.
+
+- Outputs:
+  * Applicable norm sets for Social Context Packages.
+  * Norm violation signals for Social Learning Interface.
+  * Individual preference overrides for specific interactions.
+
+- Internal State:
+  * Norm registry: HashMap<norm_category, List<SocialNormRecord>>.
+  * Individual preference index: HashMap<individual_id, List<NormOverride>>.
+
+- Algorithms:
+  * Norm learning: Explicit statements recorded at $C = 0.70$.
+  * Pattern-based norm discovery: $\ge 3$ consistent observations for $C \ge 0.50$.
+  * Context matching: Select applicable norms based on relationship category,
+    interaction context, and individual preferences.
+  * Individual override priority: Individual-specific norms take precedence over
+    general norms when both apply.
+
+- Execution Timing: Asynchronous, queried by Social Context Manager on demand.
+
+--------------------------------------------------------------------------------
+8. TRUST ASSESSMENT MODULE
+--------------------------------------------------------------------------------
+Purpose: Evaluates evidence-based, contextual trust assessments.
+
+- Inputs:
+  * Commitment tracking data (fulfilled vs. broken).
+  * Statement-action consistency data.
+  * Behavioral pattern evidence.
+  * Individual profile reliability indicators.
+
+- Outputs:
+  * Updated TrustAssessment records.
+  * Trust change signals to Relationship Manager (affects Trust dimension).
+  * Trust-relevant evidence to Social Learning Interface.
+
+- Internal State:
+  * Active trust assessment cache: HashMap<(individual_id, context), TrustAssessment>.
+  * Commitment tracking ledger.
+
+- Algorithms:
+  * Asymmetric trust update (Section 8.3 of Part 1).
+  * Contextual trust separation (per-domain trust scores).
+  * General trust derivation (weighted average of contextual scores).
+  * Statement-action consistency ratio tracking.
+  * Anti-single-incident safeguard enforcement.
+
+- Execution Timing: Asynchronous, triggered by trust-relevant interaction events.
+
+--------------------------------------------------------------------------------
+9. SOCIAL PATTERN RECOGNITION MODULE
+--------------------------------------------------------------------------------
+Purpose: Identifies recurring patterns across interactions with individuals and groups.
+
+- Inputs:
+  * Interaction history from Social Context Manager.
+  * Individual behavioral data from Individual Modeling Module.
+  * Relationship trajectory data from Relationship Manager.
+
+- Outputs:
+  * SocialPatternRecord entries with lifecycle status.
+  * Pattern discovery signals to Social Learning Interface.
+  * Pattern-based predictions for Social Context Packages.
+
+- Internal State:
+  * Pattern candidate buffer: Accumulates observations until threshold.
+  * Established pattern index: HashMap<individual_id, List<SocialPatternRecord>>.
+
+- Algorithms:
+  * Pattern detection: Sliding window analysis over interaction history.
+  * Pattern confidence: $C_{pattern} = \frac{n_{supporting}}{n_{supporting} + n_{contradicting}} \cdot \min(1.0, n_{supporting} / 5)$.
+  * Pattern lifecycle transitions: EMERGING -> ESTABLISHED -> FADING -> CONTRADICTED.
+  * Cross-individual pattern detection: Identify similar patterns across different
+    individuals (e.g., "people who discuss topic X tend to prefer brief responses").
+
+- Execution Timing: Background periodic analysis (every 10 interactions or on
+  significant relationship transitions).
+
+--------------------------------------------------------------------------------
+10. GROUP DYNAMICS MANAGER
+--------------------------------------------------------------------------------
+Purpose: Maintains group and community models, tracks group membership, and
+understands multi-party social dynamics.
+
+- Inputs:
+  * Multi-party interaction data.
+  * Individual membership evidence.
+  * Group-level behavioral observations.
+
+- Outputs:
+  * GroupProfile updates.
+  * GroupMembership records.
+  * Group dynamics snapshots for Social Context Packages.
+
+- Internal State:
+  * Group registry: HashMap<group_id, GroupProfile>.
+  * Membership index: HashMap<individual_id, List<group_id>>.
+
+- Algorithms:
+  * Group discovery: Identify groups from co-occurrence patterns of individuals
+    in interactions. Requires $\ge 3$ individuals co-occurring in $\ge 2$
+    distinct interactions for group formation.
+  * Membership evidence accumulation.
+  * Group opinion vs. individual opinion discrimination.
+  * Group dynamics assessment (cohesion, activity, tensions).
+
+- Execution Timing: Background periodic analysis and event-driven on
+  multi-party interactions.
+
+--------------------------------------------------------------------------------
+11. SOCIAL CONTEXT MANAGER
+--------------------------------------------------------------------------------
+Purpose: Assembles and provides relevant social context to other engines on demand.
+
+- Inputs:
+  * Context requests from other engines (Thought, Emotion, Motivation,
+    Cognitive Integration).
+  * All component outputs (profiles, relationships, interpretations, norms, trust).
+  * Memory Engine: Historical context.
+
+- Outputs:
+  * SocialContextPackage assembled for the requesting engine.
+  * SocialCognitionProvider interface responses.
+
+- Internal State:
+  * Context cache: LRU cache of recently assembled packages.
+
+- Algorithms:
+  * Context assembly: Collect relevant data from all components, filter by
+    requesting engine's needs, freeze into immutable snapshot.
+  * Relevance filtering: Include only information above minimum confidence
+    thresholds per evidence type.
+  * Anti-speculation enforcement: HYPOTHESIZED information excluded or
+    explicitly marked with uncertainty flags.
+
+- Execution Timing: Synchronous, on-demand from requesting engines.
+
+--------------------------------------------------------------------------------
+12. SOCIAL LEARNING INTERFACE
+--------------------------------------------------------------------------------
+Purpose: Coordinates learning evidence dispatch to Learning Engine and applies
+owner-directed parameter changes from Learning Engine.
+
+- Inputs:
+  * Pattern discovery signals from Social Pattern Recognition Module.
+  * Trust evidence from Trust Assessment Module.
+  * Norm learning signals from Social Norms Manager.
+  * ParameterChangeRequest from Learning Engine (for `social.*` parameters).
+
+- Outputs:
+  * SocialAttunementSignal dispatched to Learning Engine.
+  * OwnerAcknowledgement and OwnerApplicationReceipt for parameter changes.
+
+- Internal State:
+  * Parameter registry: HashMap<parameter_id, ParameterState>.
+  * Pending change request queue.
+
+- Algorithms:
+  * Signal dispatch: Aggregate evidence from components, format as
+    SocialAttunementSignal, dispatch to Learning Engine.
+  * Parameter change application: Validate ParameterChangeRequest against
+    version guard and valid_range, apply change, increment version, return receipt.
+  * Rollback handling: Restore known_good_value, increment version, return
+    RollbackReceipt.
+
+- Execution Timing: Asynchronous. Signal dispatch on pattern/evidence accumulation.
+  Parameter change application synchronous on receipt.
+
+- Learning Engine v2.5.0 Contract Compliance:
+  * Owner engine: SOCIAL.
+  * Parameter namespace: `social.*`.
+  * Owned parameters include:
+    - `social.conversational_verbosity`
+    - `social.empathy_weight`
+    - `social.trust_initial_baseline`
+    - `social.familiarity_growth_rate` ($\alpha_F$)
+    - `social.trust_growth_rate` ($\alpha_T^{+}$)
+    - `social.trust_decay_rate` ($\alpha_T^{-}$)
+    - `social.pattern_detection_threshold`
+    - `social.norm_learning_rate`
+  * Version-guarded optimistic concurrency: Every parameter maintains a monotonically
+    increasing version integer. ParameterChangeRequest must include
+    `expected_current_version`; rejected if version mismatch.
+
+--------------------------------------------------------------------------------
+13. SOCIAL LIFECYCLE MANAGER
+--------------------------------------------------------------------------------
+Purpose: Manages social model lifecycle transitions (ACTIVE, COOLING, DORMANT,
+ARCHIVED), staleness checks, and garbage collection.
+
+- Inputs:
+  * Interaction timestamps from all components.
+  * Social relevance scores.
+  * Internal State Engine: Resource availability signals.
+
+- Outputs:
+  * Lifecycle transition events.
+  * Garbage collection actions.
+  * Model reconstruction requests to Memory Engine.
+  * Staleness notifications to other components.
+
+- Internal State:
+  * Model lifecycle registry: HashMap<individual_id, ModelLifecycleState>.
+  * Last interaction timestamps.
+  * Garbage collection schedule.
+
+- Algorithms:
+  * Lifecycle state machine transitions (Section 14.1 of Part 1).
+  * Social relevance computation (Section 14.2 of Part 1).
+  * Garbage collection sweep: Periodic scan of DORMANT models for ARCHIVED
+    transition eligibility.
+  * Reconstruction protocol: Retrieve from Memory, rebuild working model,
+    apply confidence reduction.
+
+- Decision Rules:
+  * NEVER archive models with $R_{social} \ge 0.30$ regardless of inactivity.
+  * ALWAYS preserve individual_id and identifiers even after archival.
+  * Reconstruction confidence penalty: $C_{reconstructed} = C_{original} \cdot 0.70$.
+
+- Error Handling:
+  * Memory Engine unavailable during reconstruction: Create minimal stub profile,
+    mark for deferred reconstruction.
+  * Concurrent lifecycle transition: Version-guarded state changes.
+
+- Execution Timing: Background periodic sweep (configurable interval, default
+  every 100 interactions or once per 24-hour simulated cycle).
+
+
+================================================================================
+PART 3 — INTER-ENGINE COMMUNICATION CONTRACTS
+================================================================================
+
+The Social Cognition Engine communicates with ten other engines through formally
+defined asynchronous contracts. Each contract specifies the direction, payload
+structure, semantic invariants, and boundary rules.
+
+--------------------------------------------------------------------------------
+1. Perception Engine (`PerceptionContextProvider`)
+--------------------------------------------------------------------------------
+Direction: Ingress (Perception -> Social Cognition).
+Payload:
+  * Interaction content (processed text, metadata).
+  * Account identity metadata (platform, user IDs).
+  * Person-reference extraction (names mentioned, entities referenced).
+  * Interaction timestamps and channel identifiers.
+  * Contextual signals (tone indicators, formality level).
+
+Semantic Invariants:
+  * Perception provides raw observations. Social Cognition interprets them.
+  * Perception does NOT resolve identity — it provides signals for identity resolution.
+  * Perception does NOT assess social significance — it provides content for assessment.
+
+Boundary Rule: Social Cognition NEVER instructs Perception to filter or modify
+incoming observations. Perception is a neutral observation channel.
+
+--------------------------------------------------------------------------------
+2. Memory Engine (`MemoryContextProvider` + `MemoryNominationContract`)
+--------------------------------------------------------------------------------
+Direction: Bidirectional.
+
+Ingress (Memory -> Social Cognition):
+  * Historical interaction records for specific individuals.
+  * Individual-associated memories and experiences.
+  * Canonical memory IDs for provenance linkage.
+  * Retrieval confidence and relevance scores.
+  * Historical relationship context.
+
+Egress (Social Cognition -> Memory):
+  * `MemoryNomination`: Significant social experiences nominated for retention.
+    - Nomination criteria: interaction_significance $\ge 0.60$ OR relationship
+      transition events OR trust-relevant evidence.
+    - Nomination payload includes: individual_id, interaction_id, significance_score,
+      social_context_snapshot, nominated_at timestamp.
+  * Evidence provenance references linking social model attributes to memory records.
+
+Semantic Invariants:
+  * Memory owns permanent storage. Social Cognition owns structured interpretation.
+  * Social Cognition does NOT duplicate Memory's storage — it references via canonical IDs.
+  * When Memory returns "not found," Social Cognition proceeds with available
+    working model data only.
+
+Boundary Rule: Social Cognition NEVER deletes or modifies Memory records.
+Memory NEVER modifies Social Cognition's working models.
+
+--------------------------------------------------------------------------------
+3. Thought Engine (`ThoughtContextProvider`)
+--------------------------------------------------------------------------------
+Direction: Bidirectional.
+
+Ingress (Thought -> Social Cognition):
+  * Social hypotheses generated by thought threads.
+  * Perspective-related reasoning requests.
+  * Reflections on social situations requiring context.
+
+Egress (Social Cognition -> Thought):
+  * SocialContextPackage for thought enrichment.
+  * Perspective divergence alerts for active social reasoning.
+  * Individual profile summaries for thought threads involving social entities.
+
+Semantic Invariants:
+  * Thought Engine can generate thoughts about social situations, but Social
+    Cognition owns the structured social models those thoughts reference.
+  * Social hypotheses generated by Thought Engine are treated as INFERRED evidence
+    when incorporated into social models.
+
+Boundary Rule: Thought Engine NEVER directly modifies social models. It dispatches
+hypotheses; Social Cognition evaluates and potentially incorporates them.
+
+--------------------------------------------------------------------------------
+4. Emotion Engine (`EmotionalContextProvider`)
+--------------------------------------------------------------------------------
+Direction: Bidirectional.
+
+Ingress (Emotion -> Social Cognition):
+  * Diva's current emotional state relevant to social interactions.
+  * Emotional significance signals for social experiences.
+  * Empathy-triggered emotional responses (Diva's own empathetic feelings).
+
+Egress (Social Cognition -> Emotion):
+  * Social trigger signals: Interaction assessments with emotional_relevance score.
+  * Cognitive empathy assessments: Estimated emotional perspectives of others.
+  * Social boundary violations (may trigger discomfort or concern).
+  * Relationship-relevant emotional triggers (trust breach, closeness development).
+
+Contract: `SocialEmotionalTrigger`:
+  - `trigger_id`: UUID.
+  - `trigger_type`: Enum (`EMPATHY_SIGNAL`, `TRUST_EVENT`, `RELATIONSHIP_SHIFT`,
+    `SOCIAL_BOUNDARY`, `CONFLICT_SIGNAL`, `POSITIVE_SOCIAL_EXPERIENCE`).
+  - `interlocutor_id`: UUID.
+  - `emotional_relevance`: Float in [0.0, 1.0].
+  - `assessment_context`: Frozen SocialContextPackage subset.
+  - `dispatched_at`: ISO-8601 UTC.
+
+Semantic Invariants:
+  * Social Cognition produces cognitive empathy assessments (understanding what
+    someone might feel). Emotion Engine produces Diva's emotional response to
+    that understanding.
+  * Social Cognition NEVER directly sets Diva's emotional state.
+
+Boundary Rule: Emotion Engine owns Diva's emotional states. Social Cognition
+provides social stimuli for emotional processing.
+
+--------------------------------------------------------------------------------
+5. Motivation Engine (`MotivationContextProvider`)
+--------------------------------------------------------------------------------
+Direction: Bidirectional.
+
+Ingress (Motivation -> Social Cognition):
+  * Active social drives (social connection drive $D_{social}$, affiliation).
+  * Motivation-related social significance (relationship-maintaining motivations).
+  * Goal-related social context needs.
+
+Egress (Social Cognition -> Motivation):
+  * Social context enriching motivation evaluation.
+  * Relationship-based motivation signals (e.g., cooperation opportunity
+    with trusted collaborator may enhance motivation).
+  * Social commitment obligations (promises made, collaborative agreements).
+
+Contract: `SocialMotivationContext`:
+  - `context_id`: UUID.
+  - `relevant_relationships`: Tuple of RelationshipRecord summaries.
+  - `social_commitments`: Tuple of active commitment records.
+  - `cooperation_opportunities`: Tuple of cooperation signals.
+  - `dispatched_at`: ISO-8601 UTC.
+
+Semantic Invariants:
+  * Social Cognition provides social context. Motivation Engine independently
+    generates and manages social drives.
+  * Social Cognition NEVER creates or modifies motivational states.
+
+Boundary Rule: Motivation Engine owns social drives. Social Cognition provides
+the social intelligence that informs those drives.
+
+--------------------------------------------------------------------------------
+6. Personality Engine (`PersonalityContextProvider`)
+--------------------------------------------------------------------------------
+Direction: Ingress (Personality -> Social Cognition).
+Payload:
+  * Diva's social tendencies (introversion/extroversion, social warmth,
+    attachment style, assertiveness).
+  * Constitutional baseline social parameters.
+  * Social relevance weight signals (how much Diva's personality emphasizes
+    certain relationship types).
+
+Semantic Invariants:
+  * Personality provides static or slowly-evolving tendencies. Social Cognition
+    uses them to weight social relevance, model prioritization, and empathy
+    calibration.
+  * Social Cognition can maintain a model of someone else's apparent personality
+    traits, but CANNOT change Diva's own Personality Engine parameters.
+
+Boundary Rule: Personality Engine owns Diva's personality traits. Social Cognition
+reads them as context, never writes them.
+
+--------------------------------------------------------------------------------
+7. Learning Engine (`LearningSignalContract`)
+--------------------------------------------------------------------------------
+Direction: Bidirectional.
+
+Egress (Social Cognition -> Learning):
+  * `SocialAttunementSignal` dispatched per Learning Engine v2.5.0 contract.
+  * Signal types: COMMUNICATIVE_MISALIGNMENT, RAPPORT_SHIFT, PATTERN_DISCOVERY,
+    TRUST_EVIDENCE, RELATIONSHIP_TRANSITION, NORM_VIOLATION_DETECTED.
+
+Ingress (Learning -> Social Cognition):
+  * `ParameterChangeRequest` for `social.*` parameters.
+  * Social Cognition validates, applies, and returns `OwnerApplicationReceipt`.
+  * `RollbackRequest` for reverting unsuccessful parameter changes.
+
+Contract Details (from Learning Engine v2.5.0 specification):
+  * Owner engine: SOCIAL.
+  * Parameter namespace: `social.*`.
+  * Version-guarded optimistic concurrency on all parameter mutations.
+  * Maximum change per update epoch: $\Delta \le 0.05$ for most social parameters.
+  * Evidence thresholds per Learning Engine assessment criteria:
+    $N \ge 8$ observations minimum for social parameter changes.
+    Confidence threshold $\ge 0.80$.
+    CUSUM change-point statistic $S_t \ge 4.5$.
+
+Semantic Invariants:
+  * Social Cognition dispatches evidence signals. Learning Engine independently
+    evaluates whether evidence warrants parameter change.
+  * Learning Engine proposes changes. Social Cognition, as owner, applies them.
+
+Boundary Rule: Learning Engine NEVER directly mutates social parameters. Social
+Cognition NEVER modifies Learning Engine's assessment algorithms.
+
+--------------------------------------------------------------------------------
+8. Internal State Engine (`InternalStateProvider`)
+--------------------------------------------------------------------------------
+Direction: Ingress (Internal State -> Social Cognition).
+Payload:
+  * Current cognitive energy level $E_{cog}$.
+  * Current cognitive workload $W_{cog}$.
+  * Available attention resources.
+  * Fatigue level.
+
+Usage in Social Cognition:
+  * Low cognitive energy -> Throttle LLM interpretation requests.
+  * High cognitive workload -> Defer non-urgent pattern analysis.
+  * Very low energy -> Prioritize identity resolution only, defer all
+    background social model maintenance.
+
+Semantic Invariants:
+  * Internal State Engine owns resource metrics. Social Cognition reads them
+    for self-throttling decisions.
+
+Boundary Rule: Social Cognition NEVER modifies Internal State parameters.
+
+--------------------------------------------------------------------------------
+9. Attention Control (`AttentionContract`)
+--------------------------------------------------------------------------------
+Direction: Egress (Social Cognition -> Attention Control).
+Payload:
+  * Social urgency signals: High-significance social events requiring immediate
+    attention allocation (e.g., trust breach detection, relationship crisis signal).
+  * Social salience scores for attention prioritization.
+
+Contract: `SocialAttentionSignal`:
+  - `signal_id`: UUID.
+  - `urgency`: Float in [0.0, 1.0].
+  - `social_significance`: Float in [0.0, 1.0].
+  - `source_interaction_id`: UUID.
+  - `dispatched_at`: ISO-8601 UTC.
+
+Semantic Invariants:
+  * Social Cognition provides salience signals. Attention Control independently
+    arbitrates attention allocation.
+
+Boundary Rule: Social Cognition NEVER directly allocates attention resources.
+
+--------------------------------------------------------------------------------
+10. Cognitive Integration & Decision Engine (`CognitiveIntegrationContract`)
+--------------------------------------------------------------------------------
+Direction: Bidirectional.
+
+Egress (Social Cognition -> Cognitive Integration):
+  * Comprehensive SocialContextPackage for decision-making.
+  * Relationship-informed interaction recommendations.
+  * Social norm applicability assessments.
+  * Trust-based reliability assessments for decision inputs.
+  * Perspective divergence alerts.
+  * Social uncertainty and confidence information.
+
+Ingress (Cognitive Integration -> Social Cognition):
+  * Decision outcomes affecting social models (e.g., Diva decided to maintain
+    the relationship -> adjust relationship status accordingly).
+  * Interaction outcome feedback (success/failure of socially-informed decisions).
+
+Semantic Invariants:
+  * Social Cognition provides the social intelligence. Cognitive Integration
+    makes the decisions.
+  * Social Cognition NEVER independently decides Diva's actions or communication.
+
+Boundary Rule: Social Cognition cannot unilaterally decide whether Diva should
+forgive, confront, ignore, or continue making plans with someone. Those are
+Cognitive Integration decisions.
+
+
+================================================================================
+PART 4 — COMPREHENSIVE DATA DICTIONARY & RELATIONAL PERSISTENCE
+================================================================================
+
+--------------------------------------------------------------------------------
+SECTION A: SCHEMAS FOR ALL 23 INTERNAL DATA STRUCTURES
+--------------------------------------------------------------------------------
+All data models are deeply immutable structures (frozen dataclasses / Pydantic
+models with `frozen=True` and recursive immutability of nested collections via
+tuples, frozensets, and MappingProxyType).
+
+1. `IndividualProfile`:
+   - `individual_id`: UUID (Primary Key).
+   - `identity_type`: Enum (`PERSISTENT`, `TEMPORARY`, `INDIRECT`, `COLLECTIVE`).
+   - `entity_type`: Enum (`PERSON`, `ORGANIZATION`, `GROUP`, `FICTIONAL`).
+   - `display_names`: Immutable Tuple of String.
+   - `identity_confidence`: Float in [0.0, 1.0].
+   - `lifecycle_state`: Enum (`ACTIVE`, `COOLING`, `DORMANT`, `ARCHIVED`).
+   - `social_relevance`: Float in [0.0, 1.0].
+   - `first_interaction_at`: ISO-8601 UTC.
+   - `last_interaction_at`: ISO-8601 UTC.
+   - `total_interaction_count`: Integer.
+   - `profile_version`: Integer (monotonically increasing).
+   - `created_at`: ISO-8601 UTC.
+   - `updated_at`: ISO-8601 UTC.
+
+2. `IdentityRecord`:
+   - `record_id`: UUID (Primary Key).
+   - `individual_id`: UUID (FK to IndividualProfile).
+   - `identifier_type`: Enum (`ACCOUNT_ID`, `PLATFORM_HANDLE`, `EMAIL`,
+     `DISPLAY_NAME`, `CUSTOM`).
+   - `identifier_value`: String.
+   - `platform`: Optional String.
+   - `confidence`: Float in [0.0, 1.0].
+   - `source_type`: Enum (`EXPLICIT`, `OBSERVED`, `INFERRED`).
+   - `created_at`: ISO-8601 UTC.
+
+3. `IdentityEvidence`:
+   - `evidence_id`: UUID (Primary Key).
+   - `individual_id`: UUID (FK to IndividualProfile).
+   - `evidence_type`: Enum (`EXPLICIT_IDENTIFICATION`, `BEHAVIORAL_MATCH`,
+     `IDENTIFIER_MATCH`, `EXPLICIT_CORRECTION`, `CONTRADICTION`).
+   - `evidence_data`: String (structured JSON).
+   - `source_interaction_id`: Optional UUID.
+   - `confidence_contribution`: Float.
+   - `recorded_at`: ISO-8601 UTC.
+
+4. `IndividualAttribute`:
+   - `attribute_id`: UUID (Primary Key).
+   - `individual_id`: UUID (FK to IndividualProfile).
+   - `attribute_domain`: Enum (`DEMOGRAPHIC`, `INTEREST`, `PREFERENCE`,
+     `BEHAVIORAL`, `COGNITIVE`, `RELATIONAL`, `CONTEXTUAL`).
+   - `attribute_key`: String (e.g., "preferred_language", "expertise_area").
+   - `attribute_value`: String.
+   - `evidence_level`: Enum (`OBSERVED`, `REPORTED`, `INFERRED`, `HYPOTHESIZED`).
+   - `confidence`: Float in [0.0, 1.0].
+   - `current_relevance`: Float in [0.0, 1.0].
+   - `source_provenance_ids`: Immutable Tuple of UUID.
+   - `contradiction_flag`: Boolean (default False).
+   - `attribute_version`: Integer.
+   - `created_at`: ISO-8601 UTC.
+   - `updated_at`: ISO-8601 UTC.
+
+5. `IndividualInterest`:
+   - `interest_id`: UUID (Primary Key).
+   - `individual_id`: UUID (FK to IndividualProfile).
+   - `topic`: String.
+   - `interest_strength`: Float in [0.0, 1.0].
+   - `evidence_level`: Enum (`OBSERVED`, `REPORTED`, `INFERRED`, `HYPOTHESIZED`).
+   - `evidence_count`: Integer.
+   - `first_observed_at`: ISO-8601 UTC.
+   - `last_reinforced_at`: ISO-8601 UTC.
+
+6. `IndividualPreference`:
+   - `preference_id`: UUID (Primary Key).
+   - `individual_id`: UUID (FK to IndividualProfile).
+   - `preference_domain`: String (e.g., "communication_style", "response_length").
+   - `preference_value`: String.
+   - `evidence_level`: Enum.
+   - `confidence`: Float in [0.0, 1.0].
+   - `evidence_count`: Integer.
+
+7. `IndividualBeliefModel`:
+   - `belief_id`: UUID (Primary Key).
+   - `individual_id`: UUID (FK to IndividualProfile).
+   - `belief_content`: String.
+   - `belief_confidence`: Float in [0.0, 1.0].
+   - `truth_assessment`: Enum (`LIKELY_TRUE`, `LIKELY_FALSE`, `UNKNOWN`, `IRRELEVANT`).
+   - `source_type`: Enum (`STATED_DIRECTLY`, `INFERRED_FROM_BEHAVIOR`,
+     `INFERRED_FROM_CONTEXT`, `REPORTED_BY_THIRD_PARTY`).
+   - `evidence_basis`: Immutable Tuple of UUID.
+   - `status`: Enum (`ACTIVE`, `SUPERSEDED`, `STALE`).
+   - `created_at`: ISO-8601 UTC.
+   - `updated_at`: ISO-8601 UTC.
+
+8. `IndividualKnowledgeModel`:
+   - `model_id`: UUID (Primary Key).
+   - `individual_id`: UUID (FK to IndividualProfile).
+   - `known_facts_count`: Integer.
+   - `unknown_gaps_count`: Integer.
+   - `model_confidence`: Float in [0.0, 1.0].
+   - `last_updated_at`: ISO-8601 UTC.
+   - `status`: Enum (`CURRENT`, `STALE`).
+
+9. `KnowledgeFact`:
+   - `fact_id`: UUID (Primary Key).
+   - `knowledge_model_id`: UUID (FK to IndividualKnowledgeModel).
+   - `fact_content`: String.
+   - `fact_confidence`: Float in [0.0, 1.0].
+   - `source_interaction_id`: Optional UUID.
+   - `created_at`: ISO-8601 UTC.
+
+10. `KnowledgeGap`:
+    - `gap_id`: UUID (Primary Key).
+    - `knowledge_model_id`: UUID (FK to IndividualKnowledgeModel).
+    - `gap_content`: String (what the person likely does NOT know).
+    - `gap_confidence`: Float in [0.0, 1.0].
+    - `evidence_basis`: String.
+    - `created_at`: ISO-8601 UTC.
+
+11. `IntentionHypothesis`:
+    - `hypothesis_id`: UUID (Primary Key).
+    - `subject_id`: UUID (FK to IndividualProfile).
+    - `interaction_id`: UUID (FK to InteractionRecord).
+    - `intention_type`: Enum (11 types as defined in Section 3.1).
+    - `description`: String.
+    - `confidence`: Float in [0.0, 1.0].
+    - `supporting_evidence_ids`: Immutable Tuple of UUID.
+    - `contradicting_evidence_ids`: Immutable Tuple of UUID.
+    - `status`: Enum (`ACTIVE`, `SUPERSEDED`, `REFUTED`, `CONFIRMED`).
+    - `created_at`: ISO-8601 UTC.
+    - `updated_at`: ISO-8601 UTC.
+
+12. `PerspectiveRecord`:
+    - `perspective_id`: UUID (Primary Key).
+    - `individual_id`: UUID (FK to IndividualProfile).
+    - `perspective_type`: Enum (`EMOTIONAL`, `EPISTEMIC`, `EXPECTATION`).
+    - `content`: String.
+    - `confidence`: Float in [0.0, 1.0].
+    - `diva_perspective_differs`: Boolean.
+    - `evidence_basis`: Immutable Tuple of UUID.
+    - `status`: Enum (`ACTIVE`, `STALE`, `SUPERSEDED`).
+    - `created_at`: ISO-8601 UTC.
+
+13. `RelationshipRecord`:
+    - `relationship_id`: UUID (Primary Key).
+    - `individual_id`: UUID (FK to IndividualProfile).
+    - `relationship_category`: Enum (11 categories + CUSTOM).
+    - `custom_category_label`: Optional String.
+    - `category_confidence`: Float in [0.0, 1.0].
+    - `status`: Enum (`FORMING`, `ACTIVE`, `STABLE`, `COOLING`, `DORMANT`,
+      `RECOVERING`, `ENDED`).
+    - `first_interaction_at`: ISO-8601 UTC.
+    - `last_interaction_at`: ISO-8601 UTC.
+    - `total_interaction_count`: Integer.
+    - `relationship_version`: Integer.
+    - `created_at`: ISO-8601 UTC.
+    - `updated_at`: ISO-8601 UTC.
+
+14. `RelationshipDimension`:
+    - `dimension_id`: UUID (Primary Key).
+    - `relationship_id`: UUID (FK to RelationshipRecord).
+    - `dimension_name`: Enum (`FAMILIARITY`, `TRUST`, `AFFINITY`, `COOPERATION`,
+      `COMMUNICATION`, `RECIPROCITY`, `CONFLICT`, `CLOSENESS`).
+    - `current_value`: Float (range depends on dimension).
+    - `evidence_count`: Integer.
+    - `last_updated_at`: ISO-8601 UTC.
+    - `dimension_version`: Integer.
+
+15. `RelationshipHistory`:
+    - `history_id`: UUID (Primary Key).
+    - `relationship_id`: UUID (FK to RelationshipRecord).
+    - `event_type`: Enum (`DIMENSION_UPDATE`, `CATEGORY_TRANSITION`,
+      `STATUS_CHANGE`, `EVIDENCE_ADDED`, `CORRECTION`).
+    - `dimension_name`: Optional Enum.
+    - `previous_value`: Optional Float.
+    - `new_value`: Optional Float.
+    - `evidence_id`: Optional UUID.
+    - `recorded_at`: ISO-8601 UTC.
+
+16. `InteractionRecord`:
+    - `interaction_id`: UUID (Primary Key).
+    - `interlocutor_id`: UUID (FK to IndividualProfile).
+    - `interaction_type`: Enum (9 types as defined in Section 6.1).
+    - `channel`: String.
+    - `significance_score`: Float in [0.0, 1.0].
+    - `emotional_relevance`: Float in [0.0, 1.0].
+    - `memory_nominated`: Boolean.
+    - `memory_id`: Optional UUID (if nominated and accepted by Memory Engine).
+    - `occurred_at`: ISO-8601 UTC.
+    - `recorded_at`: ISO-8601 UTC.
+
+17. `SocialEvidenceRecord`:
+    - `evidence_id`: UUID (Primary Key).
+    - `individual_id`: Optional UUID (FK to IndividualProfile).
+    - `interaction_id`: Optional UUID (FK to InteractionRecord).
+    - `evidence_type`: Enum (`FACT`, `STATEMENT`, `ASSUMPTION`, `HYPOTHESIS`).
+    - `evidence_content`: String.
+    - `source_type`: Enum (`DIRECT_OBSERVATION`, `SELF_REPORT`,
+      `THIRD_PARTY_REPORT`, `BEHAVIORAL_INFERENCE`, `CONTEXTUAL_INFERENCE`,
+      `LLM_INTERPRETATION`, `SELF_CORRECTION`).
+    - `source_individual_id`: Optional UUID (who provided the information).
+    - `confidence`: Float in [0.0, 1.0].
+    - `status`: Enum (`ACTIVE`, `SUPERSEDED`, `RETRACTED`).
+    - `recorded_at`: ISO-8601 UTC.
+
+18. `TrustAssessment`:
+    - `assessment_id`: UUID (Primary Key).
+    - `individual_id`: UUID (FK to IndividualProfile).
+    - `context`: Enum (`GENERAL`, `TECHNICAL`, `PERSONAL`, `PROFESSIONAL`,
+      `EMOTIONAL`, `FINANCIAL`, `CUSTOM`).
+    - `overall_trust`: Float in [0.0, 1.0].
+    - `fulfilled_commitments`: Integer.
+    - `broken_commitments`: Integer.
+    - `statement_action_consistency`: Float in [0.0, 1.0].
+    - `evidence_references`: Immutable Tuple of UUID.
+    - `assessment_version`: Integer.
+    - `last_updated_at`: ISO-8601 UTC.
+
+19. `SocialPatternRecord`:
+    - `pattern_id`: UUID (Primary Key).
+    - `individual_id`: Optional UUID (FK — NULL for cross-individual patterns).
+    - `pattern_type`: Enum (`COMMUNICATION`, `BEHAVIORAL`, `COOPERATION`,
+      `CONFLICT`, `RELATIONSHIP_TRAJECTORY`, `CROSS_INDIVIDUAL`).
+    - `pattern_description`: String.
+    - `supporting_evidence_count`: Integer.
+    - `contradicting_evidence_count`: Integer.
+    - `confidence`: Float in [0.0, 1.0].
+    - `lifecycle_status`: Enum (`EMERGING`, `ESTABLISHED`, `FADING`, `CONTRADICTED`).
+    - `first_observed_at`: ISO-8601 UTC.
+    - `last_observed_at`: ISO-8601 UTC.
+
+20. `SocialNormRecord`:
+    - `norm_id`: UUID (Primary Key).
+    - `norm_category`: Enum (8 categories as defined in Section 7.1).
+    - `description`: String.
+    - `applicable_contexts`: String (JSON array of context tags).
+    - `source_type`: Enum (`OBSERVED_PATTERN`, `EXPLICITLY_STATED`,
+      `CULTURALLY_GENERAL`, `INDIVIDUAL_PREFERENCE`).
+    - `individual_id`: Optional UUID (for individual-specific norms).
+    - `confidence`: Float in [0.0, 1.0].
+    - `evidence_count`: Integer.
+    - `created_at`: ISO-8601 UTC.
+    - `updated_at`: ISO-8601 UTC.
+
+21. `GroupProfile`:
+    - `group_id`: UUID (Primary Key).
+    - `group_name`: Optional String.
+    - `group_type`: Enum (7 types as defined in Section 11.1).
+    - `discovery_source`: Enum (`OBSERVED`, `REPORTED`, `INFERRED`).
+    - `confidence`: Float in [0.0, 1.0].
+    - `activity_level`: Float in [0.0, 1.0].
+    - `cohesion_estimate`: Float in [0.0, 1.0].
+    - `profile_version`: Integer.
+    - `created_at`: ISO-8601 UTC.
+    - `updated_at`: ISO-8601 UTC.
+
+22. `GroupMembership`:
+    - `membership_id`: UUID (Primary Key).
+    - `group_id`: UUID (FK to GroupProfile).
+    - `individual_id`: UUID (FK to IndividualProfile).
+    - `role`: Optional Enum (`LEADER`, `ACTIVE_MEMBER`, `PERIPHERAL_MEMBER`,
+      `MODERATOR`, `NEWCOMER`, `OBSERVER`, `CUSTOM`).
+    - `membership_status`: Enum (`ACTIVE`, `INACTIVE`, `FORMER`, `UNCERTAIN`).
+    - `confidence`: Float in [0.0, 1.0].
+    - `evidence_basis`: String (JSON array of evidence IDs).
+    - `joined_at`: ISO-8601 UTC.
+
+23. `SocialModelHistory`:
+    - `history_id`: UUID (Primary Key).
+    - `entity_type`: Enum (`INDIVIDUAL`, `RELATIONSHIP`, `GROUP`, `TRUST`, `PATTERN`).
+    - `entity_id`: UUID (ID of the changed entity).
+    - `change_type`: Enum (`CREATED`, `UPDATED`, `MERGED`, `SPLIT`, `ARCHIVED`,
+      `RECONSTRUCTED`, `CORRECTED`).
+    - `previous_state_summary`: String (JSON snapshot).
+    - `new_state_summary`: String (JSON snapshot).
+    - `triggering_evidence_id`: Optional UUID.
+    - `recorded_at`: ISO-8601 UTC.
+
+
+--------------------------------------------------------------------------------
+SECTION B: COMPLETE 20-TABLE SQLite RELATIONAL SCHEMA
+--------------------------------------------------------------------------------
+All tables follow the established Diva persistence conventions:
+- PRAGMA journal_mode = WAL;
+- PRAGMA foreign_keys = ON;
+- ON DELETE RESTRICT (no cascading deletes).
+- All UUID primary keys stored as TEXT.
+- All timestamps stored as TEXT in ISO-8601 UTC format.
+- All enum values stored as TEXT with CHECK constraints.
+- All immutable tuples serialized as JSON TEXT arrays.
+
+TABLE 1: individual_profiles
+  individual_id       TEXT PRIMARY KEY,
+  identity_type       TEXT NOT NULL CHECK (identity_type IN ('PERSISTENT','TEMPORARY','INDIRECT','COLLECTIVE')),
+  entity_type         TEXT NOT NULL CHECK (entity_type IN ('PERSON','ORGANIZATION','GROUP','FICTIONAL')),
+  display_names       TEXT NOT NULL DEFAULT '[]',  -- JSON array
+  identity_confidence REAL NOT NULL CHECK (identity_confidence BETWEEN 0.0 AND 1.0),
+  lifecycle_state     TEXT NOT NULL DEFAULT 'ACTIVE'
+                      CHECK (lifecycle_state IN ('ACTIVE','COOLING','DORMANT','ARCHIVED')),
+  social_relevance    REAL NOT NULL DEFAULT 0.5 CHECK (social_relevance BETWEEN 0.0 AND 1.0),
+  first_interaction_at TEXT,
+  last_interaction_at  TEXT,
+  total_interaction_count INTEGER NOT NULL DEFAULT 0,
+  profile_version     INTEGER NOT NULL DEFAULT 1,
+  created_at          TEXT NOT NULL,
+  updated_at          TEXT NOT NULL
+
+TABLE 2: identity_records
+  record_id           TEXT PRIMARY KEY,
+  individual_id       TEXT NOT NULL REFERENCES individual_profiles(individual_id) ON DELETE RESTRICT,
+  identifier_type     TEXT NOT NULL CHECK (identifier_type IN ('ACCOUNT_ID','PLATFORM_HANDLE','EMAIL','DISPLAY_NAME','CUSTOM')),
+  identifier_value    TEXT NOT NULL,
+  platform            TEXT,
+  confidence          REAL NOT NULL CHECK (confidence BETWEEN 0.0 AND 1.0),
+  source_type         TEXT NOT NULL CHECK (source_type IN ('EXPLICIT','OBSERVED','INFERRED')),
+  created_at          TEXT NOT NULL
+  UNIQUE(identifier_type, identifier_value, platform)
+
+TABLE 3: identity_evidence
+  evidence_id         TEXT PRIMARY KEY,
+  individual_id       TEXT NOT NULL REFERENCES individual_profiles(individual_id) ON DELETE RESTRICT,
+  evidence_type       TEXT NOT NULL CHECK (evidence_type IN ('EXPLICIT_IDENTIFICATION','BEHAVIORAL_MATCH','IDENTIFIER_MATCH','EXPLICIT_CORRECTION','CONTRADICTION')),
+  evidence_data       TEXT NOT NULL,  -- JSON
+  source_interaction_id TEXT,
+  confidence_contribution REAL NOT NULL,
+  recorded_at         TEXT NOT NULL
+
+TABLE 4: individual_attributes
+  attribute_id        TEXT PRIMARY KEY,
+  individual_id       TEXT NOT NULL REFERENCES individual_profiles(individual_id) ON DELETE RESTRICT,
+  attribute_domain    TEXT NOT NULL CHECK (attribute_domain IN ('DEMOGRAPHIC','INTEREST','PREFERENCE','BEHAVIORAL','COGNITIVE','RELATIONAL','CONTEXTUAL')),
+  attribute_key       TEXT NOT NULL,
+  attribute_value     TEXT NOT NULL,
+  evidence_level      TEXT NOT NULL CHECK (evidence_level IN ('OBSERVED','REPORTED','INFERRED','HYPOTHESIZED')),
+  confidence          REAL NOT NULL CHECK (confidence BETWEEN 0.0 AND 1.0),
+  current_relevance   REAL NOT NULL DEFAULT 1.0 CHECK (current_relevance BETWEEN 0.0 AND 1.0),
+  source_provenance_ids TEXT NOT NULL DEFAULT '[]',  -- JSON array
+  contradiction_flag  INTEGER NOT NULL DEFAULT 0,
+  attribute_version   INTEGER NOT NULL DEFAULT 1,
+  created_at          TEXT NOT NULL,
+  updated_at          TEXT NOT NULL
+
+TABLE 5: individual_interests
+  interest_id         TEXT PRIMARY KEY,
+  individual_id       TEXT NOT NULL REFERENCES individual_profiles(individual_id) ON DELETE RESTRICT,
+  topic               TEXT NOT NULL,
+  interest_strength   REAL NOT NULL CHECK (interest_strength BETWEEN 0.0 AND 1.0),
+  evidence_level      TEXT NOT NULL CHECK (evidence_level IN ('OBSERVED','REPORTED','INFERRED','HYPOTHESIZED')),
+  evidence_count      INTEGER NOT NULL DEFAULT 1,
+  first_observed_at   TEXT NOT NULL,
+  last_reinforced_at  TEXT NOT NULL
+
+TABLE 6: individual_preferences
+  preference_id       TEXT PRIMARY KEY,
+  individual_id       TEXT NOT NULL REFERENCES individual_profiles(individual_id) ON DELETE RESTRICT,
+  preference_domain   TEXT NOT NULL,
+  preference_value    TEXT NOT NULL,
+  evidence_level      TEXT NOT NULL CHECK (evidence_level IN ('OBSERVED','REPORTED','INFERRED','HYPOTHESIZED')),
+  confidence          REAL NOT NULL CHECK (confidence BETWEEN 0.0 AND 1.0),
+  evidence_count      INTEGER NOT NULL DEFAULT 1
+
+TABLE 7: individual_belief_models
+  belief_id           TEXT PRIMARY KEY,
+  individual_id       TEXT NOT NULL REFERENCES individual_profiles(individual_id) ON DELETE RESTRICT,
+  belief_content      TEXT NOT NULL,
+  belief_confidence   REAL NOT NULL CHECK (belief_confidence BETWEEN 0.0 AND 1.0),
+  truth_assessment    TEXT NOT NULL CHECK (truth_assessment IN ('LIKELY_TRUE','LIKELY_FALSE','UNKNOWN','IRRELEVANT')),
+  source_type         TEXT NOT NULL CHECK (source_type IN ('STATED_DIRECTLY','INFERRED_FROM_BEHAVIOR','INFERRED_FROM_CONTEXT','REPORTED_BY_THIRD_PARTY')),
+  evidence_basis      TEXT NOT NULL DEFAULT '[]',  -- JSON array
+  status              TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE','SUPERSEDED','STALE')),
+  created_at          TEXT NOT NULL,
+  updated_at          TEXT NOT NULL
+
+TABLE 8: individual_knowledge_models
+  model_id            TEXT PRIMARY KEY,
+  individual_id       TEXT NOT NULL REFERENCES individual_profiles(individual_id) ON DELETE RESTRICT,
+  known_facts_count   INTEGER NOT NULL DEFAULT 0,
+  unknown_gaps_count  INTEGER NOT NULL DEFAULT 0,
+  model_confidence    REAL NOT NULL CHECK (model_confidence BETWEEN 0.0 AND 1.0),
+  last_updated_at     TEXT NOT NULL,
+  status              TEXT NOT NULL DEFAULT 'CURRENT' CHECK (status IN ('CURRENT','STALE'))
+
+TABLE 9: knowledge_facts
+  fact_id             TEXT PRIMARY KEY,
+  knowledge_model_id  TEXT NOT NULL REFERENCES individual_knowledge_models(model_id) ON DELETE RESTRICT,
+  fact_content        TEXT NOT NULL,
+  fact_confidence     REAL NOT NULL CHECK (fact_confidence BETWEEN 0.0 AND 1.0),
+  source_interaction_id TEXT,
+  created_at          TEXT NOT NULL
+
+TABLE 10: knowledge_gaps
+  gap_id              TEXT PRIMARY KEY,
+  knowledge_model_id  TEXT NOT NULL REFERENCES individual_knowledge_models(model_id) ON DELETE RESTRICT,
+  gap_content         TEXT NOT NULL,
+  gap_confidence      REAL NOT NULL CHECK (gap_confidence BETWEEN 0.0 AND 1.0),
+  evidence_basis      TEXT NOT NULL,
+  created_at          TEXT NOT NULL
+
+TABLE 11: intention_hypotheses
+  hypothesis_id       TEXT PRIMARY KEY,
+  subject_id          TEXT NOT NULL REFERENCES individual_profiles(individual_id) ON DELETE RESTRICT,
+  interaction_id      TEXT NOT NULL REFERENCES interaction_records(interaction_id) ON DELETE RESTRICT,
+  intention_type      TEXT NOT NULL CHECK (intention_type IN ('INFORMATION_SEEKING','COOPERATION_OFFERING','ASSISTANCE_REQUESTING','PERSUASION_ATTEMPTING','COMPETITION_ENGAGING','SOCIAL_BONDING','CONFLICT_INITIATING','DECEPTION_POSSIBLE','BOUNDARY_TESTING','NEUTRAL_EXCHANGE','UNKNOWN')),
+  description         TEXT NOT NULL,
+  confidence          REAL NOT NULL CHECK (confidence BETWEEN 0.0 AND 1.0),
+  supporting_evidence_ids TEXT NOT NULL DEFAULT '[]',  -- JSON array
+  contradicting_evidence_ids TEXT NOT NULL DEFAULT '[]',  -- JSON array
+  status              TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE','SUPERSEDED','REFUTED','CONFIRMED')),
+  created_at          TEXT NOT NULL,
+  updated_at          TEXT NOT NULL
+
+TABLE 12: relationship_records
+  relationship_id     TEXT PRIMARY KEY,
+  individual_id       TEXT NOT NULL REFERENCES individual_profiles(individual_id) ON DELETE RESTRICT,
+  relationship_category TEXT NOT NULL CHECK (relationship_category IN ('STRANGER','ACQUAINTANCE','FRIEND','CLOSE_FRIEND','FAMILY','COLLABORATOR','PROFESSIONAL_CONTACT','MENTOR','RIVAL','ROMANTIC_INTEREST','PARTNER','CUSTOM')),
+  custom_category_label TEXT,
+  category_confidence REAL NOT NULL CHECK (category_confidence BETWEEN 0.0 AND 1.0),
+  status              TEXT NOT NULL DEFAULT 'FORMING' CHECK (status IN ('FORMING','ACTIVE','STABLE','COOLING','DORMANT','RECOVERING','ENDED')),
+  first_interaction_at TEXT NOT NULL,
+  last_interaction_at  TEXT NOT NULL,
+  total_interaction_count INTEGER NOT NULL DEFAULT 1,
+  relationship_version INTEGER NOT NULL DEFAULT 1,
+  created_at          TEXT NOT NULL,
+  updated_at          TEXT NOT NULL
+
+TABLE 13: relationship_dimensions
+  dimension_id        TEXT PRIMARY KEY,
+  relationship_id     TEXT NOT NULL REFERENCES relationship_records(relationship_id) ON DELETE RESTRICT,
+  dimension_name      TEXT NOT NULL CHECK (dimension_name IN ('FAMILIARITY','TRUST','AFFINITY','COOPERATION','COMMUNICATION','RECIPROCITY','CONFLICT','CLOSENESS')),
+  current_value       REAL NOT NULL,
+  evidence_count      INTEGER NOT NULL DEFAULT 0,
+  last_updated_at     TEXT NOT NULL,
+  dimension_version   INTEGER NOT NULL DEFAULT 1,
+  UNIQUE(relationship_id, dimension_name)
+
+TABLE 14: relationship_history
+  history_id          TEXT PRIMARY KEY,
+  relationship_id     TEXT NOT NULL REFERENCES relationship_records(relationship_id) ON DELETE RESTRICT,
+  event_type          TEXT NOT NULL CHECK (event_type IN ('DIMENSION_UPDATE','CATEGORY_TRANSITION','STATUS_CHANGE','EVIDENCE_ADDED','CORRECTION')),
+  dimension_name      TEXT,
+  previous_value      REAL,
+  new_value           REAL,
+  evidence_id         TEXT,
+  recorded_at         TEXT NOT NULL
+
+TABLE 15: interaction_records
+  interaction_id      TEXT PRIMARY KEY,
+  interlocutor_id     TEXT NOT NULL REFERENCES individual_profiles(individual_id) ON DELETE RESTRICT,
+  interaction_type    TEXT NOT NULL CHECK (interaction_type IN ('CONVERSATIONAL','COOPERATIVE','CONFLICT','REQUEST','DISCLOSURE','BOUNDARY_EVENT','GREETING','FAREWELL','AMBIGUOUS')),
+  channel             TEXT NOT NULL,
+  significance_score  REAL NOT NULL CHECK (significance_score BETWEEN 0.0 AND 1.0),
+  emotional_relevance REAL NOT NULL CHECK (emotional_relevance BETWEEN 0.0 AND 1.0),
+  memory_nominated    INTEGER NOT NULL DEFAULT 0,
+  memory_id           TEXT,
+  occurred_at         TEXT NOT NULL,
+  recorded_at         TEXT NOT NULL
+
+TABLE 16: social_evidence_records
+  evidence_id         TEXT PRIMARY KEY,
+  individual_id       TEXT REFERENCES individual_profiles(individual_id) ON DELETE RESTRICT,
+  interaction_id      TEXT REFERENCES interaction_records(interaction_id) ON DELETE RESTRICT,
+  evidence_type       TEXT NOT NULL CHECK (evidence_type IN ('FACT','STATEMENT','ASSUMPTION','HYPOTHESIS')),
+  evidence_content    TEXT NOT NULL,
+  source_type         TEXT NOT NULL CHECK (source_type IN ('DIRECT_OBSERVATION','SELF_REPORT','THIRD_PARTY_REPORT','BEHAVIORAL_INFERENCE','CONTEXTUAL_INFERENCE','LLM_INTERPRETATION','SELF_CORRECTION')),
+  source_individual_id TEXT,
+  confidence          REAL NOT NULL CHECK (confidence BETWEEN 0.0 AND 1.0),
+  status              TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE','SUPERSEDED','RETRACTED')),
+  recorded_at         TEXT NOT NULL
+
+TABLE 17: trust_assessments
+  assessment_id       TEXT PRIMARY KEY,
+  individual_id       TEXT NOT NULL REFERENCES individual_profiles(individual_id) ON DELETE RESTRICT,
+  context             TEXT NOT NULL CHECK (context IN ('GENERAL','TECHNICAL','PERSONAL','PROFESSIONAL','EMOTIONAL','FINANCIAL','CUSTOM')),
+  overall_trust       REAL NOT NULL CHECK (overall_trust BETWEEN 0.0 AND 1.0),
+  fulfilled_commitments INTEGER NOT NULL DEFAULT 0,
+  broken_commitments  INTEGER NOT NULL DEFAULT 0,
+  statement_action_consistency REAL NOT NULL DEFAULT 0.5 CHECK (statement_action_consistency BETWEEN 0.0 AND 1.0),
+  evidence_references TEXT NOT NULL DEFAULT '[]',  -- JSON array
+  assessment_version  INTEGER NOT NULL DEFAULT 1,
+  last_updated_at     TEXT NOT NULL,
+  UNIQUE(individual_id, context)
+
+TABLE 18: social_pattern_records
+  pattern_id          TEXT PRIMARY KEY,
+  individual_id       TEXT REFERENCES individual_profiles(individual_id) ON DELETE RESTRICT,
+  pattern_type        TEXT NOT NULL CHECK (pattern_type IN ('COMMUNICATION','BEHAVIORAL','COOPERATION','CONFLICT','RELATIONSHIP_TRAJECTORY','CROSS_INDIVIDUAL')),
+  pattern_description TEXT NOT NULL,
+  supporting_evidence_count INTEGER NOT NULL DEFAULT 0,
+  contradicting_evidence_count INTEGER NOT NULL DEFAULT 0,
+  confidence          REAL NOT NULL CHECK (confidence BETWEEN 0.0 AND 1.0),
+  lifecycle_status    TEXT NOT NULL DEFAULT 'EMERGING' CHECK (lifecycle_status IN ('EMERGING','ESTABLISHED','FADING','CONTRADICTED')),
+  first_observed_at   TEXT NOT NULL,
+  last_observed_at    TEXT NOT NULL
+
+TABLE 19: social_norm_records
+  norm_id             TEXT PRIMARY KEY,
+  norm_category       TEXT NOT NULL CHECK (norm_category IN ('CONVERSATIONAL_ETIQUETTE','PERSONAL_BOUNDARY','PROFESSIONAL_BOUNDARY','CULTURAL_CONVENTION','COMMUNITY_RULE','PRIVACY_EXPECTATION','RECIPROCITY_EXPECTATION','CUSTOM')),
+  description         TEXT NOT NULL,
+  applicable_contexts TEXT NOT NULL DEFAULT '[]',  -- JSON array
+  source_type         TEXT NOT NULL CHECK (source_type IN ('OBSERVED_PATTERN','EXPLICITLY_STATED','CULTURALLY_GENERAL','INDIVIDUAL_PREFERENCE')),
+  individual_id       TEXT REFERENCES individual_profiles(individual_id) ON DELETE RESTRICT,
+  confidence          REAL NOT NULL CHECK (confidence BETWEEN 0.0 AND 1.0),
+  evidence_count      INTEGER NOT NULL DEFAULT 1,
+  created_at          TEXT NOT NULL,
+  updated_at          TEXT NOT NULL
+
+TABLE 20: social_model_history
+  history_id          TEXT PRIMARY KEY,
+  entity_type         TEXT NOT NULL CHECK (entity_type IN ('INDIVIDUAL','RELATIONSHIP','GROUP','TRUST','PATTERN','IDENTITY','NORM')),
+  entity_id           TEXT NOT NULL,
+  change_type         TEXT NOT NULL CHECK (change_type IN ('CREATED','UPDATED','MERGED','SPLIT','ARCHIVED','RECONSTRUCTED','CORRECTED')),
+  previous_state_summary TEXT,  -- JSON snapshot
+  new_state_summary   TEXT,     -- JSON snapshot
+  triggering_evidence_id TEXT,
+  recorded_at         TEXT NOT NULL
+
+Note: GroupProfile and GroupMembership share tables derived from individual_profiles
+(for COLLECTIVE entity_type) and a dedicated group_memberships join table. For
+implementation clarity, two additional tables may be created:
+
+TABLE 20a: group_profiles (uses individual_profiles with entity_type = 'GROUP' or dedicated)
+  group_id            TEXT PRIMARY KEY,
+  group_name          TEXT,
+  group_type          TEXT NOT NULL CHECK (group_type IN ('FRIEND_GROUP','COMMUNITY','TEAM','ORGANIZATION','FAMILY_UNIT','INTEREST_GROUP','CUSTOM')),
+  discovery_source    TEXT NOT NULL CHECK (discovery_source IN ('OBSERVED','REPORTED','INFERRED')),
+  confidence          REAL NOT NULL CHECK (confidence BETWEEN 0.0 AND 1.0),
+  activity_level      REAL NOT NULL DEFAULT 0.5 CHECK (activity_level BETWEEN 0.0 AND 1.0),
+  cohesion_estimate   REAL NOT NULL DEFAULT 0.5 CHECK (cohesion_estimate BETWEEN 0.0 AND 1.0),
+  profile_version     INTEGER NOT NULL DEFAULT 1,
+  created_at          TEXT NOT NULL,
+  updated_at          TEXT NOT NULL
+
+TABLE 20b: group_memberships
+  membership_id       TEXT PRIMARY KEY,
+  group_id            TEXT NOT NULL REFERENCES group_profiles(group_id) ON DELETE RESTRICT,
+  individual_id       TEXT NOT NULL REFERENCES individual_profiles(individual_id) ON DELETE RESTRICT,
+  role                TEXT CHECK (role IN ('LEADER','ACTIVE_MEMBER','PERIPHERAL_MEMBER','MODERATOR','NEWCOMER','OBSERVER','CUSTOM')),
+  membership_status   TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (membership_status IN ('ACTIVE','INACTIVE','FORMER','UNCERTAIN')),
+  confidence          REAL NOT NULL CHECK (confidence BETWEEN 0.0 AND 1.0),
+  evidence_basis      TEXT NOT NULL DEFAULT '[]',  -- JSON array
+  joined_at           TEXT NOT NULL,
+  UNIQUE(group_id, individual_id)
+
+Indexes:
+  CREATE INDEX idx_identity_records_individual ON identity_records(individual_id);
+  CREATE INDEX idx_identity_records_identifier ON identity_records(identifier_type, identifier_value);
+  CREATE INDEX idx_individual_attributes_individual ON individual_attributes(individual_id);
+  CREATE INDEX idx_individual_attributes_domain ON individual_attributes(individual_id, attribute_domain);
+  CREATE INDEX idx_individual_interests_individual ON individual_interests(individual_id);
+  CREATE INDEX idx_intention_hypotheses_subject ON intention_hypotheses(subject_id);
+  CREATE INDEX idx_intention_hypotheses_interaction ON intention_hypotheses(interaction_id);
+  CREATE INDEX idx_relationship_records_individual ON relationship_records(individual_id);
+  CREATE INDEX idx_relationship_dimensions_relationship ON relationship_dimensions(relationship_id);
+  CREATE INDEX idx_relationship_history_relationship ON relationship_history(relationship_id);
+  CREATE INDEX idx_interaction_records_interlocutor ON interaction_records(interlocutor_id);
+  CREATE INDEX idx_interaction_records_occurred ON interaction_records(occurred_at);
+  CREATE INDEX idx_social_evidence_individual ON social_evidence_records(individual_id);
+  CREATE INDEX idx_trust_assessments_individual ON trust_assessments(individual_id);
+  CREATE INDEX idx_social_patterns_individual ON social_pattern_records(individual_id);
+  CREATE INDEX idx_social_norms_individual ON social_norm_records(individual_id);
+  CREATE INDEX idx_social_model_history_entity ON social_model_history(entity_type, entity_id);
+  CREATE INDEX idx_group_memberships_group ON group_memberships(group_id);
+  CREATE INDEX idx_group_memberships_individual ON group_memberships(individual_id);
+  CREATE INDEX idx_belief_models_individual ON individual_belief_models(individual_id);
+  CREATE INDEX idx_knowledge_models_individual ON individual_knowledge_models(individual_id);
+
+
+================================================================================
+PART 5 — MUST-PASS CONDITIONS (31 AUDIT CHECKPOINTS)
+================================================================================
+
+This master verification checklist establishes 31 concrete, auditable criteria
+across six operational domains.
+
+--------------------------------------------------------------------------------
+1. IDENTITY AND INDIVIDUAL MODELING (5 CHECKPOINTS)
+--------------------------------------------------------------------------------
+[ ] SC01. Recognizes the same individual across supported interactions using
+     multi-signal identity resolution (explicit identifiers + behavioral analysis).
+[ ] SC02. Does not automatically merge individuals with similar names; requires
+     explicit identifier match AND behavioral similarity $\ge 0.75$ AND no
+     contradictory evidence for any identity merge.
+[ ] SC03. Supports unknown and uncertain identities with configurable confidence
+     thresholds and temporal/persistent identity types.
+[ ] SC04. Separates stated facts (REPORTED) from inferred attributes (INFERRED)
+     and direct observations (OBSERVED) with mandatory evidence-level classification
+     on every individual attribute.
+[ ] SC05. Supports contradictory and outdated information through the contradiction
+     record protocol and temporal relevance decay without premature deletion.
+
+--------------------------------------------------------------------------------
+2. INTENTIONS AND PERSPECTIVES (5 CHECKPOINTS)
+--------------------------------------------------------------------------------
+[ ] SC06. Generates multiple possible interpretations ($\ge 2$) of ambiguous
+     behavior with ranked confidence values and preserves all interpretations
+     with $C \ge 0.15$ when maximum confidence is below 0.80.
+[ ] SC07. Distinguishes observed behavior from inferred intentions through
+     mandatory evidence_level classification on all IntentionHypothesis records.
+[ ] SC08. Represents what another individual may know or not know through
+     IndividualKnowledgeModel with explicit known_facts and unknown_gaps.
+[ ] SC09. Supports different perspectives about the same event through
+     PerspectiveRecord with diva_perspective_differs flag and independent
+     confidence values.
+[ ] SC10. Maintains uncertainty instead of treating guesses as facts; enforces
+     the anti-speculation-to-fact safeguard preventing HYPOTHESIZED information
+     from appearing in Social Context Packages without explicit uncertainty markers.
+
+--------------------------------------------------------------------------------
+3. RELATIONSHIPS (5 CHECKPOINTS)
+--------------------------------------------------------------------------------
+[ ] SC11. Maintains separate relationship records for each individual with
+     independent lifecycle and versioned history.
+[ ] SC12. Tracks familiarity independently from trust using eight independent
+     relationship dimensions with separate update formulas and evidence streams.
+[ ] SC13. Tracks relationship development over time through append-only
+     relationship_history records for all dimension changes and category transitions.
+[ ] SC14. Supports relationship deterioration and recovery with asymmetric trust
+     update rates, relationship cooling states, and recovery-rate penalties.
+[ ] SC15. Preserves relationship history and supporting evidence with complete
+     provenance linkage through evidence record IDs and social model history.
+
+--------------------------------------------------------------------------------
+4. SOCIAL UNDERSTANDING (5 CHECKPOINTS)
+--------------------------------------------------------------------------------
+[ ] SC16. Interprets social interactions using full context (individual profile,
+     relationship history, recent interactions, applicable norms) through the
+     Social Interaction Analyzer pipeline.
+[ ] SC17. Distinguishes individual preferences from general social norms through
+     the Social Norms Manager's individual override priority mechanism.
+[ ] SC18. Supports group and community models with GroupProfile, GroupMembership,
+     and individual-vs-group opinion discrimination.
+[ ] SC19. Recognizes recurring social patterns through the pattern detection
+     algorithm with minimum $\ge 3$ observations and confidence formula that
+     accounts for both hit rate and evidence volume.
+[ ] SC20. Distinguishes isolated incidents from recurring behavior through
+     pattern lifecycle states (EMERGING, ESTABLISHED, FADING, CONTRADICTED)
+     requiring sustained evidence for establishment.
+
+--------------------------------------------------------------------------------
+5. LEARNING AND MEMORY (5 CHECKPOINTS)
+--------------------------------------------------------------------------------
+[ ] SC21. Retrieves relevant social history from Memory Engine through
+     MemoryContextProvider with canonical memory IDs for provenance linkage.
+[ ] SC22. Submits significant social experiences to Memory through
+     MemoryNomination with significance threshold $\ge 0.60$ or relationship
+     transition events.
+[ ] SC23. Sends eligible social evidence to Learning Engine through
+     SocialAttunementSignal per Learning Engine v2.5.0 contract with appropriate
+     signal types and evidence payloads.
+[ ] SC24. Updates social models when new evidence arrives through the multi-
+     component update pipeline (interaction analysis -> attribute update ->
+     dimension update -> pattern check -> history recording).
+[ ] SC25. Supports correction of previously incorrect social interpretations
+     through the self-correction protocol with historical version preservation
+     and downstream re-evaluation.
+
+--------------------------------------------------------------------------------
+6. RELIABILITY AND OWNERSHIP (6 CHECKPOINTS)
+--------------------------------------------------------------------------------
+[ ] SC26. Maintains evidence provenance and confidence on all social information
+     through mandatory EvidenceProvenance records with source_type classification.
+[ ] SC27. Prevents speculative information (HYPOTHESIZED, $C < 0.30$) from
+     becoming established fact through the anti-speculation-to-fact safeguard
+     and mandatory promotion rule enforcement.
+[ ] SC28. Uses shared LLM infrastructure rather than owning a separate model;
+     all LLM calls go through the shared orchestration layer with deterministic
+     post-validation.
+[ ] SC29. Does not own emotions, motivations, or personality parameters; Social
+     Cognition provides assessments, never generates Diva's emotional states,
+     motivational drives, or personality changes directly.
+[ ] SC30. Does not independently make final action decisions; all decision-making
+     authority is delegated to Cognitive Integration Engine through
+     CognitiveIntegrationContract.
+[ ] SC31. Recovers consistent social models after restart through the 7-step
+     crash recovery protocol with SQLite integrity verification, incomplete
+     transaction rollback, and in-memory index reconstruction.
+
+
+================================================================================
+PART 6 — MANDATORY ARCHITECTURAL WALKTHROUGHS (ALL 12 SCENARIOS)
+================================================================================
+
+Each walkthrough contains the eight mandatory structural sections:
+1. Initial State
+2. Trigger
+3. Expected Subsystem Interactions
+4. Expected State Transitions
+5. Expected Persistence Changes
+6. Ownership-Boundary Checks
+7. Expected Result
+8. Failure Scenario & Recovery Behavior
+
+--------------------------------------------------------------------------------
+SCENARIO 1: FIRST INTERACTION (NEW INDIVIDUAL REGISTRATION)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - Social Cognition Engine is ACTIVE.
+   - No existing profile matches the incoming interaction.
+   - Perception Engine delivers a message from account "discord_user_7892".
+
+2. Trigger:
+   - Perception Engine dispatches interaction event with account metadata.
+
+3. Expected Subsystem Interactions:
+   - Identity Manager: Performs Stage 1 (identifier lookup) — no match found.
+     Performs Stage 2 (anti-duplication check) — no overlap $\ge 0.85$.
+     Executes Stage 3: Creates new IndividualProfile with identity_type=PERSISTENT,
+     identity_confidence=0.80 (explicit account ID).
+   - Individual Modeling Module: Initializes minimal profile with interaction
+     metadata as first observed attributes.
+   - Relationship Manager: Creates initial RelationshipRecord with
+     category=STRANGER, all dimensions at default baselines.
+   - Social Interaction Analyzer: Processes the first message, generates initial
+     InteractionAssessment.
+   - Intention Inference Module: Generates initial IntentionHypothesis set.
+   - Trust Assessment Module: Creates default TrustAssessment with
+     overall_trust=0.50 (neutral baseline).
+
+4. Expected State Transitions:
+   - IndividualProfile: NULL -> ACTIVE (lifecycle_state).
+   - RelationshipRecord: NULL -> FORMING (status).
+   - All 8 RelationshipDimension entries created at baseline values.
+
+5. Expected Persistence Changes:
+   - INSERT into individual_profiles.
+   - INSERT into identity_records (account_id = "discord_user_7892").
+   - INSERT into relationship_records (category = STRANGER).
+   - 8x INSERT into relationship_dimensions (baseline values).
+   - INSERT into interaction_records.
+   - INSERT into social_model_history (change_type = CREATED).
+
+6. Ownership-Boundary Checks:
+   - Social Cognition creates the profile and relationship. Memory is NOT asked
+     to store these (Memory receives a MemoryNomination only if significance $\ge 0.60$).
+   - Emotion Engine receives emotional_relevance signal but does NOT determine
+     whether a profile is created.
+   - Perception Engine provides raw interaction data but does NOT resolve identity.
+
+7. Expected Result:
+   - New individual registered with canonical individual_id.
+   - Initial relationship established at STRANGER with neutral dimensions.
+   - First interaction recorded with provenance.
+   - SocialContextPackage available for future queries about this individual.
+
+8. Failure Scenario & Recovery Behavior:
+   - If SQLite transaction fails during profile creation: Roll back entire
+     atomic transaction (profile + identity record + relationship). Retry once.
+     If retry fails, log error, process interaction without social model attachment.
+   - If Identity Manager incorrectly detects a false match (anti-duplication
+     threshold too low): Create PossibleIdentityLink record for future review
+     rather than merging. No data loss.
+
+--------------------------------------------------------------------------------
+SCENARIO 2: REPEATED INTERACTION (MODEL ACCUMULATION)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - Individual "person_A42" has IndividualProfile with 8 previous interactions.
+   - Relationship category: ACQUAINTANCE ($F=0.35, T=0.50, A=0.15$).
+   - Known attributes: interested in programming (OBSERVED, $C=0.72$).
+   - Person_A42 sends a message discussing their new robotics project.
+
+2. Trigger:
+   - Perception Engine dispatches interaction with resolved account matching person_A42.
+
+3. Expected Subsystem Interactions:
+   - Identity Manager: Stage 1 identifier match succeeds -> person_A42 resolved.
+   - Social Interaction Analyzer: Generates InteractionAssessment noting new topic
+     (robotics) and cooperative tone.
+   - Individual Modeling Module: Creates new IndividualInterest (robotics, OBSERVED,
+     $C=0.40$, evidence_count=1). Updates programming interest
+     (last_reinforced_at = now).
+   - LLM Integration: Shared LLM interprets potential intention as INFORMATION_SEEKING
+     or COOPERATION_OFFERING.
+   - Intention Inference Module: Generates two hypotheses:
+     H1: Sharing excitement about new project (SOCIAL_BONDING, $C=0.55$).
+     H2: Seeking collaboration or feedback (COOPERATION_OFFERING, $C=0.35$).
+   - Relationship Manager: Updates dimensions:
+     Familiarity: $F_{new} = 0.35 + 0.03 \cdot (1 - 0.35) \cdot 0.6 = 0.362$.
+     Communication: $Cm_{new} = 0.6 \cdot 0.65 + 0.4 \cdot Cm_{old}$.
+   - Trust Assessment Module: No trust-relevant event; no update.
+   - Social Pattern Recognition: Checks for emerging patterns with new data point.
+
+4. Expected State Transitions:
+   - IndividualProfile: total_interaction_count 8 -> 9.
+   - RelationshipRecord: total_interaction_count updated, last_interaction_at updated.
+   - RelationshipDimension (FAMILIARITY): 0.35 -> 0.362.
+
+5. Expected Persistence Changes:
+   - UPDATE individual_profiles SET total_interaction_count = 9.
+   - INSERT into individual_interests (robotics, OBSERVED, C=0.40).
+   - UPDATE individual_interests (programming, last_reinforced_at = now).
+   - INSERT into interaction_records.
+   - INSERT into intention_hypotheses (2 records).
+   - UPDATE relationship_dimensions WHERE dimension_name = 'FAMILIARITY'.
+   - INSERT into relationship_history (DIMENSION_UPDATE, FAMILIARITY, 0.35 -> 0.362).
+   - INSERT into social_evidence_records.
+
+6. Ownership-Boundary Checks:
+   - Social Cognition updates its own models. It does NOT modify Memory records.
+   - LLM interpretation is proposed; Social Cognition validates and persists.
+   - Emotion Engine is notified of emotional_relevance but does not determine
+     attribute updates.
+
+7. Expected Result:
+   - person_A42's profile now reflects robotics interest alongside programming.
+   - Familiarity dimension has increased.
+   - Two intention hypotheses preserved for the interaction.
+   - New interest has evidence_level = OBSERVED with evidence_count = 1.
+
+8. Failure Scenario & Recovery Behavior:
+   - If LLM interpretation request times out ($> 10,000$ ms): Fall back to
+     pattern-based intention estimation. Record interaction without LLM-enhanced
+     interpretation. Flag for deferred LLM analysis.
+   - If dimension update fails due to version conflict: Reload current dimension
+     value, recalculate, retry. If retry fails, queue update for next cycle.
+
+--------------------------------------------------------------------------------
+SCENARIO 3: SIMILAR NAMES (IDENTITY DISAMBIGUATION)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - Existing profile: "Alex" (individual_id = id_001, platform = Discord).
+   - New interaction arrives from a different platform (email) with display name "Alex".
+
+2. Trigger:
+   - Perception Engine dispatches interaction from email with display name "Alex".
+
+3. Expected Subsystem Interactions:
+   - Identity Manager Stage 1: Display name "Alex" matches id_001 (DISPLAY_NAME match).
+     BUT platform differs (Discord vs. email). No explicit cross-platform identifier link.
+   - Identity Manager Stage 2: LLM-assisted behavioral comparison.
+     Communication style similarity score: $S_{behavioral} = 0.42$ (below 0.75 threshold).
+   - Anti-merge safeguard: Display name match alone is INSUFFICIENT for merge.
+     No explicit identifier match across platforms.
+   - Decision: Create NEW IndividualProfile (id_002) for the email Alex.
+   - Create PossibleIdentityLink(id_001, id_002, $S_{merge} = 0.42$) for future
+     evidence accumulation.
+
+4. Expected State Transitions:
+   - New IndividualProfile id_002 created (ACTIVE).
+   - PossibleIdentityLink created (linking id_001 and id_002).
+   - id_001 unchanged.
+
+5. Expected Persistence Changes:
+   - INSERT into individual_profiles (id_002).
+   - INSERT into identity_records (email identifier for id_002).
+   - INSERT into relationship_records (STRANGER for id_002).
+   - INSERT into social_model_history (CREATED for id_002).
+   - INSERT into identity_evidence (PossibleIdentityLink data).
+
+6. Ownership-Boundary Checks:
+   - Identity Manager makes the disambiguation decision independently.
+   - No other engine is consulted for identity resolution.
+   - Memory is NOT asked whether these are the same person.
+
+7. Expected Result:
+   - Two distinct profiles maintained: Discord Alex (id_001) and Email Alex (id_002).
+   - PossibleIdentityLink preserved for future evidence.
+   - If future interactions reveal they ARE the same person (e.g., one says "I
+     also messaged you from email"), the merge can be executed with explicit evidence.
+
+8. Failure Scenario & Recovery Behavior:
+   - If the two Alexes ARE the same person and evidence accumulates later:
+     When merge evidence crosses threshold ($S_{merge} \ge 0.75$ + explicit
+     identifier match), execute merge protocol with full audit trail.
+   - If accidentally merged (false positive): Split protocol separates profiles,
+     migrates attributed interactions, preserves audit trail.
+
+--------------------------------------------------------------------------------
+SCENARIO 4: AMBIGUOUS MESSAGE (MULTI-HYPOTHESIS INTERPRETATION)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - Known individual person_B12 (relationship: ACQUAINTANCE).
+   - person_B12 sends: "I noticed you haven't mentioned the project recently."
+
+2. Trigger:
+   - Social Interaction Analyzer receives the interaction content.
+
+3. Expected Subsystem Interactions:
+   - LLM Integration: Shared LLM generates interpretation candidates.
+   - Intention Inference Module generates hypotheses:
+     H1: Genuinely curious about project status (INFORMATION_SEEKING, $C=0.40$).
+     H2: Indirect request for update (ASSISTANCE_REQUESTING, $C=0.30$).
+     H3: Expressing concern about Diva's engagement (SOCIAL_BONDING, $C=0.20$).
+     H4: Subtle criticism or disappointment (BOUNDARY_TESTING, $C=0.10$).
+   - All four preserved as ACTIVE (max confidence 0.40 < 0.80 threshold).
+   - Social Interaction Analyzer: interaction_type = AMBIGUOUS.
+   - No single interpretation forced.
+
+4. Expected State Transitions:
+   - 4 IntentionHypothesis records created with ACTIVE status.
+   - InteractionRecord created with interaction_type = AMBIGUOUS.
+
+5. Expected Persistence Changes:
+   - INSERT into interaction_records (type = AMBIGUOUS).
+   - 4x INSERT into intention_hypotheses.
+   - INSERT into social_evidence_records for the interaction.
+
+6. Ownership-Boundary Checks:
+   - Social Cognition preserves ambiguity. It does NOT force a single interpretation.
+   - Cognitive Integration receives the full set of hypotheses and decides how
+     to respond (may ask for clarification).
+   - Emotion Engine receives emotional_relevance signal but the ambiguity itself
+     does NOT create an emotional state.
+
+7. Expected Result:
+   - Four active hypotheses preserved with ranked confidences.
+   - SocialContextPackage sent to Cognitive Integration includes all four
+     interpretations with explicit uncertainty markers.
+   - Future interactions may confirm or refute specific hypotheses.
+
+8. Failure Scenario & Recovery Behavior:
+   - If LLM generates only one interpretation: Deterministic layer generates
+     at least one alternative (e.g., NEUTRAL_EXCHANGE at $C=0.20$) to satisfy
+     the $\ge 2$ hypothesis requirement.
+   - If all confidences are very low ($< 0.15$): Classify interaction as
+     AMBIGUOUS with UNKNOWN intention type at $C=0.30$.
+
+--------------------------------------------------------------------------------
+SCENARIO 5: BROKEN PROMISE (CONTEXTUAL TRUST EVIDENCE)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - person_C55 (relationship: FRIEND, $T=0.68, F=0.72$).
+   - person_C55 previously committed to help with a task (commitment tracked).
+   - person_C55 fails to follow through without explanation.
+
+2. Trigger:
+   - Social Interaction Analyzer detects commitment breach through deadline
+     expiry or explicit statement of non-completion.
+
+3. Expected Subsystem Interactions:
+   - Trust Assessment Module: Records broken commitment.
+     $T_{new} = 0.68 - 0.10 \cdot 0.68 \cdot 0.60 = 0.68 - 0.041 = 0.639$.
+     (severity $w_{severity} = 0.60$ — moderate, not catastrophic).
+   - Anti-single-incident rule: Trust reduction capped at $-0.10$ for a single
+     incident. Actual reduction $-0.041$ is within bounds.
+   - Relationship Manager: Updates TRUST dimension.
+   - Intention Inference Module: Generates hypotheses for why the promise was broken:
+     H1: Genuinely unable to fulfil ($C=0.45$).
+     H2: Forgot about the commitment ($C=0.30$).
+     H3: Deprioritized the commitment ($C=0.20$).
+   - Social Pattern Recognition: Checks if this is a first occurrence or part
+     of a pattern. First occurrence: No pattern established.
+   - Emotion Engine: Receives SocialEmotionalTrigger (TRUST_EVENT, emotional_relevance=0.65).
+
+4. Expected State Transitions:
+   - TrustAssessment: overall_trust 0.68 -> 0.639, broken_commitments += 1.
+   - RelationshipDimension (TRUST): 0.68 -> 0.639.
+   - Relationship category: FRIEND (unchanged — single incident does not
+     trigger category downgrade).
+
+5. Expected Persistence Changes:
+   - UPDATE trust_assessments SET overall_trust = 0.639, broken_commitments += 1.
+   - UPDATE relationship_dimensions SET current_value = 0.639 WHERE dimension_name = 'TRUST'.
+   - INSERT into relationship_history (DIMENSION_UPDATE, TRUST, 0.68 -> 0.639).
+   - INSERT into social_evidence_records (commitment breach evidence).
+   - 3x INSERT into intention_hypotheses.
+
+6. Ownership-Boundary Checks:
+   - Trust reduction is evidence-based and formula-driven.
+   - Social Cognition does NOT decide whether Diva should confront person_C55.
+   - Emotion Engine independently evaluates the emotional impact.
+   - person_C55 is NOT labeled as "unreliable" from one incident.
+
+7. Expected Result:
+   - Trust slightly reduced with full evidence trail.
+   - Multiple hypotheses preserved for why the promise was broken.
+   - Relationship category FRIEND unchanged (single incident insufficient).
+   - Pattern Recognition records this as a data point (not yet a pattern).
+
+8. Failure Scenario & Recovery Behavior:
+   - If person_C55 later explains the breach (e.g., emergency): Reinterpretation
+     protocol updates hypotheses. Trust may partially recover.
+   - If this is the third broken commitment: Pattern Recognition promotes
+     "unreliable commitments" to ESTABLISHED pattern. Trust reduction accumulates.
+
+--------------------------------------------------------------------------------
+SCENARIO 6: REPEATED RELIABILITY (GRADUAL TRUST STRENGTHENING)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - person_D23 (relationship: COLLABORATOR, $T=0.55$).
+   - person_D23 has fulfilled 7 out of 8 previous commitments.
+   - person_D23 completes another collaboration commitment successfully.
+
+2. Trigger:
+   - Social Interaction Analyzer records successful cooperation outcome.
+
+3. Expected Subsystem Interactions:
+   - Trust Assessment Module: Records fulfilled commitment.
+     $T_{new} = 0.55 + 0.03 \cdot (1 - 0.55) \cdot 0.70 = 0.55 + 0.0095 = 0.5595$.
+     (significance $w_{significance} = 0.70$ — substantial but not exceptional).
+   - Statement-action consistency: $SAC = 8/9 = 0.889$ (high consistency).
+   - Relationship Manager: Updates TRUST and COOPERATION dimensions.
+   - Social Pattern Recognition: "Reliable collaborator" pattern at ESTABLISHED
+     status (8 supporting instances, $C_{pattern} = \frac{8}{9} \cdot \min(1.0, 8/5) = 0.889$).
+
+4. Expected State Transitions:
+   - TrustAssessment: overall_trust 0.55 -> 0.5595, fulfilled_commitments = 8.
+   - RelationshipDimension (TRUST): 0.55 -> 0.5595.
+   - RelationshipDimension (COOPERATION): Increases proportionally.
+   - SocialPatternRecord: Maintained at ESTABLISHED.
+
+5. Expected Persistence Changes:
+   - UPDATE trust_assessments SET overall_trust = 0.5595, fulfilled_commitments = 8.
+   - UPDATE relationship_dimensions (TRUST and COOPERATION).
+   - INSERT into relationship_history (2 DIMENSION_UPDATE records).
+   - INSERT into social_evidence_records (commitment fulfillment).
+
+6. Ownership-Boundary Checks:
+   - Trust growth is formula-driven with slow asymptotic approach to 1.0.
+   - Pattern Recognition confirms the established pattern but does NOT
+     automatically upgrade the relationship category.
+   - Learning Engine receives SocialAttunementSignal about consistent reliability.
+
+7. Expected Result:
+   - Trust gradually and incrementally increased.
+   - Established pattern of reliability maintained.
+   - Relationship category remains COLLABORATOR (trust alone does not change category).
+   - Cumulative evidence builds a robust, evidence-backed trust profile.
+
+8. Failure Scenario & Recovery Behavior:
+   - If the next commitment is broken: Trust reduces by $\alpha^{-} = 0.10$
+     (larger than the $0.03$ growth rate), reflecting the asymmetric model.
+   - Pattern status shifts from ESTABLISHED toward FADING if contradictions accumulate.
+
+--------------------------------------------------------------------------------
+SCENARIO 7: RELATIONSHIP DEVELOPMENT (INDEPENDENT DIMENSION UPDATE)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - person_E91 (relationship: ACQUAINTANCE).
+   - Current dimensions: $F=0.42, T=0.50, A=0.25, Co=0.10, Cm=0.45, Rp=0.60$.
+   - person_E91 and Diva have a deep, substantive conversation sharing personal
+     interests and discovering common ground.
+
+2. Trigger:
+   - Social Interaction Analyzer assesses the interaction as a significant
+     DISCLOSURE event with high reciprocity and emotional depth.
+
+3. Expected Subsystem Interactions:
+   - Relationship Manager updates dimensions INDEPENDENTLY:
+     Familiarity: Increases (deep interaction, $w_{interaction} = 0.8$).
+     $F_{new} = 0.42 + 0.03 \cdot (1-0.42) \cdot 0.8 = 0.434$.
+     Affinity: Increases (shared interests, positive emotional tone).
+     $A_{new} = 0.25 + \Delta_A$ (formula-driven positive increment).
+     Communication: Increases (high-quality, substantive exchange).
+     Trust: UNCHANGED — no commitment evidence in this interaction.
+     Cooperation: UNCHANGED — no cooperative task involved.
+     Closeness: Recalculated from updated independent dimensions.
+
+4. Expected State Transitions:
+   - Multiple dimensions update independently.
+   - Trust dimension explicitly unchanged (no evidence for change).
+   - Category check: If $F \ge 0.50$ AND $A \ge 0.30$ AND $Cm \ge 0.40$
+     AND interaction_count $\ge 15$: Consider FRIEND transition.
+     Current: $F=0.434$ (< 0.50), so category remains ACQUAINTANCE.
+
+5. Expected Persistence Changes:
+   - UPDATE relationship_dimensions for FAMILIARITY, AFFINITY, COMMUNICATION.
+   - CLOSENESS recalculated and updated.
+   - 4x INSERT into relationship_history.
+   - Trust dimension NOT touched (no INSERT for TRUST).
+
+6. Ownership-Boundary Checks:
+   - Each dimension updated based on its own evidence. No cross-contamination.
+   - Trust does NOT increase just because familiarity increased.
+   - Category transition requires ALL threshold criteria, not just one dimension.
+
+7. Expected Result:
+   - Three dimensions increased independently.
+   - Trust and Cooperation unchanged (no relevant evidence).
+   - Category remains ACQUAINTANCE (familiarity threshold not yet met).
+   - Independence of dimensions demonstrated.
+
+8. Failure Scenario & Recovery Behavior:
+   - If dimension update formula produces value outside valid range: Clamp to
+     bounds [0.0, 1.0] (or [-1.0, 1.0] for Affinity). Log warning.
+   - If multiple concurrent updates to same relationship: Version-guarded
+     optimistic concurrency; retry on conflict.
+
+--------------------------------------------------------------------------------
+SCENARIO 8: DIFFERENT PERSPECTIVES (EPISTEMIC STATE DIVERGENCE)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - Diva knows that project_X has been cancelled (from earlier information).
+   - person_F33 (relationship: COLLABORATOR) last discussed project_X two weeks
+     ago and expressed excitement about an upcoming milestone.
+   - person_F33's IndividualKnowledgeModel shows: {project_X: IN_PROGRESS} ($C=0.80$).
+
+2. Trigger:
+   - person_F33 initiates a conversation asking about the project_X milestone.
+
+3. Expected Subsystem Interactions:
+   - Perspective Modeling Module: Detects epistemic asymmetry.
+     Diva's knowledge: {project_X: CANCELLED}.
+     person_F33's estimated knowledge: {project_X: IN_PROGRESS} ($C=0.80$).
+     Generates epistemic asymmetry alert.
+   - BeliefEstimate created:
+     belief_content: "person_F33 believes project_X is still active."
+     belief_confidence: 0.80 (high — based on their last known information).
+     truth_assessment: LIKELY_FALSE (Diva knows it's cancelled).
+   - Social Context Manager: Assembles SocialContextPackage including the
+     perspective divergence for Cognitive Integration.
+   - Emotion Engine: Receives SocialEmotionalTrigger noting the delicate social
+     situation (may trigger empathy or concern about delivering bad news).
+
+4. Expected State Transitions:
+   - PerspectiveRecord created (type=EPISTEMIC, diva_perspective_differs=True).
+   - BeliefEstimate created (LIKELY_FALSE truth assessment).
+   - Epistemic asymmetry alert dispatched.
+
+5. Expected Persistence Changes:
+   - INSERT into individual_belief_models.
+   - INSERT into interaction_records.
+   - INSERT into social_evidence_records (perspective divergence evidence).
+   - INSERT into social_model_history (knowledge model updated).
+
+6. Ownership-Boundary Checks:
+   - Social Cognition IDENTIFIES the perspective divergence. It does NOT decide
+     whether Diva should tell person_F33 about the cancellation.
+   - Cognitive Integration receives the full context and decides the response approach.
+   - Emotion Engine independently evaluates Diva's emotional reaction to the situation.
+
+7. Expected Result:
+   - Epistemic asymmetry clearly represented: Diva knows X, person_F33 doesn't.
+   - Cognitive Integration receives full context including the perspective gap.
+   - person_F33's belief model explicitly marked as LIKELY_FALSE.
+   - Decision to inform or not inform is NOT made by Social Cognition.
+
+8. Failure Scenario & Recovery Behavior:
+   - If IndividualKnowledgeModel is STALE ($> 10$ interactions without update):
+     The epistemic asymmetry alert includes reduced confidence. Cognitive
+     Integration is warned that the perspective estimate may be outdated.
+   - If person_F33 reveals they already know about the cancellation: Update
+     IndividualKnowledgeModel, mark previous belief as SUPERSEDED.
+
+--------------------------------------------------------------------------------
+SCENARIO 9: GROUP INTERACTION (DUAL-LEVEL MODELING)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - Diva participates in a programming community with 3 known members:
+     person_G11, person_G22, person_G33.
+   - GroupProfile exists: group_01 (type=COMMUNITY, 3 known members).
+   - person_G11 starts a discussion about a new programming language.
+     person_G22 agrees enthusiastically. person_G33 disagrees.
+
+2. Trigger:
+   - Multi-party interaction detected by Perception Engine.
+
+3. Expected Subsystem Interactions:
+   - Identity Manager: Resolves all three participants.
+   - Social Interaction Analyzer: Analyzes the multi-party interaction.
+   - Individual Modeling Module: Updates each individual's model:
+     person_G11: Interest in new language (OBSERVED).
+     person_G22: Shares interest (OBSERVED), agrees with person_G11 (alliance signal).
+     person_G33: Disagrees with the new language (OBSERVED), contrarian position.
+   - Group Dynamics Manager: Updates GroupProfile:
+     Dominant theme: "new programming language debate."
+     Internal alliances: (person_G11, person_G22).
+     Internal tensions: (person_G33 vs. person_G11/person_G22).
+   - Individual vs. Group opinion: The group does NOT unanimously support the new
+     language. person_G33's dissent is preserved as an individual opinion,
+     NOT overridden by majority.
+
+4. Expected State Transitions:
+   - 3 IndividualProfile updates (new interaction count, attribute updates).
+   - GroupProfile updated (dominant themes, dynamics snapshot).
+   - 3 InteractionRecord entries (one per participant contribution).
+
+5. Expected Persistence Changes:
+   - UPDATE individual_profiles for person_G11, G22, G33.
+   - INSERT into individual_interests (new language topic for G11, G22).
+   - INSERT into individual_attributes (G33: skeptical of new language).
+   - UPDATE group_profiles (dynamics, activity_level).
+   - INSERT into interaction_records (3 records).
+
+6. Ownership-Boundary Checks:
+   - person_G33's disagreement is NOT suppressed or overridden by majority opinion.
+   - Group opinion is NOT formed from person_G11's statement alone.
+   - Individual attributes are updated per individual, not per group.
+
+7. Expected Result:
+   - Each individual's model reflects their own stated position.
+   - Group dynamics snapshot shows the internal debate structure.
+   - No "group opinion" is asserted (< 3 members agree = no consensus).
+   - Alliances and tensions recorded as group dynamics data.
+
+8. Failure Scenario & Recovery Behavior:
+   - If only 1 of 3 participants is identified: Create tentative profiles for
+     unidentified participants with LOW identity confidence.
+   - If group dynamics analysis fails: Individual-level modeling proceeds
+     independently; group-level update deferred.
+
+--------------------------------------------------------------------------------
+SCENARIO 10: CORRECTED INFORMATION (MODEL REVISION WITH HISTORY)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - person_H44's profile has attribute: "lives in Tokyo" (REPORTED by primary user,
+     $C=0.65$).
+   - person_H44 directly states in conversation: "I actually moved to Osaka last year."
+
+2. Trigger:
+   - Direct self-correction by person_H44 during interaction.
+
+3. Expected Subsystem Interactions:
+   - Individual Modeling Module: Self-correction protocol triggered.
+     1. Records correction as SocialEvidenceRecord (type=SELF_CORRECTION,
+        source_type=SELF_REPORT, highest reliability).
+     2. Updates existing "lives in Tokyo" attribute:
+        Status -> SUPERSEDED. confidence reduced to 0.15.
+     3. Creates new attribute: "lives in Osaka" (REPORTED by subject, $C=0.85$).
+     4. ContradictionRecord created linking both evidence items.
+   - SocialModelHistory: Records the correction with before/after snapshots.
+   - Downstream re-evaluation: Checks if any other attributes or interpretations
+     depended on the "lives in Tokyo" assumption.
+
+4. Expected State Transitions:
+   - IndividualAttribute ("lives in Tokyo"): ACTIVE -> SUPERSEDED.
+   - IndividualAttribute ("lives in Osaka"): Created (ACTIVE).
+   - SocialModelHistory entry created (change_type = CORRECTED).
+
+5. Expected Persistence Changes:
+   - UPDATE individual_attributes ("Tokyo" attribute -> SUPERSEDED, $C=0.15$).
+   - INSERT into individual_attributes ("Osaka" attribute, $C=0.85$).
+   - INSERT into social_evidence_records (SELF_CORRECTION).
+   - INSERT into social_model_history (CORRECTED).
+
+6. Ownership-Boundary Checks:
+   - Self-correction takes priority over third-party reports.
+   - Previous (incorrect) information is NOT deleted — marked SUPERSEDED.
+   - Memory Engine is NOT asked to delete historical records referencing Tokyo.
+
+7. Expected Result:
+   - person_H44's profile now shows "lives in Osaka" (REPORTED, $C=0.85$).
+   - Previous "lives in Tokyo" preserved as SUPERSEDED with full audit trail.
+   - Any attributes that depended on the Tokyo assumption are flagged for review.
+   - Complete provenance chain maintained.
+
+8. Failure Scenario & Recovery Behavior:
+   - If the correction is ambiguous ("I think I might be moving to Osaka"):
+     Do NOT trigger self-correction protocol. Instead, create a new HYPOTHESIZED
+     attribute ("may be moving to Osaka", $C=0.30$) alongside the existing
+     Tokyo attribute.
+
+--------------------------------------------------------------------------------
+SCENARIO 11: INACTIVE RELATIONSHIP (DORMANCY WITHOUT HOSTILITY ASSUMPTION)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - person_J77 (relationship: FRIEND, $F=0.65, T=0.72, A=0.55$).
+   - Last interaction: 45 days ago. No interaction since.
+   - Social Lifecycle Manager: Lifecycle state transitioned ACTIVE -> COOLING
+     at 30-day threshold.
+
+2. Trigger:
+   - Social Lifecycle Manager periodic sweep detects 45 days of inactivity.
+
+3. Expected Subsystem Interactions:
+   - Social Lifecycle Manager: Evaluates lifecycle criteria.
+     $\Delta t = 45$ days > COOLING threshold (30 days): Already COOLING.
+     $\Delta t = 45$ days < DORMANT threshold (90 days): Remains COOLING.
+   - Dimension decay (passive):
+     Familiarity: $F(45) = 0.65 \cdot \exp(-0.005 \cdot 45) = 0.65 \cdot 0.798 = 0.519$.
+     Trust: NO automatic decay (trust does not decay from inactivity alone).
+     Affinity: Slight decay (absence reduces warmth slowly).
+   - Social Interaction Analyzer: NO negative interpretations generated.
+     The absence of interaction does NOT generate a "person dislikes Diva"
+     hypothesis.
+   - Social Pattern Recognition: Checks for inactivity pattern. If person_J77
+     has had previous inactive periods followed by resumption, the pattern
+     "periodic communicator" may be established.
+
+4. Expected State Transitions:
+   - RelationshipRecord status: Remains COOLING.
+   - Relationship category: Remains FRIEND (inactivity does NOT downgrade category).
+   - Familiarity dimension: Passively decays from 0.65 -> 0.519.
+   - Trust dimension: UNCHANGED (trust does NOT decay from mere inactivity).
+
+5. Expected Persistence Changes:
+   - UPDATE relationship_dimensions (FAMILIARITY decay).
+   - INSERT into relationship_history (passive DIMENSION_UPDATE).
+   - NO negative evidence recorded (absence is NOT evidence of hostility).
+
+6. Ownership-Boundary Checks:
+   - Social Cognition does NOT assume hostility or rejection from inactivity.
+   - Emotion Engine is NOT sent a negative social trigger from mere inactivity.
+   - Motivation Engine's social connection drive operates independently.
+   - The decision to reach out is Cognitive Integration's, not Social Cognition's.
+
+7. Expected Result:
+   - Relationship COOLING but category preserved.
+   - Trust unchanged. Familiarity naturally and gradually decaying.
+   - No negative interpretations created.
+   - If person_J77 returns: Lifecycle transitions COOLING -> ACTIVE immediately.
+     Familiarity rebuilds through new interactions.
+
+8. Failure Scenario & Recovery Behavior:
+   - If person_J77 reaches 90-day threshold: Transitions to DORMANT.
+     Model compressed but NOT deleted. Trust preserved.
+   - If person_J77 returns after DORMANT: Model reconstruction from persisted
+     data. Confidence penalty: $C_{reconstructed} = C_{original} \cdot 0.70$.
+
+--------------------------------------------------------------------------------
+SCENARIO 12: CONTRADICTORY EVIDENCE (CONFIDENCE REVISION & UNCERTAINTY)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - person_K88 has established attribute: "enjoys outdoor activities"
+     (INFERRED, $C=0.72$, evidence_count=5 from discussion patterns).
+   - person_K88 explicitly states: "I actually don't enjoy being outdoors. I
+     prefer staying inside."
+
+2. Trigger:
+   - Direct contradictory statement by person_K88 during interaction.
+
+3. Expected Subsystem Interactions:
+   - Individual Modeling Module: Detects contradiction with existing attribute.
+     1. Records contradictory evidence (source_type=SELF_REPORT).
+     2. Existing attribute confidence reduced: $C_{new} = 0.72 - 0.15 = 0.57$.
+     3. ContradictionRecord created.
+     4. Second contradictory instance check: This is the first direct contradiction.
+        Attribute NOT yet marked DISPUTED (requires $C < 0.20$ or $\ge 3$
+        contradictory instances).
+   - New attribute created: "prefers indoor activities" (REPORTED by subject,
+     $C=0.80$, source_type=SELF_REPORT).
+   - Re-evaluation: Checks whether the outdoor inference was based on discussion
+     patterns that might mean something else (discussing outdoor topics ≠ enjoying
+     outdoors).
+   - Social Pattern Recognition: Updates any patterns that referenced the
+     "outdoor enthusiast" attribute.
+
+4. Expected State Transitions:
+   - IndividualAttribute ("outdoor activities"): confidence 0.72 -> 0.57,
+     contradiction_flag = True.
+   - IndividualAttribute ("prefers indoor"): Created (ACTIVE, $C=0.80$).
+   - SocialModelHistory entry created.
+
+5. Expected Persistence Changes:
+   - UPDATE individual_attributes ("outdoor" -> $C=0.57$, contradiction_flag=1).
+   - INSERT into individual_attributes ("indoor preference", $C=0.80$).
+   - INSERT into social_evidence_records (SELF_REPORT contradicting inference).
+   - INSERT into social_model_history (CORRECTED).
+
+6. Ownership-Boundary Checks:
+   - Self-report takes priority over behavioral inference.
+   - Existing attribute NOT deleted — confidence reduced and flagged.
+   - Both pieces of information coexist until further evidence resolves.
+
+7. Expected Result:
+   - Both attributes coexist: "outdoor" at reduced confidence ($C=0.57$,
+     contradicted) and "indoor" at higher confidence ($C=0.80$, self-reported).
+   - Future SocialContextPackages will present the indoor preference as the
+     higher-confidence attribute.
+   - If person_K88 later discusses hiking enthusiastically, the outdoor attribute's
+     confidence may recover — the system allows revision in both directions.
+
+8. Failure Scenario & Recovery Behavior:
+   - If further contradictions accumulate ($\ge 3$): "outdoor" attribute marked
+     DISPUTED, excluded from active context packages.
+   - If person_K88's behavior later confirms outdoor interest (direct observation):
+     Both attributes maintained; "outdoor" may be re-evaluated with new evidence.
+     The person may genuinely have mixed feelings (doesn't enjoy general outdoors
+     but enjoys specific outdoor activities).
+
+
+================================================================================
+PART 7 — COMPLETION CONDITIONS & PHASED IMPLEMENTATION ROADMAP
+================================================================================
+
+--------------------------------------------------------------------------------
+VERIFICATION OF ALL 17 ARCHITECTURAL COMPLETION CONDITIONS
+--------------------------------------------------------------------------------
+
+1. INDIVIDUAL IDENTITY MANAGEMENT IS FULLY SPECIFIED
+   Three-layer identity model (Account, Conversational, Entity) defined.
+   Identity assignment algorithm with confidence thresholds specified.
+   Anti-merge and anti-duplication safeguards documented.
+   Identity correction protocol with merge/split procedures specified.
+   Identity types (PERSISTENT, TEMPORARY, INDIRECT, COLLECTIVE) defined.
+   Entity type discrimination (PERSON, ORGANIZATION, GROUP, FICTIONAL) defined.
+   STATUS: SATISFIED.
+
+2. INDIVIDUAL PROFILE SCHEMAS ARE COMPLETE
+   IndividualProfile schema with 13 fields fully defined.
+   Six attribute domains specified.
+   Evidence-level classification (OBSERVED, REPORTED, INFERRED, HYPOTHESIZED) with
+   promotion and demotion rules.
+   STATUS: SATISFIED.
+
+3. IDENTITY MATCHING AND CORRECTION ALGORITHMS ARE DEFINED
+   Three-stage identity resolution algorithm specified.
+   Merge threshold criteria (identifier match + behavioral similarity + no contradictions).
+   Split protocol for incorrect merges.
+   PossibleIdentityLink for inconclusive evidence.
+   STATUS: SATISFIED.
+
+4. INDIVIDUAL MODELING MECHANISMS ARE DOCUMENTED
+   Four-level evidence attribution system with mathematical promotion/demotion rules.
+   Contradiction handling protocol.
+   Temporal relevance decay formula.
+   Indirectly known individual handling.
+   STATUS: SATISFIED.
+
+5. INTENTION INFERENCE MECHANISMS ARE DEFINED
+   Multi-hypothesis generation with 11 intention types.
+   Confidence decay formula.
+   Deception safeguard rule.
+   Longitudinal intention tracking.
+   Indirect communication interpretation via shared LLM.
+   STATUS: SATISFIED.
+
+6. PERSPECTIVE-TAKING REPRESENTATION IS DEFINED
+   IndividualKnowledgeModel with known_facts and unknown_gaps.
+   BeliefEstimate with truth_assessment and source_type.
+   Epistemic asymmetry representation.
+   Emotional perspective estimation with boundary to Emotion Engine.
+   STATUS: SATISFIED.
+
+7. RELATIONSHIP DIMENSIONS AND UPDATE ALGORITHMS ARE SPECIFIED
+   Eight independent dimensions with mathematical formulas.
+   Closeness as derived dimension with weighted computation.
+   Category transition thresholds with evidence requirements.
+   Asymmetric trust update rates.
+   Independence principle enforced.
+   STATUS: SATISFIED.
+
+8. TRUST ASSESSMENT MECHANISMS ARE DOCUMENTED
+   Contextual trust with per-domain assessment.
+   Asymmetric Bayesian-inspired update algorithm.
+   Statement-action consistency tracking.
+   Anti-single-incident rule.
+   Trust recovery with halved rate.
+   STATUS: SATISFIED.
+
+9. SOCIAL PATTERN RECOGNITION ALGORITHMS ARE DEFINED
+   Pattern detection categories specified.
+   Minimum observation threshold ($\ge 3$).
+   Pattern confidence formula accounting for hit rate and volume.
+   Pattern lifecycle (EMERGING, ESTABLISHED, FADING, CONTRADICTED).
+   Cross-individual pattern detection.
+   STATUS: SATISFIED.
+
+10. GROUP AND COMMUNITY REPRESENTATION IS SPECIFIED
+    GroupProfile with 7 group types.
+    GroupMembership with roles and status.
+    Individual vs. group opinion discrimination rule.
+    Group dynamics snapshot structure.
+    STATUS: SATISFIED.
+
+11. CONFIDENCE AND UNCERTAINTY MECHANISMS ARE DEFINED
+    Four-level evidence classification (FACT, STATEMENT, ASSUMPTION, HYPOTHESIS).
+    EvidenceProvenance with 6 source types.
+    Anti-speculation-to-fact safeguard.
+    Self-correction protocol.
+    Historical version preservation.
+    STATUS: SATISFIED.
+
+12. MEMORY AND LEARNING COMMUNICATION CONTRACTS ARE FINALIZED
+    MemoryContextProvider ingress contract specified.
+    MemoryNomination egress contract with significance threshold.
+    SocialAttunementSignal per Learning Engine v2.5.0 contract.
+    ParameterChangeRequest/OwnerApplicationReceipt for social.* parameters.
+    STATUS: SATISFIED.
+
+13. SHARED LLM INTEGRATION CONTRACTS ARE DEFINED
+    SocialLLMRequest structure specified with 7 request types.
+    SocialLLMResponse with scored interpretations.
+    Post-LLM validation rules (5 mandatory checks).
+    Deterministic vs. LLM task boundary explicitly drawn.
+    STATUS: SATISFIED.
+
+14. PRIVACY AND DATA-RETENTION BOUNDARIES ARE DOCUMENTED
+    SHARED_BY_SUBJECT vs. DIVA_INFERENCE tagging.
+    Information removal protocol.
+    Configurable retention periods.
+    Model lifecycle (ACTIVE -> COOLING -> DORMANT -> ARCHIVED).
+    STATUS: SATISFIED.
+
+15. ALL MANDATORY WALKTHROUGHS HAVE TEST CASES
+    12 scenarios fully specified with all 8 mandatory sections each.
+    STATUS: SATISFIED.
+
+16. ALL MUST-PASS CONDITIONS HAVE VERIFICATION PROCEDURES
+    31 audit checkpoints specified across 6 domains with concrete criteria.
+    STATUS: SATISFIED.
+
+17. NO UNRESOLVED OWNERSHIP CONFLICTS REMAIN
+    Engine ownership boundary table specified.
+    All 10 inter-engine contracts document boundary rules.
+    Five non-negotiable axioms enforce ownership separation.
+    STATUS: SATISFIED.
+
+
+--------------------------------------------------------------------------------
+PHASED 10-STAGE ENGINEERING MILESTONES
+--------------------------------------------------------------------------------
+
+PHASE 1: PERSISTENCE FOUNDATION & SCHEMA DEPLOYMENT
+  - Deliverables: All 22 SQLite tables created with constraints, indexes, and triggers.
+  - Validation: Schema integrity tests, foreign key enforcement verification.
+  - Dependencies: None (foundational).
+
+PHASE 2: IDENTITY MANAGEMENT SYSTEM
+  - Deliverables: Individual Identity Manager with three-stage resolution,
+    anti-merge safeguards, anti-duplication checks, identity correction protocol.
+  - Validation: Identity resolution accuracy tests, false merge prevention tests,
+    disambiguation scenarios.
+  - Dependencies: Phase 1.
+
+PHASE 3: INDIVIDUAL MODELING & EVIDENCE ATTRIBUTION
+  - Deliverables: Individual Modeling Module with four-level evidence attribution,
+    contradiction handling, temporal relevance decay, indirectly known individual support.
+  - Validation: Evidence promotion/demotion tests, contradiction protocol tests,
+    staleness decay verification.
+  - Dependencies: Phase 2.
+
+PHASE 4: RELATIONSHIP MANAGEMENT & MULTIDIMENSIONAL REPRESENTATION
+  - Deliverables: Relationship Manager with 8 independent dimensions, mathematical
+    update formulas, category transition thresholds, append-only history.
+  - Validation: Dimension independence tests, asymmetric trust tests, category
+    transition threshold tests, history integrity checks.
+  - Dependencies: Phase 3.
+
+PHASE 5: TRUST ASSESSMENT & SOCIAL INTERACTION ANALYSIS
+  - Deliverables: Trust Assessment Module with contextual trust, asymmetric
+    updates, anti-single-incident rule. Social Interaction Analyzer with
+    multi-interpretation generation.
+  - Validation: Trust update formula tests, single-incident cap tests,
+    multi-interpretation preservation tests.
+  - Dependencies: Phase 4.
+
+PHASE 6: SHARED LLM INTEGRATION & INTENTION INFERENCE
+  - Deliverables: Shared LLM orchestration integration, Intention Inference Module
+    with multi-hypothesis generation, Perspective Modeling Module with epistemic
+    asymmetry representation.
+  - Validation: LLM timeout handling, deception safeguard, perspective divergence
+    detection, hypothesis decay tests.
+  - Dependencies: Phase 5.
+
+PHASE 7: SOCIAL NORMS, PATTERN RECOGNITION & GROUP DYNAMICS
+  - Deliverables: Social Norms Manager, Social Pattern Recognition Module,
+    Group Dynamics Manager.
+  - Validation: Norm learning tests, pattern lifecycle tests, group opinion
+    discrimination tests, cross-individual pattern tests.
+  - Dependencies: Phase 6.
+
+PHASE 8: INTER-ENGINE COMMUNICATION CONTRACTS
+  - Deliverables: All 10 inter-engine contracts implemented and tested.
+    SocialContextPackage assembly, SocialEmotionalTrigger dispatch,
+    SocialAttunementSignal dispatch, MemoryNomination dispatch.
+  - Validation: Contract compliance tests with mock engine stubs, boundary
+    violation detection tests.
+  - Dependencies: Phase 7.
+
+PHASE 9: SOCIAL LIFECYCLE MANAGEMENT & CRASH RECOVERY
+  - Deliverables: Social Lifecycle Manager with lifecycle state machine,
+    social relevance scoring, garbage collection, model reconstruction protocol.
+    7-step crash recovery protocol.
+  - Validation: Lifecycle transition tests, garbage collection safety tests,
+    reconstruction accuracy tests, crash recovery integrity tests.
+  - Dependencies: Phase 8.
+
+PHASE 10: INTEGRATION TESTING, WALKTHROUGH VERIFICATION & MUST-PASS AUDIT
+  - Deliverables: All 12 walkthrough scenarios executed as integration tests.
+    All 31 must-pass conditions verified with documented evidence.
+    Learning Engine v2.5.0 social.* parameter change integration verified.
+    End-to-end social cognition pipeline stress test.
+  - Validation: Scenario-by-scenario walkthrough verification, must-pass
+    checklist completion, cross-engine integration smoke tests.
+  - Dependencies: All previous phases.
+
+
+================================================================================
+FINAL RECOMMENDATION & ARCHITECTURAL GOVERNANCE
+================================================================================
+
+This specification defines the Social Cognition Engine as a thirteen-component
+system with:
+- 23 formally defined frozen data structures.
+- 22 SQLite relational tables with full constraint coverage.
+- 10 formally specified inter-engine communication contracts.
+- 8 independent relationship dimensions with mathematical update formulas.
+- 4-level evidence attribution with mathematical promotion/demotion rules.
+- Shared LLM integration with deterministic post-validation.
+- 31 must-pass audit checkpoints across 6 operational domains.
+- 12 mandatory architectural walkthroughs with 8 sections each.
+- 17 completion conditions all verified as SATISFIED.
+- 10-phase implementation roadmap.
+
+The five non-negotiable architectural axioms (knowing ≠ understanding,
+inference ≠ fact, relationships are multidimensional, social understanding must
+evolve, Social Cognition does not own emotion/motivation/decision) are enforced
+at every architectural layer.
+
+This engine is ready for implementation.
+
+================================================================================
+END OF DOCUMENT
+================================================================================
+

@@ -1,0 +1,1299 @@
+================================================================================
+DIVA COGNITIVE ARCHITECTURE — ENGINE 8: LEARNING ENGINE
+ARCHITECTURAL IMPLEMENTATION PLAN & SPECIFICATION CORRECTION
+Document Version: 2.5.0 (Production Master · Architectural Specification)
+Target Framework: Python 3.12+ (Asyncio) / Deeply Frozen Data Models / SQLite WAL
+Status: Ready for Implementation Audit — All 130 Verification Checkpoints Defined
+Document Scope: Strictly Non-Code Architecture Plan & Comprehensive Relational Specification
+================================================================================
+
+TABLE OF CONTENTS
+--------------------------------------------------------------------------------
+PART 1 — REQUIRED ARCHITECTURAL CORRECTIONS
+  A. Seven Core Modules and Their Explicit Responsibilities
+    A1. Boundary Between Experience Evaluation and Feedback Service
+    A2. Learning Assessment as the Exclusive Proposal Decision Authority
+    A3. Development Coordination Protocol and Ownership Protection
+    A4. Learning Lifecycle Manager as Coordinator of Learning Records
+  B. Learning Categories and Ownership Boundaries
+    B1. Preservation of the Three Canonical Learning Categories
+    B2. Parameter Learning Ownership and Proposal Contracts
+    B3. Capability Learning Ownership and Subsystem Development
+    B4. Knowledge Learning Ownership and Memory Engine Authority
+    B5. Protected Foundational Persona vs. Adaptable Developed Personality
+  C. Experience Evaluation and Learning Signals
+    C1. Standardized LearningContribution Contract Across All Engines
+    C2. Separation of Feedback, Experience, Contribution, and Proposal
+    C3. Multi-Factor Experience Significance Formulation
+    C4. Decoupling Evidence Valence from Proposed Change Direction
+  D. Experience Point Manager and Evidence Accumulation
+    D1. Independent Evidence Balances Per Learning Dimension
+    D2. Formal LearningDimensionRegistry and Ownership Coverage
+    D3. Separation of Evidence Decay from Parameter/State Decay
+    D4. Transactional Consistency of Running Evidence Balances
+  E. Pattern Recognition and Statistical Assessment
+    E1. Operational Definition of Recurring Patterns and Classifications
+    E2. Boundary Between Pattern Detection and Learning Assessment
+    E3. Statistical Assumptions and Calibration of CUSUM
+    E4. Mathematically Rigorous Binomial Testing and Sequential Control
+    E5. Platt Calibration Training, Validation, and Leakage Prevention
+    E6. LearningAssessmentPolicy Per Learning Dimension
+  F. Learning Proposals and Development Coordination
+    F1. Explicit Current and Target Parameter Values with Version Guards
+    F2. Gradual vs. Exceptional Change Policies and Magnitude Bounds
+    F3. Unique Dispatch Attempt Identifiers and Retry Tracking
+    F4. Thirteen-Stage Proposal Lifecycle and Distinct Acknowledgements
+    F5. Structured Owner Application Reporting Contracts
+    F6. Post-Change Verification Planning and Observation Windows
+    F7. Owner-Directed Rollback and Regression Handling Protocols
+  G. Internal Learning Sources and Cross-Engine Integration
+    G1. Formal Thought Engine Reflection and Error Signal Integration
+    G2. Standardized Contribution Contracts for All Adjacent Engines
+    G3. Foundational Persona Protection Policies and Sensitive Dimensions
+PART 2 — TECHNICAL AND DATA-INTEGRITY CORRECTIONS
+  H. Immutable Ledger and Database Correctness
+    H1. True Defensive-Copy Registry Immutability and Recursive Freezing
+    H2. Complete Database-Level Append-Only Ledger Triggers
+    H3. Full Contextual Ledger Partitioning (Including Situational Mode)
+    H4. Strongly Typed, Structured Owner Acknowledgement Records
+    H5. Deterministic Ledger Balance Reconciliation and Rebuild Protocols
+    H6. Idempotent Contribution Ingestion and De-duplication
+PART 3 — STATISTICAL, EVIDENCE, AND GENERALIZATION CORRECTIONS
+  I. Evidence Independence, Decay, and Contextual Generalization
+    I1. Correlated Evidence Discounting and Lineage Deduplication
+    I2. Multi-Context Generalization Assessment Protocol
+    I3. Statistical Reliability, Calibration, and Safety Summary
+PART 4 — RECOMMENDED LEARNING ENGINE DATA DICTIONARY
+  Detailed Schemas for All 17 Core Models
+PART 5 — COMPLETE LEARNING ENGINE MASTER CHECKLIST (130 AUDIT ITEMS)
+  Sections A through J Comprehensive Verification Matrix
+PART 6 — RECOMMENDED IMPLEMENTATION ORDER & ACCEPTANCE SCENARIOS
+  Phased 10-Stage Implementation Roadmap
+  All 14 Mandatory End-to-End Acceptance Scenarios
+PART 7 — FINAL ARCHITECTURAL BOUNDARIES & GOVERNING RULES
+
+
+================================================================================
+PART 1 — REQUIRED ARCHITECTURAL CORRECTIONS
+================================================================================
+
+--------------------------------------------------------------------------------
+A. SEVEN CORE MODULES AND THEIR EXPLICIT RESPONSIBILITIES
+--------------------------------------------------------------------------------
+
+The Learning Engine architecture preserves the seven original logical modules. Under no circumstance are these modules merged into a monolithic "learning agent." Each module maintains a strictly bounded functional responsibility:
+
+A1. FORMALIZE THE BOUNDARY BETWEEN EXPERIENCE EVALUATION AND FEEDBACK SERVICE
+Problem Addressed: Feedback reception and experience interpretation previously overlapped, risking unvalidated external signals directly affecting learning balances.
+Architectural Specification:
+The roles of Feedback Service and Experience Evaluation are strictly demarcated:
+
+1. Feedback Service (`FeedbackService`):
+   - Responsibility: Passive, protocol-level boundary ingress. Receives raw feedback events, environmental reports, and inter-engine signals.
+   - Operations:
+     * Validates message schema, structural integrity, and cryptographic/system origin signatures.
+     * Enforces source authentication and validates that the emitting engine has authority to report on the referenced event.
+     * Performs idempotency checks to intercept duplicate network or bus transmissions.
+     * Normalizes raw payloads into standard internal `LearningSignal` envelopes.
+   - Invariant: The Feedback Service NEVER evaluates whether an experience occurred, whether it was significant, or whether Diva learned something. It is an ingress validation and normalization gateway only.
+
+2. Experience Evaluation (`ExperienceEvaluator`):
+   - Responsibility: Active cognitive and context evaluation. Analyzes normalized signals to determine what actually occurred and what it means for Diva's cognitive baseline.
+   - Operations:
+     * Correlates the signal with active working context, episodic memories, and environmental ground truth.
+     * Computes the objective outcome gap: $\Delta_{\text{outcome}} = \text{ObservedOutcome} - \text{ExpectedOutcome}$.
+     * Evaluates multi-factor experience significance (magnitude, novelty, context, and potential consequence).
+     * Discards trivial or ungrounded noise.
+     * Formulates validated, structured `LearningContribution` instances.
+   - Invariant: Experience Evaluation determines the cognitive weight of an individual event, but does NOT modify balances, detect multi-event trends, or authorize parameter changes.
+
+A2. DEFINE LEARNING ASSESSMENT AS THE EXCLUSIVE PROPOSAL DECISION AUTHORITY
+Problem Addressed: Pattern Recognition or Experience Evaluation previously attempted to propose parameter mutations directly.
+Architectural Specification:
+The decision-making authority for all learning proposals is centralized exclusively in `LearningAssessment`:
+- Division of Epistemic Labor:
+  * Experience Evaluation evaluates *individual events*.
+  * Pattern Recognition detects *recurring trends across events*.
+  * Learning Assessment decides *whether accumulated evidence warrants an actual change*.
+- Mandatory Assessment Criteria:
+  Before approving any learning proposal, Learning Assessment must formally evaluate:
+  1. Evidence Sufficiency: Does the accumulated evidence exceed the dimension's minimum sample size ($N \ge N_{\text{min}}$)?
+  2. Evidence Independence: Are the contributing experiences causally independent, or do they share underlying root causes?
+  3. Pattern Recurrence: Has the behavioral tendency persisted across multiple temporal windows and context variations?
+  4. Change Justification: Is the proposed modification mathematically warranted, or is it explainable by baseline noise?
+  5. Temporal Freshness: Has sufficient evidence arrived within the active recency window, or is the evidence stale?
+  6. Safety & Boundedness: Does the proposed adjustment comply with hard systemic safety constraints and parameter envelopes?
+  7. Expected Utility: Is the change likely to measurably improve future task accuracy, emotional stability, or energy efficiency?
+- Output Contract: Learning Assessment produces a structured `LearningAssessmentDecision` (Approved, Insufficient Evidence, Contradicted, or Unsafe), accompanied by full statistical justification.
+
+A3. FORMALIZE DEVELOPMENT COORDINATION
+Problem Addressed: Development Coordination must not become an alternative owner that directly mutates other engines' internal states.
+Architectural Specification:
+`DevelopmentCoordinator` acts solely as an owner-directed orchestration dispatcher.
+The 8-Step Coordination Protocol:
+1. Receive Approved Proposal: Ingests verified `LearningProposal` from Learning Assessment.
+2. Resolve Owning Engine: Looks up the authoritative owner in `LearningDimensionRegistry`.
+3. Construct Formal Change Request: Packages a typed, owner-specific payload (`ParameterChangeRequest`, `CapabilityDevelopmentRequest`, or `KnowledgeUpdateProposal`).
+4. Dispatch to Owner: Transmits the change request to the owning engine's formal change ingress with a unique `dispatch_attempt_id`.
+5. Receive Immediate Acknowledgement: Verifies whether the owner accepted or rejected the request.
+6. Track Application Status: Monitors asynchronous execution and receives confirmed application receipts.
+7. Request Post-Change Verification: Coordinates with Experience Evaluation to schedule an observation window.
+8. Record Final Outcome: Inscribes the complete dispatch, application, and verification lifecycle in the immutable ledger.
+Ownership Rule: Under no circumstance does Development Coordination write directly to memory tables, configuration files, neural weights, or runtime dictionaries of other engines.
+
+A4. DEFINE LEARNING LIFECYCLE MANAGER AS THE COORDINATOR OF LEARNING RECORDS
+Problem Addressed: Ambiguity regarding whether the lifecycle manager makes decisions or tracks state.
+Architectural Specification:
+The `LearningLifecycleManager` is the state-machine auditor of the Learning Engine. It owns the end-to-end lifecycle of contributions, assessments, and proposals:
+- Managed Lifecycle Phases: `REGISTRATION` $\to$ `EVIDENCE_ACCUMULATION` $\to$ `ASSESSMENT` $\to$ `PROPOSAL_CREATION` $\to$ `DISPATCH` $\to$ `ACKNOWLEDGEMENT` $\to$ `APPLICATION_TRACKING` $\to$ `VERIFICATION` $\to$ `SUPERSEDED` / `REJECTED` / `CLOSED`.
+- Invariant: The Lifecycle Manager cannot override the decisions of `LearningAssessment` or the rejection decisions of parameter-owning engines. It enforces state transition validity, manages timeout escalations, and ensures append-only audit persistence in SQLite.
+
+
+--------------------------------------------------------------------------------
+B. LEARNING CATEGORIES AND OWNERSHIP BOUNDARIES
+--------------------------------------------------------------------------------
+
+B1. PRESERVE THE THREE CANONICAL LEARNING CATEGORIES
+Architectural Invariant:
+The Learning Engine operates strictly across three canonical categories:
+1. Parameter Learning: Calibration and continuous tuning of existing numerical, categorical, or probabilistic parameters owned by other engines.
+2. Capability Learning: Expanding, refining, restructuring, or correcting functional cognitive skills, tool usage, and procedural workflows.
+3. Knowledge Learning: Acquiring, correcting, corroborating, and structuring declarative, episodic, and semantic knowledge.
+Boundary Rule: Relationship models are NOT a fourth learning category. Social relationships are modeled as specific domains within Knowledge Learning (declarative facts about entities) or Parameter Learning (social distance, trust calibration, warmth parameters).
+
+B2. DEFINE PARAMETER LEARNING OWNERSHIP
+Problem Addressed: Previous proposals lacked owner-directed constraints, risking out-of-bounds adjustments.
+Architectural Specification:
+Every parameter proposal emitted by the Learning Engine conforms to the strict `ParameterChangeRequest` contract:
+- `owner_engine`: Enum (EMOTION, MOTIVATION, ATTENTION, ENERGY, PERSONALITY, PERCEPTION, THOUGHT, SOCIAL).
+- `parameter_id`: Canonical, fully qualified identifier (e.g., `attention.distraction_threshold`, `emotion.joy_decay_rate`).
+- `expected_current_value`: The current numerical or categorical state expected by Learning Engine.
+- `expected_current_version`: Monotonically increasing version integer; prevents race conditions.
+- `proposed_target_value`: Bounded target value.
+- `proposed_adjustment`: Signed delta ($\Delta = \text{Target} - \text{Current}$).
+- `valid_range`: Immutable tuple `(min_val, max_val)` enforced by the owning engine.
+- `change_constraints`: Rate-limiting rules (e.g., max change $\le 0.05$ per update epoch).
+- `supporting_evidence_ids`: Tuple of UUID strings pointing to immutable ledger entries.
+- `expected_outcome`: Structured specification of anticipated behavioral impact.
+- `rollback_strategy`: Explicit definition of prior stable version and reversion triggers.
+Owning Engine Authority: The owning engine verifies `expected_current_version`. If the parameter was altered independently, the owner rejects the proposal with `VERSION_CONFLICT`. The Learning Engine never forces an update.
+
+B3. DEFINE CAPABILITY LEARNING OWNERSHIP
+Problem Addressed: Capability development can be confused with simple parameter tuning.
+Architectural Specification:
+Capability learning addresses procedural competence. Every `CapabilityDevelopmentRequest` distinguishes four development types:
+1. `IMPROVING_EXISTING`: Optimizing latency, reducing token consumption, or refining heuristics of an established skill.
+2. `EXTENDING_EXISTING`: Broadening the operational domain or input modalities of an existing tool/workflow.
+3. `ACQUIRING_NEW`: Introducing a novel cognitive workflow, tool schema, or multi-step reasoning protocol.
+4. `CORRECTING_FAILURE`: Patching an algorithmic edge-case, invalid premise rule, or broken integration.
+Contract Fields:
+- `capability_id`: Canonical capability identifier.
+- `current_capability_level`: Integer or semantic tier (e.g., `NOVICE`, `COMPETENT`, `EXPERT`).
+- `observed_limitation`: Detailed description of detected failure modes or bottlenecks.
+- `evidence_references`: Trace IDs of failed executions and comparative benchmarks.
+- `required_development_steps`: Structured recipe or curriculum for capability upgrade.
+- `responsible_engine`: Owning engine (e.g., `ThoughtEngine` for reasoning rules, `PerceptionEngine` for feature extraction).
+- `evaluation_criteria`: Unit test or benchmark suite required to validate competence.
+
+B4. DEFINE KNOWLEDGE LEARNING OWNERSHIP
+Problem Addressed: Overlap between Learning Engine and Memory Engine knowledge consolidation.
+Architectural Specification:
+- Division of Knowledge Authority:
+  * The Learning Engine evaluates whether an experience, external correction, or reasoning reflection justifies a knowledge update.
+  * The Learning Engine formulates a `KnowledgeUpdateProposal` containing proposed assertions, retractions, or confidence calibrations.
+  * The Memory Engine remains the SOLE authoritative custodian of persistent memory graphs.
+  * The Memory Engine inspects the proposal, verifies semantic coherence, updates belief graphs, manages link consolidation, and returns a verified `memory_record_id`.
+  * The Learning Engine cannot write directly to SQLite or vector storage belonging to the Memory Engine.
+
+B5. PROTECTED FOUNDATIONAL PERSONA VS. ADAPTABLE DEVELOPED PERSONALITY
+Problem Addressed: Risk of unconstrained learning overwriting Diva's core identity, ethical safeguards, and defining characteristics.
+Architectural Specification:
+The architecture divides personality into two distinct conceptual and persistence layers:
+1. `FoundationalPersona` (Protected Baseline):
+   - Scope: Core character definitions, ethical boundaries, fundamental self-concept, constitutional guardrails, and non-negotiable personality invariants.
+   - Ownership: Personality Engine (with strict system configuration locking).
+   - Invariant: ORDINARY LEARNING PROPOSALS ARE PERMANENTLY PROHIBITED FROM MODIFYING FOUNDATIONAL PERSONA. Any proposal targeting a foundational attribute is rejected automatically by the registry with `PROTECTED_DIMENSION_VIOLATION`.
+2. `DevelopedPersonality` (Adaptable Layer):
+   - Scope: Contextual humor calibration, domain-specific conversational pacing, stylistic preferences, and acquired social nuances.
+   - Ownership: Personality Engine.
+   - Mutation Protocol: The Learning Engine may evaluate experiences and propose gradual, bounded adjustments to Developed Personality parameters, which the Personality Engine applies at its own discretion.
+
+
+--------------------------------------------------------------------------------
+C. EXPERIENCE EVALUATION AND LEARNING SIGNALS
+--------------------------------------------------------------------------------
+
+C1. STANDARDIZE LEARNING CONTRIBUTIONS FROM EVERY SOURCE ENGINE
+Problem Addressed: Adjacent engines submitted heterogeneous, incompatible learning observations.
+Architectural Specification:
+All learning contributions entering the Learning Engine must adhere to the standardized `LearningContribution` schema:
+
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `contribution_id` | UUID | Globally unique identifier for this learning contribution. |
+| `source_engine` | Enum | Emitting engine (`PERCEPTION`, `THOUGHT`, `EMOTION`, `MOTIVATION`, `MEMORY`, `INTEGRATION`). |
+| `source_event_id` | String | External identifier from the emitting engine; used for idempotency checks. |
+| `experience_id` | UUID | Canonical experience cluster identifier. |
+| `contribution_type` | Enum | `EMPIRICAL_OUTCOME`, `INTERNAL_REFLECTION`, `EXTERNAL_FEEDBACK`, `PREDICTION_ERROR`. |
+| `dimension_id` | String | Fully qualified target learning dimension defined in the registry. |
+| `evidence_references`| Tuple[EvidenceRef] | Immutable tuple of underlying evidence records and sensor traces. |
+| `observed_outcome` | Dict[str, Any] | Structured outcome data observed by the source engine. |
+| `expected_outcome` | Dict[str, Any] | Structured outcome expected prior to the event. |
+| `valence` | Enum | `POSITIVE_EVIDENCE`, `NEGATIVE_EVIDENCE`, `NEUTRAL_EVALUATIVE`. |
+| `significance` | Float [0.0, 1.0] | Assessed cognitive importance and impact magnitude. |
+| `confidence` | Float [0.0, 1.0] | Source engine's observation confidence. |
+| `is_quarantined` | Boolean | Inherited from source; if True, contribution cannot trigger persistent parameter updates. |
+| `created_at` | Timestamp | ISO-8601 UTC timestamp of original event occurrence. |
+| `provenance` | Dict[str, Any] | Complete causal derivation history. |
+
+C2. SEPARATE FEEDBACK, EXPERIENCE, CONTRIBUTION, AND PROPOSAL
+Architectural Invariant:
+The cognitive learning pipeline enforces a strict four-stage epistemic transformation:
+```
+[External Event / Sensor Data]
+               │
+               ▼
+   1. Feedback Service          (Validates format, checks signatures, enforces idempotency)
+               │
+               ▼
+   2. Experience Evaluation     (Evaluates context, outcome delta, significance, and quarantine)
+               │
+               ▼
+   3. Learning Contribution     (Appends immutable evidence to the ledger, updates dimension balance)
+               │
+               ▼
+   4. Learning Assessment       (Evaluates accumulated evidence sufficiency and authorizes Proposal)
+```
+- A raw feedback event is NOT an evaluated experience.
+- An experience is NOT automatically evidence that a parameter is wrong.
+- An accumulated evidence balance does NOT automatically generate a proposal.
+- A learning proposal is NEVER a self-executed modification.
+
+C3. MULTI-FACTOR EXPERIENCE SIGNIFICANCE FORMULATION
+Problem Addressed: Trivial events were previously treated with the same weight as critical task failures.
+Architectural Specification:
+Experience significance $S_{\text{exp}} \in [0.0, 1.0]$ is computed deterministically by `ExperienceEvaluator`:
+$$S_{\text{exp}} = \text{clamp}_{[0.0, 1.0]}\left( w_O \cdot \Delta_{\text{outcome}} + w_R \cdot R_{\text{dim}} + w_N \cdot N_{\text{ctx}} + w_C \cdot C_{\text{impact}} \right) \times \text{Rel}_{\text{source}}$$
+Where:
+- $\Delta_{\text{outcome}} \in [0.0, 1.0]$: Magnitude of discrepancy between observed and expected outcomes.
+- $R_{\text{dim}} \in [0.0, 1.0]$: Relevance of the event to the target learning dimension.
+- $N_{\text{ctx}} \in [0.0, 1.0]$: Contextual novelty score (assessed against episodic memory baselines).
+- $C_{\text{impact}} \in [0.0, 1.0]$: Potential systemic consequence of the outcome (safety, task completion, emotional toll).
+- $\text{Rel}_{\text{source}} \in [0.0, 1.0]$: Certified reliability of the emitting engine or external user.
+- Base Weights: $w_O = 0.35$, $w_R = 0.25$, $w_C = 0.25$, $w_N = 0.15$ (Sum = 1.00).
+
+C4. DECOUPLING EVIDENCE VALENCE FROM PROPOSED CHANGE DIRECTION
+Problem Addressed: Previous models assumed "negative evidence" meant a parameter must decrease, leading to illogical adjustments.
+Architectural Specification:
+The Learning Engine formally separates evidence interpretation from parameter direction:
+1. `EvidenceValence`:
+   - `POSITIVE_EVIDENCE`: The observed event confirms or strengthens the governing hypothesis.
+   - `NEGATIVE_EVIDENCE`: The observed event refutes or weakens the governing hypothesis.
+2. `ProposedChangeDirection`:
+   - An independent decision made by `LearningAssessment`.
+   - Example 1: In `attention.distraction_threshold`, negative evidence (Diva became distracted) requires INCREASING the threshold parameter to filter out noise.
+   - Example 2: In `social.conversational_verbosity`, negative evidence (user requested brevity) requires DECREASING the verbosity parameter.
+   - Invariant: The mathematical mapping between `EvidenceValence` and `ProposedChangeDirection` is explicitly codified in each dimension's `LearningAssessmentPolicy`.
+
+
+--------------------------------------------------------------------------------
+D. EXPERIENCE POINT MANAGER AND EVIDENCE ACCUMULATION
+--------------------------------------------------------------------------------
+
+D1. INDEPENDENT EVIDENCE BALANCES PER LEARNING DIMENSION
+Problem Addressed: Evidence points were previously aggregated globally, allowing successes in social conversation to mask failures in mathematical reasoning.
+Architectural Specification:
+The `ExperiencePointManager` maintains strictly isolated, orthogonal evidence balances for every registered dimension:
+- Every dimension $D_k$ tracks:
+  * $E_{\text{pos}}(D_k)$: Cumulative positive evidence mass.
+  * $E_{\text{neg}}(D_k)$: Cumulative negative evidence mass.
+  * $N_{\text{obs}}(D_k)$: Total independent observation count.
+  * $T_{\text{last}}(D_k)$: Timestamp of most recent contribution.
+- Cross-Dimension Invariant: Evidence points NEVER cross dimension boundaries. A mathematical reasoning failure cannot cancel an emotional stability success.
+
+D2. FORMAL LEARNINGDIMENSIONREGISTRY AND OWNERSHIP COVERAGE
+Problem Addressed: Contributions could reference arbitrary, undefined dimension strings.
+Architectural Specification:
+Every learning dimension must be statically or dynamically declared in the authoritative `LearningDimensionRegistry`:
+
+`LearningDimension` Schema:
+- `dimension_id`: String (Canonical hierarchical identifier, e.g., `cognition.reasoning.deductive_rigor`).
+- `category`: Enum (`PARAMETER_LEARNING`, `CAPABILITY_LEARNING`, `KNOWLEDGE_LEARNING`).
+- `owning_engine`: Enum identifying the sole engine authorized to apply changes.
+- `target_attribute`: Fully qualified parameter, capability, or knowledge domain name.
+- `evidence_requirements`: Minimum sample size, required evidence types, and minimum confidence.
+- `permitted_change_types`: Tuple of allowed strategies (`GRADUAL_ADJUSTMENT`, `BOUNDED_ADJUSTMENT`, `NO_CHANGE`).
+- `valid_range`: Optional numerical or categorical bounds.
+- `is_protected`: Boolean. If True, ordinary learning proposals are rejected; requires administrative override.
+- `assessment_policy`: Instance of `LearningAssessmentPolicy` specifying decision thresholds.
+
+Mandatory Baseline Coverage:
+The registry must provide validated definitions for:
+- `personality.*` (Owned by Personality Engine; foundational attributes marked `is_protected = True`).
+- `emotion.*` (Owned by Emotion Engine; decay rates, reactivity baselines).
+- `motivation.*` (Owned by Motivation Engine; goal priority weights, curiosity thresholds).
+- `attention.*` (Owned by Attention Control; distraction thresholds, focal dwell times).
+- `energy.*` (Owned by Energy Regulation; cognitive budget limits, expenditure rates).
+- `memory.*` (Owned by Memory Engine; semantic verification thresholds, consolidation weights).
+- `social.*` (Owned by Social Cognition; conversational pacing, empathy weights).
+- `capability.*` (Owned by relevant functional subsystems; tool usage, reasoning heuristics).
+
+D3. SEPARATION OF EVIDENCE DECAY FROM PARAMETER/STATE DECAY
+Problem Addressed: Evidence decay was mistakenly used as an instruction to decay the actual parameter value in the owning engine.
+Architectural Specification:
+Two completely independent decay dynamics are maintained:
+1. Evidence Decay (Internal to Learning Engine):
+   - Older evidence contributions naturally lose epistemic weight over time to account for shifting environmental conditions.
+   - Effective Evidence Calculation:
+     $$E_{\text{eff}}(t) = \sum_{i} w_i \cdot \exp\left(-\lambda_{\text{evidence}} \cdot (t - t_i)\right)$$
+   - Purpose: Prevents historical evidence from locking a dimension permanently.
+2. Parameter / State Decay (Internal to Owning Engine):
+   - Governed entirely by the owning engine's own internal dynamics (e.g., Emotion Engine decaying an emotional state over minutes).
+   - Invariant: Evidence decay NEVER triggers parameter reversal. The Learning Engine only emits proposals when *new accumulated evidence* justifies a change.
+
+D4. TRANSACTIONAL CONSISTENCY OF RUNNING EVIDENCE BALANCES
+Problem Addressed: Power failure or process crash between appending a ledger entry and updating in-memory balances caused persistent drift.
+Architectural Specification:
+Every evidence contribution is processed inside an atomic SQLite transaction:
+```sql
+BEGIN IMMEDIATE;
+-- 1. Check idempotency: ensure source_event_id has not been processed
+-- 2. Insert row into experience_ledger (Immutable append-only record)
+-- 3. Update running totals in evidence_balances table
+-- 4. Inscribe sequence checkpoint
+COMMIT;
+```
+If any constraint fails, the entire transaction rolls back.
+Reconstructability Invariant:
+In-memory and cached evidence balances are strictly derived views. Upon startup or audit check, the engine can completely reconstruct all dimensional balances by replaying the append-only `experience_ledger` from sequence 0.
+
+
+--------------------------------------------------------------------------------
+E. PATTERN RECOGNITION AND STATISTICAL ASSESSMENT
+--------------------------------------------------------------------------------
+
+E1. OPERATIONAL DEFINITION OF RECURRING PATTERNS AND CLASSIFICATIONS
+Problem Addressed: Pattern Recognition previously treated repeated reports of a single incident as independent recurring experiences.
+Architectural Specification:
+A pattern is an abstraction discovered across multiple causally independent learning contributions.
+
+Recurring Pattern Classifications:
+1. `RECURRING_SUCCESS`: Consistent achievement of expected outcomes across diverse contextual environments ($N \ge 5$ independent successes; positive ratio $\ge 80\%$).
+2. `RECURRING_FAILURE`: Persistent failure to achieve expected outcomes under similar task profiles ($N \ge 3$ independent failures; negative ratio $\ge 70\%$).
+3. `BEHAVIORAL_TENDENCY`: A statistically significant drift or habitual response pattern that deviates from the normative baseline without necessarily producing an explicit task error.
+4. `CONTEXT_DEPENDENT_PATTERN`: A pattern that exhibits high success in Context $A$ but consistent failure in Context $B$, indicating missing situational conditioning.
+5. `CONTRADICTORY_PATTERN`: Bimodal outcome distribution where identical actions yield sharply diverging outcomes, signaling an unobserved latent variable.
+6. `EMERGING_PATTERN`: Early evidence clusters that have achieved preliminary statistical significance ($p < 0.05$) but lack sufficient sample size for permanent parameter adjustment.
+
+Pattern Invariant & Deduplication:
+Pattern Recognition must cluster contributions on `independence_group_id`. If three contributions cite the same root sensory event or user interaction, they are treated as a SINGLE observation.
+
+E2. BOUNDARY BETWEEN PATTERN DETECTION AND LEARNING ASSESSMENT
+Problem Addressed: Pattern detection previously made prescriptive decisions about parameter updates.
+Architectural Specification:
+The boundary between discovery and authorization is strictly enforced:
+- Pattern Recognition outputs an immutable `RecognizedPattern`:
+  * `pattern_id`: UUID string.
+  * `classification`: One of the 6 pattern enums above.
+  * `dimension_id`: Fully qualified target dimension.
+  * `contributing_ids`: Tuple of UUID strings pointing to supporting ledger entries.
+  * `occurrence_count`: Number of verified independent events.
+  * `temporal_span`: Duration between first and last observed occurrences.
+  * `context_diversity`: Score in [0.0, 1.0] reflecting variance across situational contexts.
+  * `statistical_significance`: Calculated $p$-value or test statistic.
+- Learning Assessment consumes `RecognizedPattern` and decides:
+  * Does this pattern warrant an actual modification to an engine parameter?
+  * What is the safe, bounded adjustment magnitude?
+  * What is the risk profile of modifying this parameter?
+- Authority Rule: Pattern Recognition NEVER generates `LearningProposal` instances or calculates target parameter values.
+
+E3. STATISTICAL ASSUMPTIONS AND CALIBRATION OF CUSUM
+Problem Addressed: Cumulative Sum (CUSUM) change-point detection was previously cited without specifying reference values, standardized inputs, or false-alarm rates.
+Architectural Specification:
+The Learning Engine deploys two-sided, standardized CUSUM detectors for continuous parameter drift monitoring:
+
+Statistical Formulation:
+Let $x_t$ be the standardized outcome delta for observation $t$:
+$$z_t = \frac{x_t - \mu_0}{\sigma_0}$$
+Where $\mu_0$ is the historical baseline mean and $\sigma_0$ is the baseline standard deviation.
+Two-sided cumulative sums are tracked independently:
+$$S_t^+ = \max\left(0, S_{t-1}^+ + z_t - k\right)$$
+$$S_t^- = \max\left(0, S_{t-1}^- - z_t - k\right)$$
+Where:
+- $k$: Reference value (slack parameter), set to $k = \frac{\delta}{2} = 0.50$, optimized to detect a 1.0 standard deviation shift ($\delta = 1.0$).
+- $h$: Decision threshold, calibrated to achieve an Average Run Length under normal conditions ($\text{ARL}_0 \ge 500$ observations, corresponding to $h = 4.5$).
+
+Detector Operational Invariants:
+1. When $S_t^+ \ge h$, a positive change-point is flagged; detector signals upward drift.
+2. When $S_t^- \ge h$, a negative change-point is flagged; detector signals downward drift.
+3. Upon triggering, the detector resets $S_t = 0$ and logs a change-point event in the ledger.
+4. Input Independence Mandate: Observations entering CUSUM must have $t_{i} - t_{i-1} \ge \tau_{\text{decorr}}$ to guarantee independence and prevent false alarms from autocorrelated sensory noise.
+
+E4. MATHEMATICALLY RIGOROUS BINOMIAL TESTING AND SEQUENTIAL CONTROL
+Problem Addressed: Binary turn outcomes (success vs. failure) were evaluated without explicit hypotheses, directionality, or multiple-testing corrections.
+Architectural Specification:
+When evaluating binary success/failure performance against a baseline success rate $p_0$:
+- Hypotheses:
+  * Null Hypothesis $H_0$: Current true success rate $p = p_0$.
+  * Alternative Hypothesis $H_1$: True success rate $p \ne p_0$ (two-sided) or $p > p_0$ (one-sided, permitted ONLY when direction was pre-specified).
+- Exact Binomial Test Calculation:
+  For $k$ successes observed in $n$ independent trials:
+  $$P(X \ge k) = \sum_{j=k}^{n} \binom{n}{j} p_0^j (1 - p_0)^{n-j}$$
+- Multiple-Testing Correction:
+  Because the Learning Engine evaluates dozens of dimensions simultaneously, the False Discovery Rate (FDR) is controlled via the Benjamini-Hochberg procedure:
+  $$p_{(i)} \le \frac{i}{M} \cdot Q$$
+  Where $M$ is the number of monitored dimensions and $Q = 0.05$. An uncorrected $p < 0.05$ on a single dimension is insufficient to trigger an update if it fails the FDR threshold.
+- Sequential Monitoring Stopping Policy:
+  To prevent false positives from continuous peeking, early stopping requires crossing an O'Brien-Fleming boundary or achieving minimum sample size $n \ge 20$.
+
+E5. PLATT CALIBRATION TRAINING, VALIDATION, AND LEAKAGE PREVENTION
+Problem Addressed: Platt scaling was claimed without specifying training data separation, validation metrics, or fallback behavior.
+Architectural Specification:
+Platt scaling maps raw heuristic or neural decision scores $s \in \mathbb{R}$ onto true posterior probabilities $P(Y=1 \mid s) \in [0.0, 1.0]$:
+$$P(Y=1 \mid s) = \frac{1}{1 + \exp(A \cdot s + B)}$$
+Protocol Requirements:
+1. Calibration Dataset: Must comprise at least 100 independently validated historical experiences with ground-truth labels.
+2. Data Leakage Prevention: The calibration set is partitioned using 5-fold cross-validation; parameters $A$ and $B$ are fitted on validation folds completely separate from the primary model training data.
+3. Quality Metric: Calibration is certified if and only if Brier score improves by $\ge 15\%$ over raw scores and Expected Calibration Error (ECE) satisfies $\text{ECE} \le 0.05$.
+4. Insufficient Data Fallback: If fewer than 100 labeled instances exist for a dimension, Platt scaling is DISABLED. Raw scores are bounded using conservative Laplace smoothing ($P = \frac{k+1}{n+2}$) rather than uncalibrated sigmoid transformations.
+
+E6. LEARNINGASSESSMENTPOLICY PER LEARNING DIMENSION
+Every dimension in `LearningDimensionRegistry` is bound to a strict `LearningAssessmentPolicy`:
+
+| Policy Dimension Class | Min Sample ($N$) | Min Confidence | Permitted Change Magnitude | Required Corroboration |
+| :--- | :--- | :--- | :--- | :--- |
+| `personality.adaptable.*` | $N \ge 15$ | $\ge 0.90$ | Max $\Delta \le 0.03$ per update | Minimum 3 distinct conversation contexts |
+| `attention.*` | $N \ge 10$ | $\ge 0.85$ | Max $\Delta \le 0.05$ per update | CUSUM change-point $S_t \ge 4.5$ |
+| `emotion.baselines.*` | $N \ge 20$ | $\ge 0.88$ | Max $\Delta \le 0.02$ per update | Minimum 5 separate emotional episodes |
+| `capability.*` | $N \ge 8$ | $\ge 0.92$ | Discrete tier advancement | Benchmark test suite pass $\ge 95\%$ |
+| `knowledge.*` | $N \ge 2$ | $\ge 0.95$ | Factual replacement / link | Memory Engine semantic verification |
+
+
+--------------------------------------------------------------------------------
+F. LEARNING PROPOSALS AND DEVELOPMENT COORDINATION
+--------------------------------------------------------------------------------
+
+F1. EXPLICIT CURRENT AND TARGET PARAMETER VALUES WITH VERSION GUARDS
+Problem Addressed: Proposals that vaguely requested "increase parameter" caused ambiguous state mutations and concurrency bugs.
+Architectural Specification:
+Every `ParameterChangeRequest` emitted by Development Coordination contains absolute state declarations:
+- `parameter_id`: String (e.g., `attention.distraction_threshold`).
+- `expected_current_value`: Float / String (e.g., `0.45`).
+- `expected_current_version`: Integer (e.g., `14`).
+- `proposed_target_value`: Float / String (e.g., `0.50`).
+- `proposed_delta`: Float (e.g., `+0.05`).
+- `version_guard_mandate`: The owning engine MUST evaluate:
+  $$\text{assert}(\text{Engine}.\text{get\_version}(\text{parameter\_id}) == \text{expected\_current\_version})$$
+  If the owner's internal version is $\ne 14$, the update is aborted with `VERSION_GUARD_FAILED`.
+
+F2. GRADUAL VS. EXCEPTIONAL CHANGE POLICIES AND MAGNITUDE BOUNDS
+Architectural Invariant:
+All parameter modifications are classified into strict operational strategies:
+1. `GRADUAL_ADJUSTMENT` (Default):
+   - Maximum adjustment per update epoch: $|\Delta| \le 0.05$ (or $5\%$ of dynamic range).
+   - Minimum interval between adjustments: $\Delta t \ge 3600\text{ seconds}$ (1 hour of active operation).
+   - Purpose: Continuous smooth adaptation without behavioral instability.
+2. `BOUNDED_ADJUSTMENT`:
+   - Enforced by hard mathematical clamping against the registry's `valid_range`.
+   - Even if evidence supports $\Delta = +0.20$, the proposal clamps target to $\min(\text{Target}, \text{Range}_{\text{max}})$.
+3. `EXCEPTIONAL_CHANGE`:
+   - Reserved for emergency safety patches or critical capability failure corrections.
+   - Requires explicit multi-source corroboration (confidence $\ge 0.98$, $N \ge 10$) and cognitive integration executive authorization.
+   - INVARIANT: Exceptional changes can NEVER bypass Foundational Persona protections.
+4. `NO_CHANGE`:
+   - Emitted when evidence confirms the current parameter is already operating at optimal utility.
+
+F3. UNIQUE DISPATCH ATTEMPT IDENTIFIERS AND RETRY TRACKING
+Problem Addressed: Retried message deliveries were mistaken for duplicate proposals.
+Architectural Specification:
+The Learning Engine decouples proposal identity from dispatch transmission identity:
+- `proposal_id`: UUID string identifying the cognitive decision (Immutable).
+- `dispatch_attempt_id`: UUID string generated fresh for EVERY individual network/bus transmission attempt.
+- Dispatch Audit Record (`DispatchAttempt`):
+  * `dispatch_attempt_id`: UUID (Primary Key).
+  * `proposal_id`: UUID (Foreign Key to `LearningProposal`).
+  * `target_engine`: Enum.
+  * `attempt_number`: Integer ($1, 2, 3$).
+  * `dispatched_at`: ISO-8601 UTC timestamp.
+  * `delivery_status`: Enum (`IN_FLIGHT`, `ACKNOWLEDGED`, `TIMED_OUT`, `FAILED_TRANSPORT`).
+  * `acknowledgement_id`: Optional UUID string linking to owner response.
+
+F4. THIRTEEN-STAGE PROPOSAL LIFECYCLE AND DISTINCT ACKNOWLEDGEMENTS
+Problem Addressed: Receiving a message was previously conflated with accepting, applying, and verifying a change.
+Architectural Specification:
+The `LearningLifecycleManager` enforces 13 mutually exclusive lifecycle states:
+```
+1. CREATED                -> Proposal generated by Learning Assessment
+2. READY_FOR_DISPATCH     -> Pre-dispatch validation checks passed
+3. DISPATCHED             -> In-flight on the inter-engine bus
+4. RECEIVED               -> Owning engine acknowledges receipt of payload
+5. ACCEPTED               -> Owning engine confirms proposal is valid and will apply
+6. REJECTED               -> Owning engine rejects proposal (version conflict, constraint violation)
+7. APPLICATION_PENDING    -> Owning engine has queued application for next safe cycle
+8. APPLIED                -> Owning engine has committed change to its internal state
+9. VERIFICATION_PENDING   -> Post-change observation window initiated
+10. VERIFIED              -> Post-change metrics confirm expected improvement
+11. FAILED                -> Post-change metrics detect regression or failure
+12. SUPERSEDED            -> Newer proposal rendered this proposal obsolete
+13. CANCELLED             -> Manually or systematically cancelled prior to application
+```
+
+F5. STRUCTURED OWNER APPLICATION REPORTING CONTRACTS
+Problem Addressed: Learning Engine previously assumed changes were applied without verifiable receipts.
+Architectural Specification:
+When an owning engine applies a change, it transmits a structured `OwnerApplicationReceipt`:
+- `receipt_id`: UUID string.
+- `proposal_id`: UUID string matching the proposal.
+- `dispatch_attempt_id`: UUID string matching the dispatch attempt.
+- `owner_engine`: Enum identifying the reporting engine.
+- `application_status`: Enum (`SUCCESSFULLY_APPLIED`, `PARTIALLY_APPLIED`, `REJECTED_AT_APPLICATION`).
+- `resulting_parameter_value`: The actual new value active in the owner engine.
+- `resulting_version`: The new monotonically incremented version integer.
+- `applied_at`: ISO-8601 UTC timestamp.
+- `owner_execution_hash`: Cryptographic or state hash verifying internal consistency.
+
+F6. POST-CHANGE VERIFICATION PLANNING AND OBSERVATION WINDOWS
+Problem Addressed: Applying a change was treated as the end of the learning process, ignoring post-change regressions.
+Architectural Specification:
+Every approved proposal includes an mandatory `VerificationPlan`:
+- `observation_window_epochs`: Number of operational cycles or elapsed time (e.g., 50 task turns).
+- `target_metric`: Measurable performance indicator (e.g., task latency, user correction frequency).
+- `success_threshold`: Minimum statistical improvement required to mark `VERIFIED`.
+- `regression_threshold`: Performance drop that immediately triggers a regression alert.
+Operational Rule: If performance degrades below `regression_threshold` during the observation window, the Lifecycle Manager transitions the proposal to `FAILED` and triggers the Rollback Protocol.
+
+F7. OWNER-DIRECTED ROLLBACK AND REGRESSION HANDLING PROTOCOLS
+Problem Addressed: The Learning Engine previously attempted to restore previous parameters directly during a rollback.
+Architectural Specification:
+Rollback authority belongs exclusively to the parameter's owning engine:
+1. Learning Assessment detects regression during post-change verification.
+2. Development Coordination constructs a formal `RollbackRequest`:
+   * `rollback_request_id`: UUID string.
+   * `original_proposal_id`: UUID string of the failed change.
+   * `target_engine`: Owning engine.
+   * `parameter_id`: Parameter to restore.
+   * `known_good_version`: The historical version recorded in the original proposal.
+   * `known_good_value`: The historical value recorded in the original proposal.
+   * `regression_evidence_ids`: Ledger IDs proving the post-change performance drop.
+3. Owning engine verifies `known_good_version`, restores the previous stable parameter value, increments its internal version, and transmits a confirmed `RollbackReceipt`.
+4. Learning Engine records the rollback in its immutable ledger and temporarily locks the dimension against re-proposing the failed value.
+
+
+--------------------------------------------------------------------------------
+G. INTERNAL LEARNING SOURCES AND CROSS-ENGINE INTEGRATION
+--------------------------------------------------------------------------------
+
+G1. FORMAL THOUGHT ENGINE REFLECTION AND ERROR SIGNAL INTEGRATION
+Problem Addressed: Internal reflections from the Thought Engine risked creating unverified, self-reinforcing feedback loops.
+Architectural Specification:
+The Learning Engine ingests reflections from Thought Engine via the `LearningSignal` contract (established in Thought Engine v2.2.0):
+- Ingested Signal Types: `REASONING_ERROR`, `SUCCESSFUL_REASONING_PATTERN`, `RECURRING_COGNITIVE_PATTERN`, `SELF_REFLECTION`, `CAPABILITY_OBSERVATION`, `PREDICTION_OUTCOME`.
+- Mandatory Independent Verification Protocol:
+  * A Thought Engine signal asserting "I made a logical mistake" is treated as an UNVERIFIED HYPOTHESIS.
+  * Experience Evaluation correlates the thought ID with external task outcomes (user correction, tool execution failure, ground-truth contradiction).
+  * If the reflection is corroborated by independent outcome data, it is admitted to the ledger as verified negative evidence.
+  * If the reflection is uncorroborated, it is recorded with `significance` capped at $\le 0.20$ and CANNOT independently authorize a parameter modification.
+
+G2. STANDARDIZED CONTRIBUTION CONTRACTS FOR ALL ADJACENT ENGINES
+Every cognitive engine in Diva communicates learning observations using typed adapters:
+1. Emotion Engine: Dispatches `AffectiveEvaluationSignal` reporting persistent negative mood states or emotional volatility.
+2. Motivation Engine: Dispatches `GoalOutcomeSignal` reporting goal satisfaction or chronic desire blockage.
+3. Attention Control: Dispatches `AttentionalStabilitySignal` reporting task interruption frequency and distraction rates.
+4. Energy Regulation: Dispatches `EnergyEfficiencySignal` reporting cognitive expenditure vs. task utility.
+5. Memory Engine: Dispatches `EpistemicCorrectionSignal` reporting retrieved fact falsifications and source reliability revisions.
+6. Social Cognition: Dispatches `SocialAttunementSignal` reporting communicative misalignment and user rapport shifts.
+
+G3. FOUNDATIONAL PERSONA PROTECTION POLICIES AND SENSITIVE DIMENSIONS
+Problem Addressed: Ensuring Diva's constitutional core identity and ethical guardrails are impervious to adversarial or drift-based learning.
+Architectural Specification:
+The `LearningDimensionRegistry` enforces an absolute barrier around foundational properties:
+- Constitutional Locks:
+  * Dimensions matching `personality.foundational.*`, `ethics.*`, `identity.core.*`, `safety.guardrails.*` have `is_protected = True`.
+  * The Learning Assessment engine has a hardcoded, non-configurable rule:
+    `if dimension.is_protected: return AssessmentDecision.REJECT_PROTECTED_VIOLATION`
+- Observational Allowance:
+  * The Learning Engine may accumulate evidence *observing* how Diva's foundational traits interact with the world, but can NEVER emit a proposal to modify them.
+  * Any identity evolution is restricted strictly to `personality.adaptable.*` and requires explicit approval from the Personality Engine.
+
+
+================================================================================
+PART 2 — TECHNICAL AND DATA-INTEGRITY CORRECTIONS
+================================================================================
+
+--------------------------------------------------------------------------------
+H. IMMUTABLE LEDGER AND DATABASE CORRECTNESS
+--------------------------------------------------------------------------------
+
+H1. TRUE DEFENSIVE-COPY REGISTRY IMMUTABILITY AND RECURSIVE FREEZING
+Problem Addressed: Wrapping a mutable dictionary in `MappingProxyType` leaves the underlying dictionary vulnerable to external mutation through retained references.
+Architectural Specification:
+The `LearningDimensionRegistry` enforces true deep immutability:
+1. Defensive Deep Copy: When the registry is constructed or initialized, all backing data structures are deep-copied.
+2. Recursive Freezing:
+   - All nested lists are converted to immutable `tuple`.
+   - All nested sets are converted to `frozenset`.
+   - All nested dictionaries are wrapped in nested `MappingProxyType` instances.
+3. Reference Disposal: The original mutable initialization dictionaries are destroyed and dereferenced; no external reference to any mutable container survives.
+4. Mutation Lockdown: Attempting to insert, overwrite, or mutate a registered dimension raises an uncatchable `RegistryFrozenError`.
+
+H2. COMPLETE DATABASE-LEVEL APPEND-ONLY LEDGER TRIGGERS
+Problem Addressed: Application-level conventions failed to protect the ledger against raw SQL updates or accidental cascading deletions.
+Architectural Specification:
+The SQLite database enforces physical, database-level append-only invariants via triggers on `experience_ledger`:
+
+```sql
+-- Enforce absolute prohibition of UPDATE on the ledger
+CREATE TRIGGER IF NOT EXISTS trg_prevent_ledger_update
+BEFORE UPDATE ON experience_ledger
+BEGIN
+    SELECT RAISE(ABORT, 'CRITICAL_SECURITY_VIOLATION: Updates to experience_ledger are strictly prohibited.');
+END;
+
+-- Enforce absolute prohibition of DELETE on the ledger
+CREATE TRIGGER IF NOT EXISTS trg_prevent_ledger_delete
+BEFORE DELETE ON experience_ledger
+BEGIN
+    SELECT RAISE(ABORT, 'CRITICAL_SECURITY_VIOLATION: Deletions from experience_ledger are strictly prohibited.');
+END;
+
+-- Enforce absolute prohibition of replacement-style writes
+CREATE TRIGGER IF NOT EXISTS trg_prevent_ledger_replace
+BEFORE INSERT ON experience_ledger
+WHEN EXISTS (SELECT 1 FROM experience_ledger WHERE contribution_id = NEW.contribution_id)
+BEGIN
+    SELECT RAISE(ABORT, 'IDEMPOTENCY_VIOLATION: Contribution ID already exists in experience_ledger.');
+END;
+```
+
+H3. FULL CONTEXTUAL LEDGER PARTITIONING (INCLUDING SITUATIONAL MODE)
+Problem Addressed: Situational mode was omitted from ledger indexes, causing evidence from play, emergency, or formal modes to be conflated.
+Architectural Specification:
+Every record in `experience_ledger` is indexed across all six canonical contextual axes:
+1. `dimension_id`: The target learning dimension.
+2. `situation_context`: Domain or topic identifier (e.g., `technical_coding`, `creative_writing`).
+3. `situational_mode`: Enum (`CONVERSATIONAL_CASUAL`, `FOCUSED_WORK`, `CRITICAL_INCIDENT`, `EXPLORATORY_PLAY`).
+4. `evidence_category`: `EMPIRICAL`, `FEEDBACK`, `REFLECTION`.
+5. `owner_engine_id`: Authoritative engine responsible for the target attribute.
+6. `observation_period`: Discrete temporal cohort (e.g., 2026-W46).
+Compound Index Definition:
+```sql
+CREATE INDEX idx_ledger_contextual_partition 
+ON experience_ledger (dimension_id, situational_mode, situation_context, observation_period);
+```
+Rule: Pattern recognition and learning assessment cannot aggregate evidence across divergent `situational_mode` values without an explicit `GeneralizationAssessment`.
+
+H4. STRONGLY TYPED, STRUCTURED OWNER ACKNOWLEDGEMENT RECORDS
+Problem Addressed: Using untyped `Any` payloads undermined schema validation and allowed corrupted receipts.
+Architectural Specification:
+All responses from owner engines conform to the strongly typed `OwnerAcknowledgement` schema:
+
+```python
+# Conceptual Schema Representation
+class OwnerAcknowledgement:
+    acknowledgement_id: UUID
+    proposal_id: UUID
+    dispatch_attempt_id: UUID
+    target_engine: EngineType
+    acknowledgement_status: AckStatus  # RECEIVED, ACCEPTED, REJECTED, INVALID_SCHEMA
+    owner_current_version: int
+    applied_value: Optional[Union[float, str, int]]
+    applied_version: Optional[int]
+    rejection_reason: Optional[str]
+    timestamp: str  # ISO-8601 UTC
+    signature: str  # Engine cryptographic/system signature
+```
+Under no circumstance are unstructured dictionaries or primitive strings accepted as acknowledgements.
+
+H5. DETERMINISTIC LEDGER BALANCE RECONCILIATION AND REBUILD PROTOCOLS
+Problem Addressed: Cached running balances could drift from the immutable ledger after sudden power loss.
+Architectural Specification:
+The append-only `experience_ledger` is the SOLE authoritative source of truth.
+Reconciliation Protocol:
+1. Periodic Integrity Audit: Runs every 1000 contributions or upon engine startup.
+2. Rebuild Algorithm:
+   - For every dimension $D_k$, recalculate:
+     $$\hat{E}_{\text{pos}}(D_k) = \sum \{ \text{significance}_i \mid \text{valence}_i = \text{POSITIVE\_EVIDENCE} \}$$
+     $$\hat{E}_{\text{neg}}(D_k) = \sum \{ \text{significance}_i \mid \text{valence}_i = \text{NEGATIVE\_EVIDENCE} \}$$
+     $$\hat{N}_{\text{obs}}(D_k) = \text{Count}(\text{distinct } \text{independence\_group\_id})$$
+3. Drift Detection: Compare $\hat{E}$ against cached `evidence_balances` table.
+4. Auto-Correction: If a discrepancy exists, the cached table is updated to match $\hat{E}$. The immutable ledger is NEVER modified to match the cache.
+
+H6. IDEMPOTENT CONTRIBUTION INGESTION AND DE-DUPLICATION
+Problem Addressed: Duplicate delivery of sensory events or reflections resulted in double-counted evidence.
+Architectural Specification:
+Ingestion idempotency is guaranteed via a two-tier filter:
+1. Tier 1 (Memory Filter): In-memory Bloom filter and LRU cache of recently processed `source_event_id` keys ($10,000$ key capacity).
+2. Tier 2 (Database Constraint): Unique constraint on `(source_engine, source_event_id)` in the SQLite ledger table.
+Protocol:
+- If a contribution arrives with an existing `(source_engine, source_event_id)`:
+  * Ingestion is immediately halted.
+  * No new row is inserted into `experience_ledger`.
+  * No balance is incremented.
+  * The original `contribution_id` is returned with status `DUPLICATE_IGNORED`.
+
+
+================================================================================
+PART 3 — STATISTICAL, EVIDENCE, AND GENERALIZATION CORRECTIONS
+================================================================================
+
+--------------------------------------------------------------------------------
+I. EVIDENCE INDEPENDENCE, DECAY, AND CONTEXTUAL GENERALIZATION
+--------------------------------------------------------------------------------
+
+I1. CORRELATED EVIDENCE DISCOUNTING AND LINEAGE DEDUPLICATION
+Problem Addressed: Correlated sensory inputs (e.g., three cameras reporting the same gesture, or five logs of the same server crash) artificially inflated evidence balances.
+Architectural Specification:
+The `ExperienceEvaluator` assigns an `independence_group_id` to every incoming contribution:
+- Definition: An `independence_group_id` identifies the underlying causal phenomenon generating the observation.
+- Discounting Formula:
+  When calculating total evidence for dimension $D_k$:
+  $$E_{\text{effective}} = \sum_{g \in \text{Groups}} \max_{i \in g} (\text{Significance}_i \times \text{Confidence}_i)$$
+  Within any single independence group, only the *strongest single observation* contributes to the balance. Secondary reports provide verification of occurrence, not additive evidence volume.
+
+I2. MULTI-CONTEXT GENERALIZATION ASSESSMENT PROTOCOL
+Problem Addressed: Diva learning that an aggressive pacing strategy worked in a competitive game automatically applying it to a supportive conversation.
+Architectural Specification:
+Before any parameter modification derived in Context $A$ is applied globally or to Context $B$, Learning Assessment must execute a `GeneralizationAssessment`:
+
+Assessment Factors:
+1. Source Context: The situational context where the pattern was discovered.
+2. Target Context: The proposed operational context for the parameter.
+3. Context Similarity Score ($S_{\text{ctx}} \in [0.0, 1.0]$): Semantic and relational distance between task requirements, user expectations, and emotional stakes.
+4. Target Context Evidence: Has the proposed change ever been observed in the target context?
+   - If positive evidence exists in target context: Generalization Approved.
+   - If zero evidence exists and $S_{\text{ctx}} < 0.75$: Generalization REJECTED. The parameter adjustment is converted to a *context-conditioned override* scoped exclusively to Source Context.
+   - If contradictory evidence exists in target context: Generalization STRICTLY FORBIDDEN.
+
+I3. STATISTICAL RELIABILITY, CALIBRATION, AND SAFETY SUMMARY
+The statistical methods governing the Learning Engine are unified under strict operational assumptions:
+
+| Statistical Method | Input Requirements | Mathematical Assumption | Decision Threshold | Fallback / Safeguard |
+| :--- | :--- | :--- | :--- | :--- |
+| **Two-Sided CUSUM** | Standardized continuous $\Delta_{\text{outcome}}$ | Independent observations, Gaussian baseline | $S_t \ge 4.5$ ($\text{ARL}_0 \ge 500$) | Decorrelation time filter $\tau_{\text{decorr}}$ |
+| **Exact Binomial** | Binary turn outcomes (Success/Failure) | Independent Bernoulli trials, fixed $p_0$ | $p < 0.05$ with FDR Benjamini-Hochberg | Minimum sample $n \ge 20$; O'Brien-Fleming |
+| **Platt Scaling** | Decision heuristic scores $s \in \mathbb{R}$ | Monotonic sigmoid relationship | Brier improvement $\ge 15\%$, ECE $\le 0.05$| Laplace smoothing ($P = \frac{k+1}{n+2}$) |
+| **Evidence Decay** | Historical contribution timestamps | Exponential loss of relevance | Half-life $\tau_{\text{decay}}$ per dimension | State in owner does NOT decay |
+| **Significance** | Multi-factor outcome and context | Multi-attribute linear utility | $S_{\text{exp}} \ge 0.15$ threshold | Trivial noise discarded prior to ledger |
+
+
+================================================================================
+PART 4 — RECOMMENDED LEARNING ENGINE DATA DICTIONARY
+================================================================================
+
+All models are deeply frozen data structures (Pydantic models with `frozen=True` and recursive immutability):
+
+1. `LearningContribution`:
+   - `contribution_id`: UUID (Primary Key).
+   - `source_engine`: `EngineType` Enum.
+   - `source_event_id`: String (Idempotency key).
+   - `experience_id`: UUID.
+   - `contribution_type`: `ContributionType` Enum.
+   - `dimension_id`: String (Foreign Key to Registry).
+   - `evidence_references`: Immutable Tuple of `EvidenceReference`.
+   - `observed_outcome`: Immutable Mapping[str, Any].
+   - `expected_outcome`: Immutable Mapping[str, Any].
+   - `valence`: `EvidenceValence` Enum.
+   - `significance`: Float in [0.0, 1.0].
+   - `confidence`: Float in [0.0, 1.0].
+   - `is_quarantined`: Boolean.
+   - `independence_group_id`: String.
+   - `created_at`: ISO-8601 UTC timestamp.
+   - `provenance`: Immutable Mapping[str, Any].
+
+2. `ExperienceEvaluation`:
+   - `evaluation_id`: UUID.
+   - `source_event_id`: String.
+   - `outcome_delta`: Float in [0.0, 1.0].
+   - `assessed_significance`: Float in [0.0, 1.0].
+   - `relevance_score`: Float in [0.0, 1.0].
+   - `is_accepted`: Boolean.
+   - `rejection_reason`: Optional String.
+   - `evaluated_at`: ISO-8601 UTC timestamp.
+
+3. `LearningDimension`:
+   - `dimension_id`: String (Primary Key).
+   - `category`: `LearningCategory` Enum.
+   - `owning_engine`: `EngineType` Enum.
+   - `target_attribute`: String.
+   - `permitted_change_types`: Tuple of `ChangeStrategy` Enums.
+   - `valid_range`: Optional Tuple[float, float].
+   - `is_protected`: Boolean.
+   - `assessment_policy`: `LearningAssessmentPolicy`.
+
+4. `ExperienceLedgerEntry`:
+   - `sequence_number`: Integer (Monotonically increasing sequence; Primary Key).
+   - `contribution_id`: UUID (Unique Foreign Key).
+   - `dimension_id`: String.
+   - `situational_mode`: String.
+   - `situation_context`: String.
+   - `valence`: `EvidenceValence` Enum.
+   - `significance`: Float.
+   - `confidence`: Float.
+   - `inscribed_at`: ISO-8601 UTC timestamp.
+
+5. `EvidenceBalance`:
+   - `dimension_id`: String (Primary Key).
+   - `positive_balance`: Float.
+   - `negative_balance`: Float.
+   - `observation_count`: Integer.
+   - `last_updated_at`: ISO-8601 UTC timestamp.
+
+6. `RecognizedPattern`:
+   - `pattern_id`: UUID (Primary Key).
+   - `classification`: `PatternClassification` Enum.
+   - `dimension_id`: String.
+   - `contributing_ids`: Immutable Tuple of UUIDs.
+   - `occurrence_count`: Integer.
+   - `temporal_span_seconds`: Float.
+   - `context_diversity`: Float.
+   - `p_value`: Float.
+   - `detected_at`: ISO-8601 UTC timestamp.
+
+7. `LearningAssessment`:
+   - `assessment_id`: UUID (Primary Key).
+   - `dimension_id`: String.
+   - `decision`: `AssessmentDecision` Enum (`APPROVED`, `INSUFFICIENT_EVIDENCE`, `CONTRADICTED`, `UNSAFE`).
+   - `pattern_id`: Optional UUID.
+   - `justification`: String.
+   - `statistical_metrics`: Immutable Mapping[str, float].
+   - `assessed_at`: ISO-8601 UTC timestamp.
+
+8. `LearningProposal`:
+   - `proposal_id`: UUID (Primary Key).
+   - `dimension_id`: String.
+   - `category`: `LearningCategory` Enum.
+   - `owning_engine`: `EngineType` Enum.
+   - `target_attribute`: String.
+   - `proposal_status`: `ProposalStatus` Enum (13 states).
+   - `created_at`: ISO-8601 UTC timestamp.
+
+9. `ParameterChangeRequest`:
+   - `request_id`: UUID (Primary Key).
+   - `proposal_id`: UUID.
+   - `parameter_id`: String.
+   - `expected_current_value`: Union[float, str].
+   - `expected_current_version`: Integer.
+   - `proposed_target_value`: Union[float, str].
+   - `proposed_delta`: Float.
+   - `valid_range`: Tuple[float, float].
+   - `change_strategy`: `ChangeStrategy` Enum.
+   - `rollback_plan`: `RollbackPlan`.
+
+10. `CapabilityDevelopmentRequest`:
+    - `request_id`: UUID (Primary Key).
+    - `proposal_id`: UUID.
+    - `capability_id`: String.
+    - `development_type`: `CapabilityDevelopmentType` Enum.
+    - `observed_limitation`: String.
+    - `evaluation_benchmark`: String.
+
+11. `KnowledgeUpdateProposal`:
+    - `proposal_id`: UUID.
+    - `claim_predicate`: String.
+    - `proposed_action`: Enum (`ASSERT`, `RETRACT`, `CALIBRATE_CONFIDENCE`).
+    - `evidence_ids`: Immutable Tuple of UUIDs.
+
+12. `DispatchAttempt`:
+    - `dispatch_attempt_id`: UUID (Primary Key).
+    - `proposal_id`: UUID.
+    - `attempt_number`: Integer.
+    - `dispatched_at`: ISO-8601 UTC timestamp.
+    - `status`: `DispatchStatus` Enum.
+
+13. `OwnerAcknowledgement`:
+    - `acknowledgement_id`: UUID (Primary Key).
+    - `proposal_id`: UUID.
+    - `dispatch_attempt_id`: UUID.
+    - `target_engine`: `EngineType` Enum.
+    - `status`: `AckStatus` Enum.
+    - `timestamp`: ISO-8601 UTC timestamp.
+
+14. `ApplicationRecord`:
+    - `application_id`: UUID (Primary Key).
+    - `proposal_id`: UUID.
+    - `applied_value`: Union[float, str].
+    - `applied_version`: Integer.
+    - `applied_at`: ISO-8601 UTC timestamp.
+
+15. `VerificationRecord`:
+    - `verification_id`: UUID (Primary Key).
+    - `proposal_id`: UUID.
+    - `outcome`: Enum (`VERIFIED_SUCCESS`, `REGRESSION_DETECTED`, `INCONCLUSIVE`).
+    - `measured_improvement`: Float.
+    - `verified_at`: ISO-8601 UTC timestamp.
+
+16. `RollbackRequest`:
+    - `rollback_id`: UUID (Primary Key).
+    - `failed_proposal_id`: UUID.
+    - `target_engine`: `EngineType` Enum.
+    - `parameter_id`: String.
+    - `target_version`: Integer.
+    - `target_value`: Union[float, str].
+
+17. `GeneralizationAssessment`:
+    - `assessment_id`: UUID (Primary Key).
+    - `source_context`: String.
+    - `target_context`: String.
+    - `context_similarity`: Float.
+    - `is_generalization_permitted`: Boolean.
+    - `scoped_override_rule`: Optional String.
+
+
+================================================================================
+PART 5 — COMPLETE LEARNING ENGINE MASTER CHECKLIST (130 AUDIT ITEMS)
+================================================================================
+
+This master checklist serves as the authoritative verification and audit instrument for the Learning Engine v2.5.0 architecture and its eventual phased implementation.
+
+--------------------------------------------------------------------------------
+A. ORIGINAL ARCHITECTURE COMPLIANCE (12 ITEMS)
+--------------------------------------------------------------------------------
+[ ] A01. All seven logical modules (Experience Evaluation, Feedback Service, Experience Point Manager, Pattern Recognition, Learning Assessment, Development Coordination, Learning Lifecycle Manager) are present.
+[ ] A02. Experience Evaluation has a distinct responsibility evaluating significance, context, and outcome.
+[ ] A03. Feedback Service has a distinct responsibility validating incoming structures and normalizing signals.
+[ ] A04. Experience Point Manager has a distinct responsibility recording positive and negative evidence.
+[ ] A05. Pattern Recognition has a distinct responsibility discovering recurring structures across events.
+[ ] A06. Learning Assessment has a distinct responsibility deciding whether accumulated evidence warrants change.
+[ ] A07. Development Coordination has a distinct responsibility dispatching owner-directed change requests.
+[ ] A08. Learning Lifecycle Manager has a distinct responsibility tracking proposal and contribution states.
+[ ] A09. The three canonical learning categories (Parameter, Capability, Knowledge) are strictly preserved without adding relationship learning as a fourth category.
+[ ] A10. Learning Engine does not directly mutate other engines' parameters, memory tables, or internal state.
+[ ] A11. Learning from Diva's own experiences, outcomes, and internal reflections is supported.
+[ ] A12. Knowledge acquisition, capability extension, and individuality development are supported.
+
+--------------------------------------------------------------------------------
+B. CROSS-ENGINE OWNERSHIP AND INTERFACES (16 ITEMS)
+--------------------------------------------------------------------------------
+[ ] B01. Standardized LearningContribution contract is enforced across all emitting engines.
+[ ] B02. Thought Engine reflection signals are integrated via formal LearningSignal contracts.
+[ ] B03. Emotion Engine contributions are integrated via affective evaluation contracts.
+[ ] B04. Motivation Engine contributions are integrated via goal outcome contracts.
+[ ] B05. Attention Control contributions are integrated via attentional stability contracts.
+[ ] B06. Energy Regulation contributions are integrated via energy efficiency contracts.
+[ ] B07. Memory Engine contributions are integrated via epistemic correction contracts.
+[ ] B08. Social Cognition contributions are integrated via social attunement contracts.
+[ ] B09. Cognitive Integration contributions are integrated via action outcome contracts.
+[ ] B10. Every contribution identifies its source engine, source event ID, and causal provenance.
+[ ] B11. Every learning dimension identifies its authoritative owning engine.
+[ ] B12. Parameter Learning is applied exclusively by the parameter's owning engine.
+[ ] B13. Capability Learning is implemented exclusively by the responsible functional subsystem.
+[ ] B14. Knowledge Learning strictly preserves Memory Engine ownership of persistent knowledge graphs.
+[ ] B15. Foundational Persona is protected by hard constitutional barriers against ordinary learning.
+[ ] B16. Developed Personality evolves exclusively through owner-directed Personality Engine updates.
+
+--------------------------------------------------------------------------------
+C. EXPERIENCE EVALUATION AND FEEDBACK (9 ITEMS)
+--------------------------------------------------------------------------------
+[ ] C01. Feedback events and evaluated experiences are represented as distinct data structures.
+[ ] C02. Feedback Service validates incoming contribution schema and origin authenticity.
+[ ] C03. Experience Evaluation assesses outcome delta, significance, context, and potential consequence.
+[ ] C04. Source observation confidence is formally separated from experience significance.
+[ ] C05. Evidence valence (positive/negative support) is formally decoupled from parameter change direction.
+[ ] C06. Duplicate source events are detected and intercepted prior to evaluation.
+[ ] C07. Complete causal derivation provenance is attached to every evaluated contribution.
+[ ] C08. Contribution ingestion is idempotent across network and process restarts.
+[ ] C09. Quarantined evidence is identified and prohibited from driving persistent parameter modifications.
+
+--------------------------------------------------------------------------------
+D. EXPERIENCE POINTS AND EVIDENCE LEDGER (12 ITEMS)
+--------------------------------------------------------------------------------
+[ ] D01. Independent evidence balances are maintained strictly per learning dimension.
+[ ] D02. LearningDimensionRegistry defines all adaptable parameters and capabilities across Diva.
+[ ] D03. Every dimension in the registry identifies an authoritative owning engine.
+[ ] D04. Every dimension in the registry defines an explicit LearningAssessmentPolicy.
+[ ] D05. Positive and negative evidence masses are accumulated separately without cross-dimensional cancellation.
+[ ] D06. Evidence accumulation is encapsulated in atomic SQLite transactions.
+[ ] D07. The append-only experience_ledger is the sole authoritative source of truth.
+[ ] D08. Running dimensional balances can be deterministically reconstructed from ledger sequence 0.
+[ ] D09. Evidence decay is maintained independently from parameter/state decay in the owner.
+[ ] D10. Situational mode is included in the compound ledger partition index.
+[ ] D11. Ledger history is permanently immutable and audit-protected.
+[ ] D12. Database-level SQLite triggers prevent UPDATE, DELETE, and replacement-style mutations on the ledger.
+
+--------------------------------------------------------------------------------
+E. PATTERN RECOGNITION AND STATISTICAL ASSESSMENT (14 ITEMS)
+--------------------------------------------------------------------------------
+[ ] E01. Recurring pattern classifications (6 enums) are formally defined with operational thresholds.
+[ ] E02. Pattern Recognition preserves underlying contribution IDs and temporal spans.
+[ ] E03. Duplicate or correlated observations within an independence group do not count as independent evidence.
+[ ] E04. Correlated evidence is discounted using independence group grouping.
+[ ] E05. Context-dependent patterns are explicitly supported and conditioned on situational context.
+[ ] E06. Contradictory evidence distributions are identified and preserved in pattern outputs.
+[ ] E07. Two-sided CUSUM statistical assumptions, reference values ($k=0.5$), and thresholds ($h=4.5$) are calibrated.
+[ ] E08. One-sided and two-sided change detection policies are explicitly separated.
+[ ] E09. Binomial test assumptions (sample size, null hypothesis, exact formulation) are documented.
+[ ] E10. Multiple-testing false discovery rate (FDR) is controlled via Benjamini-Hochberg.
+[ ] E11. Platt calibration protocol enforces cross-validation, leakage prevention, and ECE validation.
+[ ] E12. Insufficient calibration data triggers conservative Laplace smoothing fallbacks.
+[ ] E13. Multi-context GeneralizationAssessment is required before cross-context parameter application.
+[ ] E14. LearningAssessment enforces explicit evidence sufficiency policies per dimension.
+
+--------------------------------------------------------------------------------
+F. LEARNING PROPOSALS AND DEVELOPMENT (15 ITEMS)
+--------------------------------------------------------------------------------
+[ ] F01. Parameter proposals specify explicit expected current values and target values.
+[ ] F02. Parameter proposals include owner engine and version guard identifiers.
+[ ] F03. Bounded change magnitude limits are strictly enforced.
+[ ] F04. Gradual adjustment ($\le 5\%$) and exceptional change policies are formally separated.
+[ ] F05. Capability proposals define development types, limitations, and verification benchmarks.
+[ ] F06. Knowledge proposals preserve Memory Engine consolidation authority.
+[ ] F07. Every proposal cites supporting immutable ledger entry IDs.
+[ ] F08. Every proposal includes a formal expected outcome declaration.
+[ ] F09. Every proposal is dispatched via an owner-directed contract.
+[ ] F10. Every dispatch attempt carries a unique dispatch_attempt_id.
+[ ] F11. Receipt acknowledgements and acceptance acknowledgements are distinct states.
+[ ] F12. Application confirmation and post-change verification statuses are distinct states.
+[ ] F13. Owner rejections and retry behaviors are typed and auditable.
+[ ] F14. Owner-directed rollback protocols are defined with known-good version references.
+[ ] F15. Post-change verification plans with defined observation windows are mandatory for proposals.
+
+--------------------------------------------------------------------------------
+G. LIFECYCLE AND COORDINATION (10 ITEMS)
+--------------------------------------------------------------------------------
+[ ] G01. Learning contribution lifecycle states are fully defined.
+[ ] G02. Learning assessment decision lifecycle is fully defined.
+[ ] G03. Proposal lifecycle enforces 13 mutually exclusive states.
+[ ] G04. Dispatch transmission lifecycle tracks attempts, timeouts, and transport errors.
+[ ] G05. Application tracking verifies owner receipts and applied versions.
+[ ] G06. Post-change verification lifecycle tracks observation windows and metric outcomes.
+[ ] G07. Proposal supersession and cancellation are supported prior to application.
+[ ] G08. Learning Lifecycle Manager does not override Learning Assessment decisions.
+[ ] G09. Development Coordination does not directly write to owner state.
+[ ] G10. All lifecycle state transitions are logged in an append-only SQLite audit table.
+
+--------------------------------------------------------------------------------
+H. DATA MODELS AND PERSISTENCE (12 ITEMS)
+--------------------------------------------------------------------------------
+[ ] H01. All 17 recommended data models are documented in the data dictionary.
+[ ] H02. Pydantic models are deeply immutable with frozen=True and recursive collection freezing.
+[ ] H03. Registry mappings use defensive deep copying before MappingProxyType wrapping.
+[ ] H04. Owner acknowledgements use strongly typed schemas without Any fields.
+[ ] H05. Dispatch attempts are persisted independently with attempt sequences.
+[ ] H06. Evidence ledger operations execute within atomic SQLite transactions.
+[ ] H07. Database-level append-only triggers are implemented and verified via unit tests.
+[ ] H08. Ingestion idempotency keys prevent duplicate ledger entries.
+[ ] H09. Running evidence balances can be deterministically reconciled from the ledger.
+[ ] H10. Owner application receipts are persisted with execution hashes.
+[ ] H11. Verification and rollback records are permanently stored in relational tables.
+[ ] H12. Engine crash recovery preserves proposal, dispatch, and ledger state.
+
+--------------------------------------------------------------------------------
+I. STATISTICAL RELIABILITY AND SAFETY (10 ITEMS)
+--------------------------------------------------------------------------------
+[ ] I01. Evidence observation confidence is not confused with parameter update probability.
+[ ] I02. Evidence independence is verified via causal lineage grouping.
+[ ] I03. Evidence decay rates are calibrated per dimension without mutating owner state.
+[ ] I04. Pattern detection thresholds have documented statistical power and false-alarm baselines.
+[ ] I05. False-positive and false-negative trade-offs are evaluated for change-point detectors.
+[ ] I06. Learning change magnitudes are clamped against hard systemic safety envelopes.
+[ ] I07. Foundational Persona and ethical guardrails are permanently protected from ordinary learning.
+[ ] I08. Generalization is evaluated across context similarity before cross-context transfer.
+[ ] I09. Regression monitoring is active throughout the post-change observation window.
+[ ] I10. Failed or harmful changes can be safely rolled back by their owning engines.
+
+--------------------------------------------------------------------------------
+J. TESTING AND FINAL VERIFICATION (20 ITEMS)
+--------------------------------------------------------------------------------
+[ ] J01. Scenario 1 (Repeated Failure) passes with capability improvement proposal.
+[ ] J02. Scenario 2 (Repeated Success) passes without unjustified parameter changes.
+[ ] J03. Scenario 3 (Contradictory Evidence) passes with hypothesis recalibration.
+[ ] J04. Scenario 4 (Duplicate Feedback) passes with idempotent de-duplication.
+[ ] J05. Scenario 5 (Context-Dependent Learning) passes with scoped context conditioning.
+[ ] J06. Scenario 6 (Insufficient Evidence) passes with proposal suppression.
+[ ] J07. Scenario 7 (Parameter Adjustment) passes with owner acceptance and application.
+[ ] J08. Scenario 8 (Owner Rejection) passes with rejection recording and non-override.
+[ ] J09. Scenario 9 (Regression Detection) passes with post-change metric degradation alert.
+[ ] J10. Scenario 10 (Owner-Directed Rollback) passes with historical state restoration.
+[ ] J11. Scenario 11 (Memory Correction) passes with Memory Engine authoritative handling.
+[ ] J12. Scenario 12 (Self-Reflection Verification) passes with independent outcome corroboration.
+[ ] J13. Scenario 13 (Crash Recovery) passes with zero ledger duplication or lost dispatches.
+[ ] J14. Scenario 14 (Foundational Persona Protection) passes with protected violation rejection.
+[ ] J15. All seven logical module boundaries pass integration tests.
+[ ] J16. All three canonical learning categories pass end-to-end verification.
+[ ] J17. Database append-only trigger tests pass against malicious UPDATE and DELETE attempts.
+[ ] J18. Ledger balance reconstruction passes from sequence 0 replay tests.
+[ ] J19. CUSUM and Binomial statistical unit tests pass on simulated benchmark distributions.
+[ ] J20. All 130 verification checkpoints have documented evidence of compliance.
+
+================================================================================
+MASTER CHECKLIST SUMMARY: 0/130 ITEMS VERIFIED (READY FOR IMPLEMENTATION AUDIT)
+================================================================================
+
+
+================================================================================
+PART 6 — RECOMMENDED IMPLEMENTATION ORDER & ACCEPTANCE SCENARIOS
+================================================================================
+
+--------------------------------------------------------------------------------
+PHASED 10-STAGE IMPLEMENTATION ROADMAP
+--------------------------------------------------------------------------------
+Development follows a strict dependency-ordered progression:
+
+Phase 1: Core Models, Enums, and LearningDimensionRegistry
+- Deliverables: Immutable Pydantic models, enums, defensive-copy registry, recursive freezing.
+- Gate: 100% unit test coverage on immutability, registry lockdown, and serialization.
+
+Phase 2: Feedback Service and Experience Evaluation
+- Deliverables: Boundary ingress, signature validation, outcome delta calculation, significance formula.
+- Gate: Idempotent ingestion verified; trivial noise discarded.
+
+Phase 3: Experience Point Manager and Immutable Ledger
+- Deliverables: SQLite tables, append-only triggers, atomic transactions, running balance reconciliation.
+- Gate: Crash injection and malicious UPDATE/DELETE triggers abort with explicit errors.
+
+Phase 4: Pattern Recognition Subsystem
+- Deliverables: 6 pattern classifications, independence group clustering, temporal span tracking.
+- Gate: Correlated inputs deduplicated; recurring patterns detected.
+
+Phase 5: Learning Assessment Subsystem
+- Deliverables: Two-sided CUSUM, exact binomial test with FDR, Platt calibration, sufficiency policies.
+- Gate: Statistical tests validated against known distributions; sufficiency gates pass.
+
+Phase 6: Development Coordination Subsystem
+- Deliverables: Owner-directed proposal formatting, version guards, dispatch attempts, retry handlers.
+- Gate: Proposals emitted with version guards; zero direct writes to owner state.
+
+Phase 7: Learning Lifecycle Manager Subsystem
+- Deliverables: 13-stage state machine, timeout tracking, append-only lifecycle event persistence.
+- Gate: Complete proposal lifecycle transitions verified; invalid state transitions rejected.
+
+Phase 8: Cross-Engine Integration Adapters
+- Deliverables: Standardized adapters for Thought, Emotion, Motivation, Attention, Energy, Memory.
+- Gate: All 7 adjacent engines transmit and receive validated learning messages.
+
+Phase 9: Post-Change Verification and Rollback Management
+- Deliverables: Verification observation windows, regression detectors, owner rollback requests.
+- Gate: Simulated regressions reliably trigger owner-directed rollbacks.
+
+Phase 10: System Hardening, Stress Testing, and Final Audit
+- Deliverables: Crash recovery validation, WAL benchmark, execution of all 14 acceptance scenarios.
+- Gate: All 14 acceptance scenarios pass; 130/130 checklist items verified.
+
+--------------------------------------------------------------------------------
+ALL 14 MANDATORY END-TO-END ACCEPTANCE SCENARIOS
+--------------------------------------------------------------------------------
+
+Scenario 1: Repeated Failure (Capability Improvement Proposal)
+- Initial State: Diva attempts complex regex text extraction task.
+- Trigger: 3 consecutive failures across distinct sessions where extracted patterns fail unit tests.
+- Execution: Experience Evaluation logs negative evidence; Pattern Recognition detects `RECURRING_FAILURE`; Learning Assessment evaluates evidence ($N=3$, confidence=0.96) and determines capability gap; Development Coordination emits `CapabilityDevelopmentRequest(capability_id='text.regex_parser', type='CORRECTING_FAILURE')`.
+- Result: Capability development proposal dispatched to Tool/Reasoning subsystem without altering core parameters.
+
+Scenario 2: Repeated Success (No Unjustified Parameter Change)
+- Initial State: Diva successfully answers 10 consecutive factual history questions.
+- Trigger: 10 successful query events.
+- Execution: Experience Evaluation logs positive evidence; Pattern Recognition detects `RECURRING_SUCCESS`; Learning Assessment evaluates dimension `memory.retrieval_accuracy`.
+- Result: System verifies accuracy is already operating within target envelope; emits `NO_CHANGE` decision; avoids parameter inflation.
+
+Scenario 3: Contradictory Evidence (Hypothesis Recalibration)
+- Initial State: Existing hypothesis posits user prefers highly formal academic language.
+- Trigger: User explicitly states: "Please keep it casual and concise, don't be so formal."
+- Execution: Feedback Service normalizes correction; Experience Evaluation calculates high outcome delta ($\Delta=0.85$, significance=0.90); Learning Assessment updates hypothesis balance; formal style hypothesis drops below confidence threshold; casual style hypothesis promoted.
+- Result: Evidence balance adjusts cleanly; future proposals align with casual persona layer.
+
+Scenario 4: Duplicate Feedback (Idempotent De-duplication)
+- Initial State: Network glitch causes emitting engine to send identical task outcome event 3 times.
+- Trigger: 3 identical messages with `source_event_id = 'evt_task_9012'`.
+- Execution: First event is ingested, evaluated, and committed to ledger; second and third events match in-memory cache and database unique constraint; both are intercepted and discarded with `DUPLICATE_IGNORED`.
+- Result: Ledger contains exactly 1 row; dimensional balance increments exactly once.
+
+Scenario 5: Context-Dependent Learning (Scoped Conditioning)
+- Initial State: Diva interacts across two distinct contexts: `coding_terminal` (technical) and `casual_chat` (social).
+- Trigger: Rapid, concise replies receive high user praise in `coding_terminal` but produce conversational friction in `casual_chat`.
+- Execution: Pattern Recognition detects `CONTEXT_DEPENDENT_PATTERN`; Generalization Assessment evaluates transfer: context similarity $S_{\text{ctx}} = 0.30 < 0.75$; generalization rejected.
+- Result: Learning Engine formulates a *context-conditioned override* scoped exclusively to `coding_terminal`, preserving warm pacing in `casual_chat`.
+
+Scenario 6: Insufficient Evidence (Proposal Suppression)
+- Initial State: Diva experiences a single unexpected timeout during an image generation call.
+- Trigger: 1 failure event ($N=1$).
+- Execution: Experience Evaluation inscriber logs negative evidence; Pattern Recognition marks `EMERGING_PATTERN`; Learning Assessment evaluates against policy requirement ($N \ge 5$).
+- Result: Learning Assessment rejects proposal creation with `INSUFFICIENT_EVIDENCE`; parameter remains untouched; no proposal dispatched.
+
+Scenario 7: Parameter Adjustment (Owner Acceptance and Application)
+- Initial State: Attention Control parameter `attention.distraction_threshold` is at version 12, value 0.40.
+- Trigger: CUSUM detector flags sustained upward drift in distraction events ($S_t^+ \ge 4.5$).
+- Execution: Learning Assessment approves bounded increase ($\Delta = +0.05$); Development Coordination dispatches `ParameterChangeRequest(expected_version=12, target=0.45)`; Attention Control verifies version 12 matches, applies 0.45, increments internal version to 13, and returns `OwnerApplicationReceipt(status='SUCCESSFULLY_APPLIED', new_version=13)`.
+- Result: Parameter successfully updated through owner authority with full cryptographic receipt.
+
+Scenario 8: Owner Rejection (Version Conflict Handling)
+- Initial State: Learning Engine prepares proposal targeting `emotion.reactivity` assuming version 8.
+- Trigger: Concurrently, user manually adjusted emotion settings, advancing Emotion Engine internal version to 9.
+- Execution: Development Coordination dispatches request with `expected_current_version = 8`; Emotion Engine detects version mismatch ($9 \ne 8$) and rejects request with `REJECTED_VERSION_CONFLICT`.
+- Result: Learning Engine records rejection, marks proposal `REJECTED`, invalidates stale assumption, re-synchronizes current version, and schedules re-evaluation.
+
+Scenario 9: Regression Detection (Post-Change Degradation Alert)
+- Initial State: Parameter change applied to `social.conversational_verbosity` (reduced by 10%).
+- Trigger: Post-change verification observation window begins (50 turns).
+- Execution: In turns 1-20, user clarification requests increase by $40\%$ ($\text{measured\_drop} > \text{regression\_threshold}$); Verification monitor flags regression; Lifecycle Manager transitions proposal from `VERIFICATION_PENDING` to `FAILED`.
+- Result: Regression alert published; automatic rollback sequence triggered.
+
+Scenario 10: Owner-Directed Rollback (Historical State Restoration)
+- Initial State: Proposal marked `FAILED` due to regression in Scenario 9.
+- Trigger: Rollback trigger fired.
+- Execution: Development Coordination constructs `RollbackRequest` specifying `known_good_version = 5` and `known_good_value = 0.60`; Social Cognition Engine verifies request, restores 0.60, increments version to 7, and returns `RollbackReceipt`.
+- Result: Parameter safely restored to stable baseline by its owner; Learning Engine locks dimension against re-proposing reduction.
+
+Scenario 11: Memory Correction (Authoritative Handling)
+- Initial State: Diva's memory contains assertion: "The capital of Australia is Sydney."
+- Trigger: User corrects Diva: "The capital of Australia is Canberra."
+- Execution: Experience Evaluation validates external user correction; Learning Assessment approves knowledge update; emits `KnowledgeUpdateProposal(action='RETRACT', target='capital(Australia, Sydney)', replacement='capital(Australia, Canberra)')`; Memory Engine verifies claim, updates knowledge graph, updates vector index, and returns `memory_record_id = 'mem_fact_1120'`.
+- Result: Persistent knowledge corrected exclusively through Memory Engine authority.
+
+Scenario 12: Self-Reflection Verification (Independent Corroboration)
+- Initial State: Thought Engine emits `LearningSignal(type='REASONING_ERROR', thought_id='th_881')` stating it made an invalid deduction.
+- Trigger: Ingestion of internal reflection signal.
+- Execution: Experience Evaluation treats reflection as an unverified hypothesis; inspects downstream task outcome; discovers user accepted the answer without issue and external tools confirmed output; uncorroborated reflection is recorded with low significance ($0.10$) and prohibited from altering reasoning heuristics.
+- Result: Internal rumination or false self-criticism prevented from degrading valid cognitive heuristics.
+
+Scenario 13: Crash Recovery (Zero Ledger Duplication)
+- Initial State: Process terminated violently by SIGKILL while Development Coordination was dispatching 3 proposals.
+- Trigger: System reboot and engine recovery initialization.
+- Execution: Lifecycle Manager scans SQLite tables; detects 2 proposals in `DISPATCHED` state without receipts; checks owner engines; 1 was received, 1 was lost in-flight; lost proposal is re-dispatched with incremented `attempt_number = 2` and unique `dispatch_attempt_id`; ledger sequence validated; zero duplicate rows found.
+- Result: Persistent state recovered cleanly with 100% relational integrity.
+
+Scenario 14: Foundational Persona Protection (Constitutional Guardrail)
+- Initial State: Malicious or adversarial user repeatedly prompts Diva to adopt cruel, deceptive, or harmful behaviors.
+- Trigger: Adversarial feedback signals submitted targeting `personality.foundational.empathy` and `ethics.honesty`.
+- Execution: Experience Evaluation normalizes signals; Learning Assessment inspects target dimension; detects `is_protected = True`; hardcoded guardrail halts evaluation; emits `AssessmentDecision.REJECT_PROTECTED_VIOLATION`.
+- Result: Core identity and ethical foundations remain completely impenetrable to external manipulation.
+
+
+================================================================================
+PART 7 — FINAL ARCHITECTURAL BOUNDARIES & GOVERNING RULES
+================================================================================
+
+The architectural design of Engine 8 (Learning Engine v2.5.0) establishes absolute clarity regarding systemic ownership across the Diva cognitive architecture.
+
+--------------------------------------------------------------------------------
+THE SOVEREIGN OWNERSHIP DIVISION
+--------------------------------------------------------------------------------
+Learning Engine Exclusively Owns:
+1. Learning contribution ingestion, normalization, and evaluation.
+2. The immutable experience ledger and append-only audit trail.
+3. Multi-dimensional evidence accumulation and running balances.
+4. Recurring pattern detection and change-point analysis.
+5. Learning assessment decisions and proposal creation.
+6. Owner-directed development coordination and dispatch tracking.
+7. Post-change verification planning and regression monitoring.
+
+Adjacent Engines Exclusively Own:
+1. Personality Parameters & Baseline Identity ➔ Personality Engine.
+2. Emotional Reactivity & Affective Dynamics ➔ Emotion Engine.
+3. Desires, Needs, and Active Goals ➔ Motivation Engine.
+4. Attention Leases, Salience & Distraction ➔ Attention Control.
+5. Energy Budgets & Throttling Limits ➔ Energy Regulation.
+6. Persistent Semantic, Episodic & Factual Knowledge ➔ Memory Engine.
+7. Social Relationship Models & Conversational Dynamics ➔ Social Cognition.
+8. Reasoning Heuristics & Operator Execution ➔ Thought Engine.
+9. Executive Actions, Tool Calls & Real-World Execution ➔ Cognitive Integration.
+
+--------------------------------------------------------------------------------
+THE SUPREME GOVERNING INVARIANT
+--------------------------------------------------------------------------------
+THE LEARNING ENGINE DECIDES WHETHER ACCUMULATED EVIDENCE JUSTIFIES PROPOSING A CHANGE.
+THE OWNER ENGINE DECIDES WHETHER, WHEN, AND HOW TO APPLY THAT CHANGE.
+
+Under no circumstances does the Learning Engine possess direct write access to the state of any other engine. By maintaining this separation, enforcing deep model immutability, establishing database-level append-only triggers, and grounding all proposals in statistical rigor, the Learning Engine provides Diva with genuine, adaptive, self-improving intelligence while preserving architectural stability, identity integrity, and system safety.
+================================================================================
+END OF SPECIFICATION — DIVA ENGINE 8: LEARNING ENGINE v2.5.0
+================================================================================

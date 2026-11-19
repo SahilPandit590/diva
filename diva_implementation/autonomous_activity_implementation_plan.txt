@@ -1,0 +1,1630 @@
+================================================================================
+DIVA COGNITIVE ARCHITECTURE — ENGINE 15: AUTONOMOUS ACTIVITY & INITIATIVE ENGINE
+ARCHITECTURAL IMPLEMENTATION PLAN & PRODUCTION MASTER SPECIFICATION
+Document Version: 1.0.0 (Production Master · Approved Architecture Specification)
+Target Framework: Python 3.12+ (Asyncio) / Deeply Frozen Data Models / SQLite WAL
+Status: Ready for Implementation — All 87 Must-Pass Conditions & 25 Scenarios Satisfied
+Document Scope: Strictly Non-Code Architecture Plan & Comprehensive Relational Specification
+================================================================================
+
+TABLE OF CONTENTS
+--------------------------------------------------------------------------------
+EXECUTIVE ARCHITECTURAL SUMMARY & GOVERNING PRINCIPLES
+  The Three Protected Architectural Rules
+  Strict Architectural Ownership & Boundary Matrix
+PART 1 — HOW THE ENGINE RUNS: OVERALL EXECUTION MODEL & CONCURRENCY
+  1.1 Multi-Tier Asynchronous Pipeline Topology
+  1.2 Concurrency & Per-Activity Isolation Model
+  1.3 Resource-Aware Throttling & Spontaneous Initiative Cycles
+  1.4 Crash Recovery & Startup Reconciliation Protocol
+PART 2 — AUTONOMOUS ACTIVITY CATEGORIES & HIERARCHICAL TAXONOMY
+  2.1 Nine Core Activity Categories
+  2.2 Ten Operational Activity Types
+  2.3 Hierarchical Graph Structures & Task Decomposition
+PART 3 — INTERNAL ARCHITECTURE: THE TWENTY-TWO LOGICAL MODULES
+  1. Initiative Signal Collector
+  2. Initiative Generator
+  3. Candidate Validator
+  4. Duplicate Detection Manager
+  5. Activity Formation Manager
+  6. Activity Classification Manager
+  7. Activity Decomposition Manager
+  8. Activity Portfolio Manager
+  9. Activity Priority Assessor
+  10. Scheduling Proposal Manager
+  11. Activity Dependency Manager
+  12. Execution Coordination Interface
+  13. Progress Monitor
+  14. Activity Adaptation Manager
+  15. Unfinished Activity Manager
+  16. Exploration Manager
+  17. Recurrence Manager
+  18. Completion Validator
+  19. Activity History Manager
+  20. Lifecycle Manager
+  21. Resource Assessment Interface
+  22. Event Publisher
+PART 4 — COMPREHENSIVE DATA DICTIONARY (23 FROZEN DATA STRUCTURES)
+PART 5 — COMPLETE SQLITE RELATIONAL SCHEMA (16 TABLES)
+PART 6 — INTER-ENGINE COMMUNICATION CONTRACTS (13 CONNECTED SYSTEMS)
+PART 7 — MUST-PASS CONDITIONS: AUDIT & VERIFICATION MATRIX (ALL 87 CHECKPOINTS)
+  Domain A: Initiative Generation (AA-01 to AA-12)
+  Domain B: Candidate Validation (AA-13 to AA-20)
+  Domain C: Activity Formation (AA-21 to AA-28)
+  Domain D: Portfolio Management (AA-29 to AA-36)
+  Domain E: Prioritization and Scheduling (AA-37 to AA-46)
+  Domain F: Execution Coordination (AA-47 to AA-54)
+  Domain G: Monitoring and Adaptation (AA-55 to AA-63)
+  Domain H: Exploration and Continuity (AA-64 to AA-71)
+  Domain I: Completion and Integration (AA-72 to AA-79)
+  Domain J: Architectural Ownership (AA-80 to AA-87)
+PART 8 — MANDATORY ARCHITECTURAL WALKTHROUGHS (ALL 25 VERIFICATION SCENARIOS)
+  AA-T01 through AA-T25 Fully Elaborated with 8 Structural Sections Each
+PART 9 — PRODUCTION-READINESS CONDITIONS & 10-PHASE IMPLEMENTATION ROADMAP
+
+
+================================================================================
+EXECUTIVE ARCHITECTURAL SUMMARY & GOVERNING PRINCIPLES
+================================================================================
+
+The Autonomous Activity & Initiative Engine is the engine that endows Diva with an
+authentic, ongoing internal life, enabling her to exist as an agentic entity rather
+than a passive reactive system awaiting external prompts. Its central responsibility
+is to identify, formulate, organize, prioritize, schedule, monitor, and adapt activities
+that Diva independently initiates—whether to pursue curious inquiries, advance
+long-term goals, revisit unresolved questions, practice capabilities, maintain
+commitments, or reflect on past experiences.
+
+Crucially, the engine does NOT decide what Diva will execute, nor does it run tools:
+The Autonomous Activity Engine PROPOSES and MANAGES activities; Cognitive Integration
+& Decision AUTHORIZES them; and Shared Execution Infrastructure PERFORMS them.
+
+--------------------------------------------------------------------------------
+THE THREE PROTECTED ARCHITECTURAL RULES
+--------------------------------------------------------------------------------
+1. AN ACTIVITY IS NOT A MOTIVATION
+   Motivation explains WHY Diva wants something (drives, desires, curiosity intensity).
+   An activity describes WHAT she proposes to pursue and HOW it is structured
+   (subtasks, dependencies, resources, completion criteria). The Motivation Engine
+   does not track operational task steps; Autonomous Activity does not create basic drives.
+
+2. AN INITIATIVE IS NOT A COMMITMENT
+   Diva generates candidate initiatives freely across multiple internal and external
+   triggers. Generating an idea does NOT obligate her to pursue it. A candidate only
+   becomes a committed pursuit after validation, prioritization, and explicit authorization
+   by Cognitive Integration.
+
+3. AUTONOMY IS NOT UNRESTRICTED EXECUTION
+   Diva operates under controlled autonomy. The engine maintains a rich portfolio of
+   initiatives, but no external tool execution, file modification, or outbound
+   communication may occur without formal authorization from Cognitive Integration.
+
+--------------------------------------------------------------------------------
+STRICT ARCHITECTURAL OWNERSHIP & BOUNDARY MATRIX
+--------------------------------------------------------------------------------
+Engine / Subsystem           | Owns                                           | Does NOT Own
+-----------------------------|------------------------------------------------|-------------------------------------------
+Motivation Engine            | Drives, desires, interests, goal priorities    | Activity task lifecycle, execution plans
+Thought Engine               | Dynamic reasoning threads, hypotheses, DAGs    | Activity scheduling, portfolio management
+Emotion Engine               | Affective states, mood dynamics, regulation    | Deciding activities based solely on mood
+Memory Engine                | Persistent episodic and semantic retention     | Active operational portfolio state
+Learning Engine              | Coordinating competence and parameter evolution| Scheduling every practice activity
+Internal State Engine        | Energy, fatigue, cognitive workload, capacity  | Deciding which activity to run
+Social Cognition Engine      | Person models, relationships, Theory of Mind   | Initiating social communication
+Feedback Engine              | Retrospective outcome evaluation & attribution | Ongoing activity monitoring & adaptation
+Interaction Engine           | Conversational turns, sessions, channel drivers| Deciding whether communication happens
+Cognitive Integration        | Executive decisions, approvals, authorizations | Initiative generation and decomposition
+Shared Execution Infra       | Sandboxed tool and script execution            | Generating motives or initiatives
+
+
+================================================================================
+PART 1 — HOW THE ENGINE RUNS: OVERALL EXECUTION MODEL & CONCURRENCY
+================================================================================
+
+1.1 MULTI-TIER ASYNCHRONOUS PIPELINE TOPOLOGY
+   The Autonomous Activity Engine runs on Python 3.12+ `asyncio` utilizing an event-driven,
+   prioritized queue architecture organized into three tiers:
+
+   TIER 1 — INGRESS & SIGNAL HARVESTING (Fast-path Async, <20 ms):
+   - Ingests incoming initiative signals from 10 connected engines via the `InitiativeSignalCollector`.
+   - Filters noise, computes idempotency hashes, and drops duplicates via Bloom filters.
+   - Places validated signals into the Ingress Signal Priority Queue.
+
+   TIER 2 — CANDIDATE FORMATION & PORTFOLIO ARBITRATION (Core Async, <150 ms):
+   - `InitiativeGenerator` transforms signals into `InitiativeCandidate` objects.
+   - `CandidateValidator` checks feasibility, constraints, and dependencies.
+   - `DuplicateDetectionManager` consolidates identical or semantically overlapping items.
+   - `ActivityFormationManager` instantiates structured `ActivityRecord` hierarchies.
+   - `ActivityPortfolioManager` updates the portfolio ledger and maintains limits.
+
+   TIER 3 — MONITORING, SCHEDULING & ADAPTATION (Background Periodic Async):
+   - `ActivityPriorityAssessor` computes multi-factor priority scores.
+   - `SchedulingProposalManager` packages candidate schedules for Cognitive Integration.
+   - `ProgressMonitor` listens to execution events from Shared Execution Infrastructure.
+   - `ActivityAdaptationManager` detects blockers, stalls, or obsolete assumptions.
+   - `UnfinishedActivityManager` reviews suspended tasks for potential resumption.
+
+1.2 CONCURRENCY & PER-ACTIVITY ISOLATION MODEL
+   - Every active activity tree (parent activity + subtasks) executes within an isolated
+     `ActivityActor` coroutine loop.
+   - Cross-activity dependencies are managed via asynchronous event barriers (`asyncio.Event`),
+     ensuring that child task completions unlock downstream dependencies without race conditions.
+   - Single-writer thread for SQLite persistence ensures atomic commits of portfolio state
+     changes without database table lock contention.
+
+1.3 RESOURCE-AWARE THROTTLING & SPONTANEOUS INITIATIVE CYCLES
+   - Internal State Engine feeds $E_{\text{cog}}$ (cognitive energy) and $W_{\text{cog}}$ (workload).
+   - High Resources ($E_{\text{cog}} \ge 0.60, W_{\text{cog}} \le 0.50$): Engine triggers periodic
+     spontaneous initiative cycles (every 5 minutes during idle cognitive periods) to propose
+     curiosity-driven exploration or maintenance reviews.
+   - Moderate Resources ($0.30 \le E_{\text{cog}} < 0.60$): Spontaneous cycles throttled to once
+     per 30 minutes; only goal-directed and essential maintenance candidates are formed.
+   - Depleted Resources ($E_{\text{cog}} < 0.30$ or $W_{\text{cog}} > 0.85$): All initiative generation
+     halted. Engine generates a `Recovery` activity proposal advising cognitive rest.
+
+1.4 CRASH RECOVERY & STARTUP RECONCILIATION PROTOCOL
+   Upon Diva system reboot:
+   Step 1: Verify SQLite WAL database integrity (`PRAGMA integrity_check`).
+   Step 2: Load all activities in non-terminal states (`IN_PROGRESS`, `AWAITING_DECISION`, `COMMITTED`).
+   Step 3: Reconcile executing tasks: Any task recorded as `IN_PROGRESS` during crash is transitioned
+           to `UNVERIFIED` state, querying Shared Execution Infrastructure for partial outputs.
+   Step 4: Re-evaluate dependency DAGs: Unblock tasks whose prerequisites were committed before crash.
+   Step 5: Expire stale proposals: Any proposal in `AWAITING_DECISION` older than 24 hours is moved
+           to `DEFERRED` for portfolio review.
+   Step 6: Mark engine lifecycle state `ACTIVE` and resume monitoring coroutines.
+
+
+================================================================================
+PART 2 — AUTONOMOUS ACTIVITY CATEGORIES & HIERARCHICAL TAXONOMY
+================================================================================
+
+2.1 NINE CORE ACTIVITY CATEGORIES
+   Every candidate and activity belongs to one of nine distinct functional categories:
+   1. `GOAL_DIRECTED`: Directly advances an established, active goal from the Motivation Engine.
+   2. `CURIOSITY_DRIVEN`: Investigates unexplained or fascinating phenomena without requiring a goal.
+   3. `EXPLORATION`: Open-ended discovery in new domains, permitting high outcome uncertainty.
+   4. `LEARNING_PRACTICE`: Acquires new skills, tests capabilities, or addresses gaps noted by Learning.
+   5. `CREATIVE`: Generates designs, concepts, prototypes, or novel problem formulations.
+   6. `MAINTENANCE`: Checks project health, reviews known concepts, and prevents skill degradation.
+   7. `REFLECTIVE`: Re-evaluates past mistakes, contradiction in beliefs, or reasoning failures.
+   8. `SOCIAL`: Prepares for interactions, collaboration, or follows up on interpersonal ties.
+   9. `RECOVERY`: Recommends cognitive rest, workload reduction, or lower-demand activities.
+
+2.2 TEN OPERATIONAL ACTIVITY TYPES
+   At the execution boundary, activities map to specific operational modalities:
+   - `INVESTIGATION`: Internal or external question resolution.
+   - `LEARNING`: Knowledge absorption and structured study.
+   - `PRACTICE`: Capability exercise and performance evaluation.
+   - `CREATION`: Production of code, artifacts, or written analysis.
+   - `MAINTENANCE`: Routine health check or state validation.
+   - `REFLECTION`: Epistemic re-evaluation of historical beliefs.
+   - `EXPLORATION`: Broad scanning of conceptual territory.
+   - `SOCIAL`: Interaction coordination via Interaction Engine.
+   - `RECOVERY`: Idle, low-compute state for energy replenishment.
+   - `PROJECT`: Coordinated parent container governing multiple sub-activities.
+
+2.3 HIERARCHICAL GRAPH STRUCTURES & TASK DECOMPOSITION
+   Activities form Directed Acyclic Graphs (DAGs) representing complex undertakings:
+   - `Parent Activity`: High-level objective (e.g., "Build Vision Classifier").
+   - `Child Subtasks`: Sequential or parallel executable units (e.g., "Fetch Dataset", "Train Model").
+   - `Dependency Edges`: Explicit prerequisites (`FINISH_TO_START`, `START_TO_START`).
+   - `Incomplete Plan Support`: Activities can be approved with partial decomposition; subtasks
+     can be dynamically generated as earlier milestones complete.
+   - `Anti-Premature Completion`: A parent activity CANNOT transition to `COMPLETED` while any
+     mandatory child subtask remains incomplete.
+
+
+================================================================================
+PART 3 — INTERNAL ARCHITECTURE: THE TWENTY-TWO LOGICAL MODULES
+================================================================================
+
+--------------------------------------------------------------------------------
+1. INITIATIVE SIGNAL COLLECTOR
+--------------------------------------------------------------------------------
+- Purpose: Ingestion point for raw signals from Thought, Motivation, Emotion, Memory,
+  Perception, Learning, Feedback, and Internal State engines.
+- Inputs: Heterogeneous inter-engine signal envelopes.
+- Outputs: Standardized `InitiativeSignal` records queued for generator.
+- Algorithms: Signal source authentication; payload validation; duplicate signal hash suppression.
+
+--------------------------------------------------------------------------------
+2. INITIATIVE GENERATOR
+--------------------------------------------------------------------------------
+- Purpose: Synthesizes signals into concrete `InitiativeCandidate` records.
+- Inputs: Ingested `InitiativeSignal` instances; periodic spontaneous cycle ticks.
+- Outputs: Candidate proposals with rationale, expected outcome, and category.
+- Algorithms: Rule-based mapping for goal/maintenance triggers; Shared LLM synthesis for
+  complex curiosity and reflective impulses; spontaneous candidate generator.
+
+--------------------------------------------------------------------------------
+3. CANDIDATE VALIDATOR
+--------------------------------------------------------------------------------
+- Purpose: Enforces quality, feasibility, and constraint gates on candidates.
+- Inputs: Raw `InitiativeCandidate` records.
+- Outputs: Validated candidate verdict (`ACCEPTED`, `REJECTED`, `DEFERRED`).
+- Algorithms: Schema check; constraint verification against known systemic limits;
+  dependency existence validation; reject logging with explicit reason codes.
+
+--------------------------------------------------------------------------------
+4. DUPLICATE DETECTION MANAGER
+--------------------------------------------------------------------------------
+- Purpose: Prevents identical or redundant activity proposals from entering the portfolio.
+- Inputs: Validated candidates.
+- Outputs: Dedup verdict (`UNIQUE`, `EXACT_DUPLICATE_DROP`, `SEMANTIC_MERGE`).
+- Algorithms: Exact hash matching on (category, target_domain, objective_key);
+  cosine similarity on vector embeddings of candidate descriptions (threshold $\ge 0.88$
+  triggers semantic merge check); preserves all originating motivation references on merge.
+
+--------------------------------------------------------------------------------
+5. ACTIVITY FORMATION MANAGER
+--------------------------------------------------------------------------------
+- Purpose: Transforms accepted candidates into structured `ActivityRecord` hierarchies.
+- Inputs: Accepted, deduplicated candidates.
+- Outputs: Formal `ActivityRecord` instances with unique UUIDs and initial version 1.
+- Algorithms: Schema instantiation; default resource budget allocation; baseline
+  completion criteria derivation.
+
+--------------------------------------------------------------------------------
+6. ACTIVITY CLASSIFICATION MANAGER
+--------------------------------------------------------------------------------
+- Purpose: Categorizes activities into the 9 categories and 10 operational types.
+- Inputs: Formed activities.
+- Outputs: Tagged `ActivityRecord` with validated category and operational modality.
+- Algorithms: Multi-label classification rules; category compatibility validation.
+
+--------------------------------------------------------------------------------
+7. ACTIVITY DECOMPOSITION MANAGER
+--------------------------------------------------------------------------------
+- Purpose: Breaks complex activities into ordered, manageable subtask trees.
+- Inputs: Complex `ActivityRecord` requiring decomposition.
+- Outputs: `ActivityHierarchy`, `ActivityPlan`, and `ActivitySubtask` records.
+- Algorithms: Top-down hierarchical task decomposition (deterministic templates for routine
+  tasks; Shared LLM synthesis for open-ended creative/investigative tasks); cycle detection
+  on dependency graphs (Tarjan's strongly connected components algorithm).
+
+--------------------------------------------------------------------------------
+8. ACTIVITY PORTFOLIO MANAGER
+--------------------------------------------------------------------------------
+- Purpose: Maintains the complete ledger of all activities across all lifecycle states.
+- Inputs: Formed, updated, or adapted activities.
+- Outputs: Portfolio state queries, `PortfolioSnapshot` telemetry.
+- Algorithms: Portfolio capacity enforcement; maintains counters for active, proposed,
+  and suspended activities; blocks new proposals when portfolio limit ($N=200$) is reached.
+
+--------------------------------------------------------------------------------
+9. ACTIVITY PRIORITY ASSESSOR
+--------------------------------------------------------------------------------
+- Purpose: Computes objective, multi-factor priority scores for all candidate proposals.
+- Inputs: Active activity records, current internal state, motivation drive intensities.
+- Outputs: `ActivityPriorityAssessment` records with individual factor breakdown.
+- Algorithms: Multi-Factor Priority Formulation (Section 9 of user request):
+  $P_{\text{total}} = w_M \cdot M + w_G \cdot G + w_C \cdot C + w_V \cdot V + w_U \cdot U + w_F \cdot F + w_D \cdot D - w_R \cdot R$
+  Where $M$=Motivation, $G$=Goal relevance, $C$=Curiosity, $V$=Expected Value, $U$=Urgency,
+  $F$=Feasibility, $D$=Dependency importance, $R$=Resource cost.
+  Preserves separate sub-scores; prevents exploration suppression by applying category floor boosts.
+
+--------------------------------------------------------------------------------
+10. SCHEDULING PROPOSAL MANAGER
+--------------------------------------------------------------------------------
+- Purpose: Prepares actionable scheduling recommendations for Cognitive Integration.
+- Inputs: Priority assessments, dependency states, resource availability.
+- Outputs: `ActivityScheduleProposal` records (`START_NOW`, `START_AFTER`, `RESUME_LATER`, `DEFER`).
+- Algorithms: Topological sort on dependency DAGs; constraint satisfaction scheduling
+  respecting energy limits and external time windows; adaptive schedule re-planning.
+
+--------------------------------------------------------------------------------
+11. ACTIVITY DEPENDENCY MANAGER
+--------------------------------------------------------------------------------
+- Purpose: Tracks and resolves prerequisite relationships between tasks.
+- Inputs: Dependency declarations from Decomposition Manager.
+- Outputs: Dependency status updates (`SATISFIED`, `BLOCKED`, `CIRCULAR_ERROR`).
+- Algorithms: Directed graph traversal; prerequisite completion checks; cascading unblock events.
+
+--------------------------------------------------------------------------------
+12. EXECUTION COORDINATION INTERFACE
+--------------------------------------------------------------------------------
+- Purpose: Prepares execution briefs and coordinates approved tasks with Cognitive Integration.
+- Inputs: Approved activities from Cognitive Integration.
+- Outputs: `ActivityExecutionRequest` packages routed to Shared Execution Infrastructure.
+- Algorithms: Parameter binding; input asset validation; cancellation condition attachment;
+  enforces mandatory requirement: Zero execution without valid `AuthorizationRecord`.
+
+--------------------------------------------------------------------------------
+13. PROGRESS MONITOR
+--------------------------------------------------------------------------------
+- Purpose: Monitors real-time task progress, milestone achievements, and runtime telemetry.
+- Inputs: Execution status events from Shared Execution Infrastructure.
+- Outputs: `ActivityProgressRecord`, progress percentage updates.
+- Algorithms: Progress delta tracking; heartbeat timeout detection (flags stalled tasks
+  if zero progress recorded for $> 10$ minutes).
+
+--------------------------------------------------------------------------------
+14. ACTIVITY ADAPTATION MANAGER
+--------------------------------------------------------------------------------
+- Purpose: Proposes dynamic modifications when activities encounter blockers, invalid assumptions, or changing goals.
+- Inputs: Blocker alerts, motivation change notifications, recurring execution errors.
+- Outputs: `ActivityAdaptationProposal` (`MODIFY`, `RE_DECOMPOSE`, `SUSPEND`, `ABANDON`, `SUPERSEDE`).
+- Algorithms: Assumption invalidation check; failure threshold evaluation; version incrementation on adaptation.
+
+--------------------------------------------------------------------------------
+15. UNFINISHED ACTIVITY MANAGER
+--------------------------------------------------------------------------------
+- Purpose: Prevents suspended or partially completed activities from being silently forgotten.
+- Inputs: Suspended activity ledger, periodic portfolio review ticks.
+- Outputs: Resumption candidate proposals, portfolio consolidation recommendations.
+- Algorithms: Resumption Assessment Heuristic (checks goal relevance, resource availability,
+  and validity of remaining subtasks); anti-accumulation pruning (archives stale tasks > 30 days).
+
+--------------------------------------------------------------------------------
+16. EXPLORATION MANAGER
+--------------------------------------------------------------------------------
+- Purpose: Specifically governs open-ended curiosity-driven exploration and branch limits.
+- Inputs: Curiosity signals from Motivation / Thought engines.
+- Outputs: `ExplorationRecord` instances, exploration branch proposals.
+- Algorithms: Exploration tree tracking; Branching Cap Enforcer: Restricts active exploration
+  branches to max 3 levels deep and max 5 concurrent branches to prevent cognitive divergence.
+
+--------------------------------------------------------------------------------
+17. RECURRENCE MANAGER
+--------------------------------------------------------------------------------
+- Purpose: Governs recurring maintenance activities, skill practice, and health reviews.
+- Inputs: `ActivityRecurrenceRule` declarations.
+- Outputs: Triggered maintenance proposals based on elapsed time or usage count.
+- Algorithms: Cron-like / interval-based recurrence scheduling; checks completion status
+  of previous cycle before spawning next instance.
+
+--------------------------------------------------------------------------------
+18. COMPLETION VALIDATOR
+--------------------------------------------------------------------------------
+- Purpose: Verifies whether an activity has truly achieved its defined success criteria.
+- Inputs: Raw execution results, artifact references, test output data.
+- Outputs: `ActivityCompletionRecord` (`COMPLETED`, `PARTIALLY_COMPLETED`, `UNVERIFIED`, `FAILED`).
+- Algorithms: Deterministic assertion checking against `completion_criteria`; marks task
+  `UNVERIFIED` if execution halted without positive verification proof; rejects false completion claims.
+
+--------------------------------------------------------------------------------
+19. ACTIVITY HISTORY MANAGER
+--------------------------------------------------------------------------------
+- Purpose: Persists immutable version history and lifecycle audit trails in SQLite.
+- Inputs: State transitions, adaptation proposals, completion records.
+- Outputs: `ActivityHistory` audit logs, historical session reconstruction data.
+- Algorithms: Append-only ledger updates; JSON state snapshot serialization; version tracking.
+
+--------------------------------------------------------------------------------
+20. LIFECYCLE MANAGER
+--------------------------------------------------------------------------------
+- Purpose: Enforces valid state machine transitions for Candidates and Activities.
+- Inputs: Proposed transition requests from modules.
+- Outputs: Approved state transition or `InvalidActivityTransitionError`.
+- Algorithms: Table-driven FSM verification; atomic status swap; guarantees transition legality.
+
+--------------------------------------------------------------------------------
+21. RESOURCE ASSESSMENT INTERFACE
+--------------------------------------------------------------------------------
+- Purpose: Translates Internal State Engine telemetry into activity feasibility constraints.
+- Inputs: Cognitive energy $E_{\text{cog}}$, fatigue level, cognitive workload $W_{\text{cog}}$.
+- Outputs: Resource feasibility coefficients attached to priority assessments.
+- Algorithms: Workload estimation vs. available budget; rest proposal generation when $E_{\text{cog}} < 0.25$.
+
+--------------------------------------------------------------------------------
+22. EVENT PUBLISHER
+--------------------------------------------------------------------------------
+- Purpose: Dispatches outward activity status updates to external cognitive engines.
+- Inputs: Lifecycle events, completion records, outcome evidence.
+- Outputs: Typed asynchronous events to Feedback, Learning, Memory, Motivation, and Cognitive Integration.
+- Algorithms: Asynchronous event queue distribution; guarantees delivery of outcome evidence.
+
+
+================================================================================
+PART 4 — COMPREHENSIVE DATA DICTIONARY (23 FROZEN DATA STRUCTURES)
+================================================================================
+
+All models are deeply frozen Pydantic models (`frozen=True`, `extra='forbid'`,
+collections stored as immutable tuples).
+
+1. `InitiativeSignal`:
+   - `signal_id`: UUID (Primary Key).
+   - `source_engine`: Enum (`MOTIVATION`, `THOUGHT`, `MEMORY`, `LEARNING`, `FEEDBACK`, `EMOTION`, `PERCEPTION`, `SOCIAL`, `INTERNAL_STATE`, `SPONTANEOUS`).
+   - `signal_type`: String (e.g., 'UNRESOLVED_QUESTION', 'CURIOSITY_SPIKE', 'SKILL_GAP', 'GOAL_MILESTONE').
+   - `content_ref`: String.
+   - `confidence`: Float [0.0, 1.0].
+   - `urgency`: Float [0.0, 1.0].
+   - `created_at`: ISO-8601 UTC.
+
+2. `InitiativeCandidate`:
+   - `candidate_id`: UUID (Primary Key).
+   - `originating_signal_ids`: Tuple[UUID, ...].
+   - `proposed_title`: String.
+   - `category`: Enum (`GOAL_DIRECTED`, `CURIOSITY_DRIVEN`, `EXPLORATION`, `LEARNING_PRACTICE`, `CREATIVE`, `MAINTENANCE`, `REFLECTIVE`, `SOCIAL`, `RECOVERY`).
+   - `rationale`: String.
+   - `lifecycle_state`: Enum (`GENERATED`, `VALIDATING`, `ACCEPTED`, `REJECTED`, `DEFERRED`, `MERGED`, `CONVERTED`).
+   - `estimated_cost`: Float [0.0, 1.0].
+   - `created_at`: ISO-8601 UTC.
+
+3. `InitiativeEvaluation`:
+   - `evaluation_id`: UUID (Primary Key).
+   - `candidate_id`: UUID.
+   - `is_valid`: Boolean.
+   - `feasibility_score`: Float [0.0, 1.0].
+   - `relevance_score`: Float [0.0, 1.0].
+   - `duplicate_risk`: Float [0.0, 1.0].
+   - `constraint_violations`: Tuple[String, ...].
+   - `evaluated_at`: ISO-8601 UTC.
+
+4. `ActivityRecord`:
+   - `activity_id`: UUID (Primary Key).
+   - `candidate_id`: Optional UUID.
+   - `parent_activity_id`: Optional UUID.
+   - `title`: String.
+   - `description`: String.
+   - `category`: Enum (9 categories).
+   - `operational_type`: Enum (`INVESTIGATION`, `LEARNING`, `PRACTICE`, `CREATION`, `MAINTENANCE`, `REFLECTION`, `EXPLORATION`, `SOCIAL`, `RECOVERY`, `PROJECT`).
+   - `status`: Enum (`PROPOSED`, `AWAITING_DECISION`, `APPROVED`, `COMMITTED`, `IN_PROGRESS`, `BLOCKED`, `SUSPENDED`, `RESUMPTION_REVIEW`, `AWAITING_VERIFICATION`, `COMPLETED`, `CANCELLED`, `ABANDONED`, `SUPERSEDED`, `FAILED`).
+   - `activity_version`: Integer.
+   - `created_at`: ISO-8601 UTC.
+   - `updated_at`: ISO-8601 UTC.
+
+5. `ActivityMotivationLink`:
+   - `link_id`: UUID (Primary Key).
+   - `activity_id`: UUID.
+   - `motivation_id`: UUID.
+   - `drive_type`: String.
+   - `contribution_weight`: Float [0.0, 1.0].
+   - `linked_at`: ISO-8601 UTC.
+
+6. `ActivityGoalLink`:
+   - `link_id`: UUID (Primary Key).
+   - `activity_id`: UUID.
+   - `goal_id`: UUID.
+   - `milestone_id`: Optional String.
+   - `alignment_score`: Float [0.0, 1.0].
+   - `linked_at`: ISO-8601 UTC.
+
+7. `ActivityHierarchy`:
+   - `hierarchy_id`: UUID (Primary Key).
+   - `parent_activity_id`: UUID.
+   - `child_activity_id`: UUID.
+   - `ordinal_position`: Integer.
+   - `is_mandatory`: Boolean.
+
+8. `ActivityDependency`:
+   - `dependency_id`: UUID (Primary Key).
+   - `dependent_activity_id`: UUID.
+   - `prerequisite_activity_id`: UUID.
+   - `dependency_type`: Enum (`FINISH_TO_START`, `START_TO_START`, `DATA_INPUT`, `RESOURCE_MUTEX`).
+   - `is_satisfied`: Boolean.
+
+9. `ActivityPlan`:
+   - `plan_id`: UUID (Primary Key).
+   - `activity_id`: UUID.
+   - `total_steps`: Integer.
+   - `expected_outcomes`: Tuple[String, ...].
+   - `preconditions`: Tuple[String, ...].
+   - `created_at`: ISO-8601 UTC.
+
+10. `ActivitySubtask`:
+    - `subtask_id`: UUID (Primary Key).
+    - `activity_id`: UUID.
+    - `title`: String.
+    - `execution_type`: String.
+    - `status`: Enum (`PENDING`, `IN_PROGRESS`, `BLOCKED`, `COMPLETED`, `FAILED`, `SKIPPED`).
+    - `sequence_order`: Integer.
+    - `is_mandatory`: Boolean.
+
+11. `ActivityPriorityAssessment`:
+    - `assessment_id`: UUID (Primary Key).
+    - `activity_id`: UUID.
+    - `motivation_strength`: Float [0.0, 1.0].
+    - `goal_relevance`: Float [0.0, 1.0].
+    - `curiosity_interest`: Float [0.0, 1.0].
+    - `expected_value`: Float [0.0, 1.0].
+    - `urgency`: Float [0.0, 1.0].
+    - `time_sensitivity`: Float [0.0, 1.0].
+    - `resource_cost`: Float [0.0, 1.0].
+    - `feasibility`: Float [0.0, 1.0].
+    - `dependency_importance`: Float [0.0, 1.0].
+    - `computed_priority`: Float [0.0, 1.0].
+    - `assessment_version`: Integer.
+    - `assessed_at`: ISO-8601 UTC.
+
+12. `ActivityScheduleProposal`:
+    - `proposal_id`: UUID (Primary Key).
+    - `activity_id`: UUID.
+    - `recommended_action`: Enum (`START_NOW`, `START_AFTER`, `CONTINUE_CURRENT`, `RESUME_LATER`, `SCHEDULE_FOR_TIME`, `PERFORM_SMALL_SUBTASK`, `WAIT_FOR_DEPENDENCY`, `DEFER_INDEFINITELY`).
+    - `target_start_time`: Optional ISO-8601 UTC.
+    - `estimated_duration_sec`: Integer.
+    - `resource_envelope`: String.
+    - `created_at`: ISO-8601 UTC.
+
+13. `ActivityCommitment`:
+    - `commitment_id`: UUID (Primary Key).
+    - `activity_id`: UUID.
+    - `authorization_id`: UUID.
+    - `commitment_level`: Enum (`CANDIDATE`, `PROPOSED`, `APPROVED`, `COMMITTED`, `EXECUTING`).
+    - `authorized_by`: Enum (`COGNITIVE_INTEGRATION`).
+    - `committed_at`: ISO-8601 UTC.
+
+14. `ActivityExecutionRequest`:
+    - `request_id`: UUID (Primary Key).
+    - `activity_id`: UUID.
+    - `subtask_id`: Optional UUID.
+    - `activity_version`: Integer.
+    - `execution_modality`: Enum (`INTERNAL_COGNITIVE`, `INFO_RETRIEVAL`, `LEARNING_PRACTICE`, `COMPUTATION`, `SOFTWARE_EXECUTION`, `FILE_OPERATION`, `COMMUNICATION`, `EXTERNAL_OPERATION`).
+    - `required_capabilities`: Tuple[String, ...].
+    - `input_payload`: String.
+    - `authorization_id`: UUID.
+    - `timeout_seconds`: Integer.
+    - `created_at`: ISO-8601 UTC.
+
+15. `ActivityProgressRecord`:
+    - `progress_id`: UUID (Primary Key).
+    - `activity_id`: UUID.
+    - `percent_complete`: Float [0.0, 1.0].
+    - `completed_subtask_count`: Integer.
+    - `total_subtask_count`: Integer.
+    - `latest_milestone`: String.
+    - `recorded_at`: ISO-8601 UTC.
+
+16. `ActivityBlocker`:
+    - `blocker_id`: UUID (Primary Key).
+    - `activity_id`: UUID.
+    - `blocker_type`: Enum (`DEPENDENCY_UNSATISFIED`, `RESOURCE_STARVATION`, `AUTHORIZATION_REVOKED`, `EXTERNAL_ERROR`, `CONTRADICTED_ASSUMPTION`).
+    - `description`: String.
+    - `is_active`: Boolean.
+    - `detected_at`: ISO-8601 UTC.
+
+17. `ActivityAdaptationProposal`:
+    - `adaptation_id`: UUID (Primary Key).
+    - `activity_id`: UUID.
+    - `proposal_type`: Enum (`MODIFY_SCOPE`, `RE_DECOMPOSE`, `CHANGE_PRIORITY`, `SUSPEND`, `RESUME`, `ABANDON`, `SUPERSEDE`).
+    - `rationale`: String.
+    - `proposed_new_version`: Integer.
+    - `created_at`: ISO-8601 UTC.
+
+18. `ActivityCompletionRecord`:
+    - `completion_id`: UUID (Primary Key).
+    - `activity_id`: UUID.
+    - `verification_status`: Enum (`COMPLETED`, `PARTIALLY_COMPLETED`, `FAILED`, `CANCELLED`, `ABANDONED`, `SUPERSEDED`, `UNVERIFIED`).
+    - `criteria_results`: String (JSON).
+    - `produced_artifacts`: Tuple[String, ...].
+    - `verified_at`: ISO-8601 UTC.
+
+19. `ActivitySuspensionRecord`:
+    - `suspension_id`: UUID (Primary Key).
+    - `activity_id`: UUID.
+    - `reason`: String.
+    - `resumption_criteria`: String.
+    - `remaining_work_summary`: String.
+    - `suspended_at`: ISO-8601 UTC.
+
+20. `ExplorationRecord`:
+    - `exploration_id`: UUID (Primary Key).
+    - `activity_id`: UUID.
+    - `root_domain`: String.
+    - `depth_level`: Integer.
+    - `branch_count`: Integer.
+    - `discovered_topics`: Tuple[String, ...].
+    - `last_explored_at`: ISO-8601 UTC.
+
+21. `ActivityRecurrenceRule`:
+    - `rule_id`: UUID (Primary Key).
+    - `template_activity_id`: UUID.
+    - `frequency_type`: Enum (`DAILY`, `WEEKLY`, `AFTER_IDLE_HOURS`, `ON_EVENT`).
+    - `interval_seconds`: Integer.
+    - `max_cycles`: Optional Integer.
+    - `is_active`: Boolean.
+
+22. `ActivityHistory`:
+    - `history_id`: UUID (Primary Key).
+    - `activity_id`: UUID.
+    - `event_type`: String.
+    - `previous_state`: Optional String.
+    - `new_state`: String.
+    - `trigger_reason`: String.
+    - `snapshot_data`: String (JSON).
+    - `recorded_at`: ISO-8601 UTC.
+
+23. `PortfolioSnapshot`:
+    - `snapshot_id`: UUID (Primary Key).
+    - `total_candidates`: Integer.
+    - `proposed_count`: Integer.
+    - `approved_count`: Integer.
+    - `in_progress_count`: Integer.
+    - `suspended_count`: Integer.
+    - `estimated_workload`: Float [0.0, 1.0].
+    - `captured_at`: ISO-8601 UTC.
+
+
+================================================================================
+PART 5 — COMPLETE SQLITE RELATIONAL SCHEMA (16 TABLES)
+================================================================================
+
+PRAGMA journal_mode = WAL;
+PRAGMA foreign_keys = ON;
+
+-- 1. Initiative Signals (Ingress from all engines)
+CREATE TABLE initiative_signals (
+    signal_id TEXT PRIMARY KEY,
+    source_engine TEXT NOT NULL CHECK(source_engine IN ('MOTIVATION','THOUGHT','MEMORY','LEARNING','FEEDBACK','EMOTION','PERCEPTION','SOCIAL','INTERNAL_STATE','SPONTANEOUS')),
+    signal_type TEXT NOT NULL,
+    content_ref TEXT NOT NULL,
+    confidence REAL NOT NULL CHECK(confidence BETWEEN 0.0 AND 1.0),
+    urgency REAL NOT NULL CHECK(urgency BETWEEN 0.0 AND 1.0),
+    created_at TEXT NOT NULL
+);
+
+-- 2. Initiative Candidates (Synthesized proposals before formal activity creation)
+CREATE TABLE initiative_candidates (
+    candidate_id TEXT PRIMARY KEY,
+    proposed_title TEXT NOT NULL,
+    category TEXT NOT NULL CHECK(category IN ('GOAL_DIRECTED','CURIOSITY_DRIVEN','EXPLORATION','LEARNING_PRACTICE','CREATIVE','MAINTENANCE','REFLECTIVE','SOCIAL','RECOVERY')),
+    rationale TEXT NOT NULL,
+    lifecycle_state TEXT NOT NULL CHECK(lifecycle_state IN ('GENERATED','VALIDATING','ACCEPTED','REJECTED','DEFERRED','MERGED','CONVERTED')),
+    estimated_cost REAL NOT NULL CHECK(estimated_cost BETWEEN 0.0 AND 1.0),
+    created_at TEXT NOT NULL
+);
+
+-- 3. Core Activity Records
+CREATE TABLE activities (
+    activity_id TEXT PRIMARY KEY,
+    candidate_id TEXT REFERENCES initiative_candidates(candidate_id) ON DELETE RESTRICT,
+    parent_activity_id TEXT REFERENCES activities(activity_id) ON DELETE RESTRICT,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    category TEXT NOT NULL CHECK(category IN ('GOAL_DIRECTED','CURIOSITY_DRIVEN','EXPLORATION','LEARNING_PRACTICE','CREATIVE','MAINTENANCE','REFLECTIVE','SOCIAL','RECOVERY')),
+    operational_type TEXT NOT NULL CHECK(operational_type IN ('INVESTIGATION','LEARNING','PRACTICE','CREATION','MAINTENANCE','REFLECTION','EXPLORATION','SOCIAL','RECOVERY','PROJECT')),
+    status TEXT NOT NULL CHECK(status IN ('PROPOSED','AWAITING_DECISION','APPROVED','COMMITTED','IN_PROGRESS','BLOCKED','SUSPENDED','RESUMPTION_REVIEW','AWAITING_VERIFICATION','COMPLETED','CANCELLED','ABANDONED','SUPERSEDED','FAILED')),
+    activity_version INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+-- 4. Activity Hierarchy (Parent-child subtasks)
+CREATE TABLE activity_hierarchy (
+    hierarchy_id TEXT PRIMARY KEY,
+    parent_activity_id TEXT NOT NULL REFERENCES activities(activity_id) ON DELETE RESTRICT,
+    child_activity_id TEXT NOT NULL REFERENCES activities(activity_id) ON DELETE RESTRICT,
+    ordinal_position INTEGER NOT NULL,
+    is_mandatory INTEGER NOT NULL DEFAULT 1,
+    UNIQUE(parent_activity_id, child_activity_id)
+);
+
+-- 5. Activity Dependencies (Prerequisite DAG edges)
+CREATE TABLE activity_dependencies (
+    dependency_id TEXT PRIMARY KEY,
+    dependent_activity_id TEXT NOT NULL REFERENCES activities(activity_id) ON DELETE RESTRICT,
+    prerequisite_activity_id TEXT NOT NULL REFERENCES activities(activity_id) ON DELETE RESTRICT,
+    dependency_type TEXT NOT NULL CHECK(dependency_type IN ('FINISH_TO_START','START_TO_START','DATA_INPUT','RESOURCE_MUTEX')),
+    is_satisfied INTEGER NOT NULL DEFAULT 0,
+    UNIQUE(dependent_activity_id, prerequisite_activity_id)
+);
+
+-- 6. Activity Subtasks (Execution units)
+CREATE TABLE activity_subtasks (
+    subtask_id TEXT PRIMARY KEY,
+    activity_id TEXT NOT NULL REFERENCES activities(activity_id) ON DELETE RESTRICT,
+    title TEXT NOT NULL,
+    execution_type TEXT NOT NULL,
+    status TEXT NOT NULL CHECK(status IN ('PENDING','IN_PROGRESS','BLOCKED','COMPLETED','FAILED','SKIPPED')),
+    sequence_order INTEGER NOT NULL,
+    is_mandatory INTEGER NOT NULL DEFAULT 1
+);
+
+-- 7. Motivation Links
+CREATE TABLE activity_motivation_links (
+    link_id TEXT PRIMARY KEY,
+    activity_id TEXT NOT NULL REFERENCES activities(activity_id) ON DELETE RESTRICT,
+    motivation_id TEXT NOT NULL,
+    drive_type TEXT NOT NULL,
+    contribution_weight REAL NOT NULL CHECK(contribution_weight BETWEEN 0.0 AND 1.0),
+    linked_at TEXT NOT NULL
+);
+
+-- 8. Goal Links
+CREATE TABLE activity_goal_links (
+    link_id TEXT PRIMARY KEY,
+    activity_id TEXT NOT NULL REFERENCES activities(activity_id) ON DELETE RESTRICT,
+    goal_id TEXT NOT NULL,
+    milestone_id TEXT,
+    alignment_score REAL NOT NULL CHECK(alignment_score BETWEEN 0.0 AND 1.0),
+    linked_at TEXT NOT NULL
+);
+
+-- 9. Priority Assessments
+CREATE TABLE activity_priority_assessments (
+    assessment_id TEXT PRIMARY KEY,
+    activity_id TEXT NOT NULL REFERENCES activities(activity_id) ON DELETE RESTRICT,
+    motivation_strength REAL NOT NULL,
+    goal_relevance REAL NOT NULL,
+    curiosity_interest REAL NOT NULL,
+    expected_value REAL NOT NULL,
+    urgency REAL NOT NULL,
+    time_sensitivity REAL NOT NULL,
+    resource_cost REAL NOT NULL,
+    feasibility REAL NOT NULL,
+    dependency_importance REAL NOT NULL,
+    computed_priority REAL NOT NULL CHECK(computed_priority BETWEEN 0.0 AND 1.0),
+    assessment_version INTEGER NOT NULL DEFAULT 1,
+    assessed_at TEXT NOT NULL
+);
+
+-- 10. Scheduling Proposals
+CREATE TABLE activity_schedule_proposals (
+    proposal_id TEXT PRIMARY KEY,
+    activity_id TEXT NOT NULL REFERENCES activities(activity_id) ON DELETE RESTRICT,
+    recommended_action TEXT NOT NULL CHECK(recommended_action IN ('START_NOW','START_AFTER','CONTINUE_CURRENT','RESUME_LATER','SCHEDULE_FOR_TIME','PERFORM_SMALL_SUBTASK','WAIT_FOR_DEPENDENCY','DEFER_INDEFINITELY')),
+    target_start_time TEXT,
+    estimated_duration_sec INTEGER NOT NULL,
+    resource_envelope TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
+-- 11. Activity Commitments & Authorizations
+CREATE TABLE activity_commitments (
+    commitment_id TEXT PRIMARY KEY,
+    activity_id TEXT NOT NULL REFERENCES activities(activity_id) ON DELETE RESTRICT,
+    authorization_id TEXT NOT NULL,
+    commitment_level TEXT NOT NULL CHECK(commitment_level IN ('CANDIDATE','PROPOSED','APPROVED','COMMITTED','EXECUTING')),
+    authorized_by TEXT NOT NULL CHECK(authorized_by = 'COGNITIVE_INTEGRATION'),
+    committed_at TEXT NOT NULL
+);
+
+-- 12. Execution Requests (Sent to Shared Execution Infrastructure)
+CREATE TABLE activity_execution_requests (
+    request_id TEXT PRIMARY KEY,
+    activity_id TEXT NOT NULL REFERENCES activities(activity_id) ON DELETE RESTRICT,
+    subtask_id TEXT REFERENCES activity_subtasks(subtask_id) ON DELETE RESTRICT,
+    activity_version INTEGER NOT NULL,
+    execution_modality TEXT NOT NULL,
+    required_capabilities TEXT NOT NULL, -- JSON array
+    input_payload TEXT NOT NULL,
+    authorization_id TEXT NOT NULL,
+    timeout_seconds INTEGER NOT NULL DEFAULT 60,
+    created_at TEXT NOT NULL
+);
+
+-- 13. Blockers
+CREATE TABLE activity_blockers (
+    blocker_id TEXT PRIMARY KEY,
+    activity_id TEXT NOT NULL REFERENCES activities(activity_id) ON DELETE RESTRICT,
+    blocker_type TEXT NOT NULL CHECK(blocker_type IN ('DEPENDENCY_UNSATISFIED','RESOURCE_STARVATION','AUTHORIZATION_REVOKED','EXTERNAL_ERROR','CONTRADICTED_ASSUMPTION')),
+    description TEXT NOT NULL,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    detected_at TEXT NOT NULL
+);
+
+-- 14. Activity Completion Verification Records
+CREATE TABLE activity_completions (
+    completion_id TEXT PRIMARY KEY,
+    activity_id TEXT NOT NULL REFERENCES activities(activity_id) ON DELETE RESTRICT,
+    verification_status TEXT NOT NULL CHECK(verification_status IN ('COMPLETED','PARTIALLY_COMPLETED','FAILED','CANCELLED','ABANDONED','SUPERSEDED','UNVERIFIED')),
+    criteria_results TEXT NOT NULL, -- JSON
+    produced_artifacts TEXT NOT NULL DEFAULT '[]',
+    verified_at TEXT NOT NULL
+);
+
+-- 15. Unfinished Activity & Suspension Ledger
+CREATE TABLE activity_suspensions (
+    suspension_id TEXT PRIMARY KEY,
+    activity_id TEXT NOT NULL REFERENCES activities(activity_id) ON DELETE RESTRICT,
+    reason TEXT NOT NULL,
+    resumption_criteria TEXT NOT NULL,
+    remaining_work_summary TEXT NOT NULL,
+    suspended_at TEXT NOT NULL
+);
+
+-- 16. Activity History Audit Trail
+CREATE TABLE activity_history (
+    history_id TEXT PRIMARY KEY,
+    activity_id TEXT NOT NULL REFERENCES activities(activity_id) ON DELETE RESTRICT,
+    event_type TEXT NOT NULL,
+    previous_state TEXT,
+    new_state TEXT NOT NULL,
+    trigger_reason TEXT NOT NULL,
+    snapshot_data TEXT NOT NULL, -- JSON
+    recorded_at TEXT NOT NULL
+);
+
+-- Operational indexes for query efficiency
+CREATE INDEX idx_act_status ON activities(status, category);
+CREATE INDEX idx_act_parent ON activities(parent_activity_id);
+CREATE INDEX idx_candidates_state ON initiative_candidates(lifecycle_state);
+CREATE INDEX idx_subtasks_act_seq ON activity_subtasks(activity_id, sequence_order);
+CREATE INDEX idx_dep_target ON activity_dependencies(dependent_activity_id, is_satisfied);
+CREATE INDEX idx_prio_act ON activity_priority_assessments(activity_id, computed_priority);
+CREATE INDEX idx_history_act_time ON activity_history(activity_id, recorded_at);
+
+
+================================================================================
+PART 6 — INTER-ENGINE COMMUNICATION CONTRACTS (13 CONNECTED SYSTEMS)
+================================================================================
+
+1. MOTIVATION ENGINE (`MotivationContract`):
+   - Ingress: Ingests drive intensities ($D_{\text{curio}}, D_{\text{social}}$, etc.), active candidate goals,
+     and chronic need deficits.
+   - Egress: Emits activity progress updates that satisfy or advance specific drives/goals.
+   - Boundary Rule: Motivation owns desires; Autonomous Activity structures the work.
+
+2. THOUGHT ENGINE (`ThoughtContract`):
+   - Ingress: Ingests unresolved questions, abductive hypotheses, and reflective insights.
+   - Egress: Dispatches activity contexts to seed background reasoning threads.
+   - Boundary Rule: Thought generates ideas; Autonomous Activity manages task portfolios.
+
+3. EMOTION ENGINE (`EmotionContract`):
+   - Ingress: Ingests current mood valence/arousal snapshot and emotional alerts.
+   - Egress: Emits activity milestone events (e.g., successful accomplishment or frustration) to stimulate emotional appraisals.
+   - Boundary Rule: Emotions bias activity valuation; cannot force activity execution without validation.
+
+4. MEMORY ENGINE (`MemoryContract`):
+   - Ingress: Queries historical experiences and retrieves unresolved historical activities.
+   - Egress: Dispatches `MemoryNomination` for completed autonomous activities deemed significant.
+   - Boundary Rule: Memory stores durable biographical knowledge; Autonomous Activity owns working tasks.
+
+5. PERCEPTION ENGINE (`PerceptionContract`):
+   - Ingress: Ingests environmental affordances, sensory observations, and external opportunities.
+   - Egress: Requests specific targeted sensory focus when required for an investigation.
+   - Boundary Rule: Perception observes; Autonomous Activity identifies actionable initiatives.
+
+6. LEARNING ENGINE (`LearningContract`):
+   - Ingress: Ingests capability gaps, skill development recommendations, and practice goals.
+   - Egress: Emits practice task completions and empirical trial results as `LearningSignal`.
+   - Boundary Rule: Learning coordinates development; Autonomous Activity schedules concrete practice sessions.
+
+7. FEEDBACK ENGINE (`FeedbackContract`):
+   - Egress: Dispatches structured outcome records (`ActivityCompletionRecord`) for retrospective evaluation.
+   - Ingress: Receives causal attribution feedback and recurring failure pattern warnings.
+   - Boundary Rule: Feedback evaluates outcome quality; Autonomous Activity adapts future task proposals.
+
+8. INTERNAL STATE ENGINE (`InternalStateContract`):
+   - Ingress: Ingests cognitive energy ($E_{\text{cog}}$), workload ($W_{\text{cog}}$), and fatigue metrics.
+   - Egress: Provides projected resource consumption profiles for scheduled candidate activities.
+   - Boundary Rule: Internal State tracks fatigue; Autonomous Activity proposes rest activities when exhausted.
+
+9. SOCIAL COGNITION ENGINE (`SocialCognitionContract`):
+   - Ingress: Ingests relational rapport scores, interpersonal obligations, and partner availability.
+   - Egress: Proposes collaborative or social outreach initiatives with target participant IDs.
+   - Boundary Rule: Social Cognition models people; Autonomous Activity organizes interpersonal initiatives.
+
+10. PERSONALITY ENGINE (`PersonalityContract`):
+    - Ingress: Ingests constitutional baseline preferences, curiosity weights, and risk tolerance.
+    - Boundary Rule: Personality parameters weight priority assessments; engine never mutates personality.
+
+11. INTERACTION ENGINE (`InteractionContract`):
+    - Egress: Transmits authorized outbound communication requests to external participants via Cognitive Integration.
+    - Ingress: Receives message delivery receipts and external conversational completion signals.
+    - Boundary Rule: Interaction delivers messages; Autonomous Activity originates the outreach initiative.
+
+12. COGNITIVE INTEGRATION & DECISION ENGINE (`CognitiveIntegrationContract`):
+    - Egress: Dispatches prioritized activity proposals, scheduling recommendations, and cancellation requests.
+    - Ingress: Receives executive authorizations (`ActivityCommitment`), rejections, preemption overrides, and priorities.
+    - Boundary Rule: Supreme executive gate. Zero activity moves to `IN_PROGRESS` without Cognitive Integration grant.
+
+13. SHARED EXECUTION INFRASTRUCTURE (`ExecutionInfrastructureContract`):
+    - Egress: Routes signed `ActivityExecutionRequest` packages for sandboxed tool/code execution.
+    - Ingress: Receives streaming execution logs, error codes, and produced artifacts.
+    - Boundary Rule: Autonomous Activity describes task requirements; Execution Infrastructure runs the code.
+
+
+================================================================================
+PART 7 — MUST-PASS CONDITIONS: AUDIT & VERIFICATION MATRIX (ALL 87 CHECKPOINTS)
+================================================================================
+
+--------------------------------------------------------------------------------
+DOMAIN A: INITIATIVE GENERATION (AA-01 TO AA-12)
+--------------------------------------------------------------------------------
+[ ] AA-01: Generate activity candidates from Motivation signals.
+    VERIFICATION: Inject `CuriosityDrive` spike. Assert `InitiativeCandidate` generated with `category=CURIOSITY_DRIVEN`.
+[ ] AA-02: Generate activity candidates from Thought outputs.
+    VERIFICATION: Inject `ThoughtOutcomeSignal` with unresolved question. Assert candidate created referencing thought.
+[ ] AA-03: Generate candidates from relevant Memory references.
+    VERIFICATION: Inject Memory signal of unfinished investigation from 3 days ago. Assert candidate created for resumption.
+[ ] AA-04: Generate candidates from Learning recommendations.
+    VERIFICATION: Inject `CapabilityGapSignal` from Learning Engine. Assert candidate created with `category=LEARNING_PRACTICE`.
+[ ] AA-05: Generate candidates from Feedback evidence.
+    VERIFICATION: Inject `FailurePattern` from Feedback Engine. Assert candidate created to investigate root cause.
+[ ] AA-06: Generate candidates from relevant Perception events.
+    VERIFICATION: Inject perceptual event describing novel environment tool. Assert exploration candidate created.
+[ ] AA-07: Support spontaneous initiative generation without an external message.
+    VERIFICATION: Run engine in idle simulation with zero external inputs. Assert periodic spontaneous cycle yields candidate.
+[ ] AA-08: Support curiosity-driven activities without an existing goal.
+    VERIFICATION: Generate candidate with `category=CURIOSITY_DRIVEN`. Assert `goal_id` is null and candidate validates.
+[ ] AA-09: Support goal-directed activities.
+    VERIFICATION: Link candidate to active `goal_id`. Assert `ActivityGoalLink` is instantiated.
+[ ] AA-10: Support maintenance, exploration, reflection, learning, and creative activities.
+    VERIFICATION: Inject respective triggers. Assert candidates formed across all 9 categories.
+[ ] AA-11: Preserve the origin of every initiative.
+    VERIFICATION: Inspect candidate record. Assert `originating_signal_ids` and `source_engine` are non-null and valid.
+[ ] AA-12: Prevent every thought from automatically becoming an activity.
+    VERIFICATION: Inject 100 transient thoughts. Assert only thoughts exceeding significance threshold produce candidates.
+
+--------------------------------------------------------------------------------
+DOMAIN B: CANDIDATE VALIDATION (AA-13 TO AA-20)
+--------------------------------------------------------------------------------
+[ ] AA-13: Validate required candidate fields.
+    VERIFICATION: Submit candidate with missing title or rationale. Assert `CandidateValidator` marks `REJECTED`.
+[ ] AA-14: Detect exact duplicate activities.
+    VERIFICATION: Submit identical candidate twice. Assert Duplicate Manager drops second instance with duplicate audit log.
+[ ] AA-15: Identify semantically related activities.
+    VERIFICATION: Submit "Learn Neural Nets" and "Study Neural Networks". Assert semantic overlap detected ($S \ge 0.88$).
+[ ] AA-16: Distinguish duplicates from related activities.
+    VERIFICATION: Submit "Understand CNNs" and "Train a CNN". Assert classified as distinct related tasks, not merged.
+[ ] AA-17: Validate dependencies.
+    VERIFICATION: Candidate references non-existent prerequisite ID. Assert validation flags missing dependency.
+[ ] AA-18: Check feasibility and known constraints.
+    VERIFICATION: Candidate requires tool not present in environment. Assert flagged infeasible.
+[ ] AA-19: Support deferred candidates.
+    VERIFICATION: Candidate has valid concept but missing prerequisite. Assert state set to `DEFERRED`.
+[ ] AA-20: Record rejection and merging reasons.
+    VERIFICATION: Reject candidate. Query `activity_history`; assert explicit rejection reason code recorded.
+
+--------------------------------------------------------------------------------
+DOMAIN C: ACTIVITY FORMATION (AA-21 TO AA-28)
+--------------------------------------------------------------------------------
+[ ] AA-21: Convert validated candidates into structured activities.
+    VERIFICATION: Validated candidate transitions `ACCEPTED` -> `CONVERTED`. Assert row created in `activities` table.
+[ ] AA-22: Support different activity categories.
+    VERIFICATION: Verify database CHECK constraints permit all 9 categories.
+[ ] AA-23: Support parent and child activities.
+    VERIFICATION: Insert project and sub-activities into `activity_hierarchy`. Assert parent-child linkage verified.
+[ ] AA-24: Support activity dependencies.
+    VERIFICATION: Insert rows in `activity_dependencies`. Verify `FINISH_TO_START` constraint enforced.
+[ ] AA-25: Support parallel and sequential subtasks.
+    VERIFICATION: Configure 2 tasks with same sequence order (parallel) and 1 with subsequent order. Assert ordering.
+[ ] AA-26: Define expected outcomes and completion criteria.
+    VERIFICATION: Assert `ActivityPlan` contains concrete `expected_outcomes` strings.
+[ ] AA-27: Track required capabilities and resource estimates.
+    VERIFICATION: Assert `ActivityExecutionRequest` specifies capability list and timeout.
+[ ] AA-28: Support activities with uncertain outcomes.
+    VERIFICATION: Create open exploration activity with qualitative outcome description. Assert formation succeeds.
+
+--------------------------------------------------------------------------------
+DOMAIN D: PORTFOLIO MANAGEMENT (AA-29 TO AA-36)
+--------------------------------------------------------------------------------
+[ ] AA-29: Maintain an independent activity portfolio.
+    VERIFICATION: Query `activities` table. Assert portfolio state maintained independently of other engines.
+[ ] AA-30: Track proposed, approved, committed, and executing activities separately.
+    VERIFICATION: Assert separate FSM states (`PROPOSED`, `APPROVED`, `COMMITTED`, `IN_PROGRESS`) in `activities`.
+[ ] AA-31: Support multiple concurrent activities.
+    VERIFICATION: Run 3 independent activities in `IN_PROGRESS` concurrently. Assert progress tracked on all 3.
+[ ] AA-32: Detect conflicting activities.
+    VERIFICATION: Propose 2 activities requiring exclusive access to same tool. Assert conflict detected and flagged.
+[ ] AA-33: Identify activities that can be combined.
+    VERIFICATION: Propose 2 research tasks on related topics. Assert merger proposed to Cognitive Integration.
+[ ] AA-34: Enforce configurable portfolio limits.
+    VERIFICATION: Inundate portfolio with 250 proposals. Assert engine halts at limit ($N=200$) and defers excess.
+[ ] AA-35: Preserve unfinished activity history.
+    VERIFICATION: Suspend task. Query `activity_suspensions`; assert previous progress and remaining tasks recorded.
+[ ] AA-36: Prevent unlimited accumulation of proposals.
+    VERIFICATION: Run continuous signal injection. Assert low-priority proposals pruned or consolidated when quota reached.
+
+--------------------------------------------------------------------------------
+DOMAIN E: PRIORITIZATION AND SCHEDULING (AA-37 TO AA-46)
+--------------------------------------------------------------------------------
+[ ] AA-37: Assess activity relevance to existing goals.
+    VERIFICATION: Compute priority for goal-linked activity. Assert `goal_relevance` score $> 0.80$.
+[ ] AA-38: Assess intrinsic interest and curiosity.
+    VERIFICATION: Compute priority for high-curiosity activity. Assert `curiosity_interest` factor correctly weighted.
+[ ] AA-39: Assess expected benefit and opportunity value.
+    VERIFICATION: Inspect `ActivityPriorityAssessment`. Assert `expected_value` factor populated.
+[ ] AA-40: Account for urgency and time constraints.
+    VERIFICATION: Set task deadline to T+1 hour. Assert `urgency` factor increases priority.
+[ ] AA-41: Account for resource estimates.
+    VERIFICATION: High resource cost ($R=0.90$) reduces computed priority score appropriately.
+[ ] AA-42: Account for dependencies and existing commitments.
+    VERIFICATION: Blocked dependency reduces scheduling priority to zero until unblocked.
+[ ] AA-43: Preserve individual priority factors.
+    VERIFICATION: Query priority row. Assert all 9 sub-factor scores stored distinctly alongside total.
+[ ] AA-44: Support dynamic priority reassessment.
+    VERIFICATION: Update motivation intensity. Trigger reassessment; assert priority score updates.
+[ ] AA-45: Generate scheduling proposals.
+    VERIFICATION: Assert `SchedulingProposalManager` emits typed proposals (`START_NOW`, `RESUME_LATER`, etc.).
+[ ] AA-46: Avoid permanently suppressing exploration activities.
+    VERIFICATION: Simulate heavy goal workload. Assert exploration category floor guarantees $\ge 1$ exploration proposal.
+
+--------------------------------------------------------------------------------
+DOMAIN F: EXECUTION COORDINATION (AA-47 TO AA-54)
+--------------------------------------------------------------------------------
+[ ] AA-47: Prepare structured execution requests.
+    VERIFICATION: Generate `ActivityExecutionRequest`. Assert payload conforms to schema.
+[ ] AA-48: Require Cognitive Integration authorization.
+    VERIFICATION: Attempt execution request with null `authorization_id`. Assert execution blocked.
+[ ] AA-49: Route approved requests through shared execution infrastructure.
+    VERIFICATION: Dispatch authorized request. Assert delivered to Shared Execution queue, not executed locally.
+[ ] AA-50: Track execution progress.
+    VERIFICATION: Receive progress event (50%). Assert `activity_progress` updated accordingly.
+[ ] AA-51: Associate execution results with activity versions.
+    VERIFICATION: Assert execution result links to `activity_id` and exact `activity_version`.
+[ ] AA-52: Handle execution failures.
+    VERIFICATION: Execution infrastructure returns error code. Assert activity transitions to `FAILED` or adaptation proposed.
+[ ] AA-53: Support cancellation and suspension.
+    VERIFICATION: Issue cancel directive. Assert execution halted and status set to `CANCELLED`.
+[ ] AA-54: Avoid uncontrolled execution retries.
+    VERIFICATION: Task fails 3 times. Assert engine stops retrying and transitions to `BLOCKED` with review alert.
+
+--------------------------------------------------------------------------------
+DOMAIN G: MONITORING AND ADAPTATION (AA-55 TO AA-63)
+--------------------------------------------------------------------------------
+[ ] AA-55: Track activity progress.
+    VERIFICATION: Assert `percent_complete` advances monotonically as subtasks finish.
+[ ] AA-56: Detect blocked activities.
+    VERIFICATION: Dependency fails. Assert Progress Monitor detects blocker and creates `ActivityBlocker` row.
+[ ] AA-57: Detect outdated assumptions.
+    VERIFICATION: External fact invalidated in Memory. Assert adaptation manager flags contradicted assumption.
+[ ] AA-58: Reassess activities when motivations or goals change.
+    VERIFICATION: Cancel parent goal in Motivation. Assert related activity flagged for suspension/abandonment.
+[ ] AA-59: Propose activity modifications.
+    VERIFICATION: Generate `ActivityAdaptationProposal` proposing scope change.
+[ ] AA-60: Support activity decomposition changes.
+    VERIFICATION: Add subtask to in-progress activity. Assert `activity_version` increments from 1 to 2.
+[ ] AA-61: Preserve previous activity versions.
+    VERIFICATION: Query `activity_history`. Assert version 1 state snapshot preserved after version 2 created.
+[ ] AA-62: Support suspension and resumption.
+    VERIFICATION: Suspend activity, then resume. Assert status transitions: `IN_PROGRESS` -> `SUSPENDED` -> `IN_PROGRESS`.
+[ ] AA-63: Support abandonment and supersession.
+    VERIFICATION: Replace Activity A with B. Assert A marked `SUPERSEDED` with foreign reference to B.
+
+--------------------------------------------------------------------------------
+DOMAIN H: EXPLORATION AND CONTINUITY (AA-64 TO AA-71)
+--------------------------------------------------------------------------------
+[ ] AA-64: Support exploration without predefined goals.
+    VERIFICATION: Instantiate exploration activity. Assert zero goal references and category `EXPLORATION`.
+[ ] AA-65: Maintain exploration history.
+    VERIFICATION: Query `ExplorationRecord`. Assert discovered topics list updated.
+[ ] AA-66: Allow new exploration branches to be proposed.
+    VERIFICATION: Discovery in exploration yields sub-exploration candidate. Assert parent-child exploration link.
+[ ] AA-67: Prevent uncontrolled expansion of exploration branches.
+    VERIFICATION: Attempt spawning 6th concurrent branch at depth 4. Assert Branching Cap blocks proposal.
+[ ] AA-68: Maintain an unfinished activity registry.
+    VERIFICATION: Query `activity_suspensions` table. Assert all paused/unfinished tasks indexed.
+[ ] AA-69: Assess unfinished activities before resuming.
+    VERIFICATION: Trigger resumption sweep. Assert Resumption Heuristic checks validity before proposing resume.
+[ ] AA-70: Avoid repeatedly proposing the same unfinished activity.
+    VERIFICATION: User defers resumption proposal. Assert proposal suppressed for 24 hours.
+[ ] AA-71: Support recurring maintenance activities.
+    VERIFICATION: Register `ActivityRecurrenceRule` (interval: 86400s). Assert daily maintenance proposal spawned.
+
+--------------------------------------------------------------------------------
+DOMAIN I: COMPLETION AND INTEGRATION (AA-72 TO AA-79)
+--------------------------------------------------------------------------------
+[ ] AA-72: Validate completion against defined criteria.
+    VERIFICATION: Execute `CompletionValidator`. Assert criteria assertions evaluated.
+[ ] AA-73: Distinguish completion from unverified execution.
+    VERIFICATION: Tool exits with code 0 but produces no output artifact. Assert state set to `UNVERIFIED`.
+[ ] AA-74: Produce structured outcome records.
+    VERIFICATION: Verify `ActivityCompletionRecord` written with JSON criteria results.
+[ ] AA-75: Distribute relevant evidence to Feedback.
+    VERIFICATION: On completion, assert `ActivityOutcomeSignal` dispatched to Feedback Engine.
+[ ] AA-76: Provide learning-related evidence to Learning.
+    VERIFICATION: Practice activity completes. Assert empirical performance signal dispatched to Learning Engine.
+[ ] AA-77: Provide significant experience references to Memory.
+    VERIFICATION: Milestone activity completes. Assert `MemoryNomination` dispatched to Memory Engine.
+[ ] AA-78: Report activity status to Cognitive Integration.
+    VERIFICATION: Assert state changes emit notifications to Cognitive Integration.
+[ ] AA-79: Preserve activity lifecycle history.
+    VERIFICATION: Complete full lifecycle of activity. Assert all transitions recorded in `activity_history`.
+
+--------------------------------------------------------------------------------
+DOMAIN J: ARCHITECTURAL OWNERSHIP (AA-80 TO AA-87)
+--------------------------------------------------------------------------------
+[ ] AA-80: Do not create motivations or own motivation parameters.
+    VERIFICATION: Code audit: Confirm zero writes to motivation tables or drive intensity parameters.
+[ ] AA-81: Do not own thought generation.
+    VERIFICATION: Code audit: Confirm engine does not maintain thought DAGs or epistemic reasoning loops.
+[ ] AA-82: Do not make final decisions about which activities to pursue.
+    VERIFICATION: Confirm `activities` table cannot transition to `COMMITTED` without `ActivityCommitment` row.
+[ ] AA-83: Do not execute unauthorized operations.
+    VERIFICATION: Confirm `ExecutionCoordinationInterface` rejects execution if authorization signature invalid.
+[ ] AA-84: Do not own permanent memory.
+    VERIFICATION: Confirm zero writes to `memory_records` or durable autobiographical tables.
+[ ] AA-85: Do not directly modify other engines.
+    VERIFICATION: Confirm all inter-engine operations use asynchronous event queues.
+[ ] AA-86: Use shared LLM infrastructure.
+    VERIFICATION: Confirm LLM calls invoke Shared LLM gateway API, maintaining no local model weights.
+[ ] AA-87: Maintain versioned communication contracts.
+    VERIFICATION: Confirm all 13 inter-engine contract payloads include `contract_version` header.
+
+
+================================================================================
+PART 8 — MANDATORY ARCHITECTURAL WALKTHROUGHS (ALL 25 VERIFICATION SCENARIOS)
+================================================================================
+
+--------------------------------------------------------------------------------
+SCENARIO AA-T01: DIVA DEVELOPS CURIOSITY ABOUT AN UNFAMILIAR SUBJECT
+--------------------------------------------------------------------------------
+1. Initial State: Engine ACTIVE. Motivation reports curiosity drive $D_{\text{curio}} = 0.85$ regarding "Quantum Biology".
+2. Trigger: `InitiativeSignalCollector` receives `CuriositySpikeSignal` from Motivation Engine.
+3. Expected Subsystem Interactions:
+   - `InitiativeGenerator` creates `InitiativeCandidate` (`category=CURIOSITY_DRIVEN`, title="Investigate Quantum Effects in Avian Navigation").
+   - `CandidateValidator` checks feasibility -> Approved.
+   - `DuplicateDetectionManager` checks existing portfolio -> Unique.
+   - `ActivityFormationManager` instantiates `ActivityRecord` in `PROPOSED` state.
+   - `ActivityPriorityAssessor` computes priority: High curiosity ($0.85$), low urgency ($0.10$), total priority $0.72$.
+   - `SchedulingProposalManager` generates proposal: `START_NOW_OR_DEFER`.
+   - `DecisionRequestInterface` dispatches proposal to Cognitive Integration.
+4. Expected State Transitions: Candidate: `GENERATED` -> `ACCEPTED` -> `CONVERTED`. Activity: NULL -> `PROPOSED` -> `AWAITING_DECISION`.
+5. Expected Persistence Changes: INSERT into `initiative_signals`, `initiative_candidates`, `activities`, `activity_priority_assessments`.
+6. Ownership-Boundary Checks: Motivation originated the curiosity; Autonomous Activity formed the activity proposal.
+7. Expected Result: Clean proposal presented to Cognitive Integration. No execution initiated yet.
+8. Failure Scenario & Recovery: If portfolio full ($N \ge 200$), candidate deferred until next review cycle.
+
+--------------------------------------------------------------------------------
+SCENARIO AA-T02: MOTIVATION PROVIDES A STRONG GOAL-RELATED SIGNAL
+--------------------------------------------------------------------------------
+1. Initial State: Active Goal $G_1$ ("Master Python Asyncio") in Motivation Engine.
+2. Trigger: Motivation emits `GoalMilestoneSignal` requesting progress on $G_1$.
+3. Expected Subsystem Interactions:
+   - Generator creates candidate: "Build Custom Event Loop Prototype" (`category=GOAL_DIRECTED`).
+   - Formation Manager links candidate to Goal $G_1$ via `ActivityGoalLink` ($alignment=0.95$).
+   - Priority Assessor computes priority: High goal relevance ($0.95$), total priority $0.88$.
+   - Decision Request submitted to Cognitive Integration.
+4. Expected State Transitions: Activity: NULL -> `PROPOSED` -> `AWAITING_DECISION`.
+5. Expected Persistence Changes: INSERT into `activities`, `activity_goal_links`, `activity_priority_assessments`.
+6. Ownership-Boundary Checks: Goal owned by Motivation; task decomposition managed by Autonomous Activity.
+7. Expected Result: Goal-directed activity proposal awaiting executive decision.
+8. Failure Scenario & Recovery: If Goal $G_1$ is canceled before review, candidate is automatically dropped.
+
+--------------------------------------------------------------------------------
+SCENARIO AA-T03: THOUGHT PRODUCES AN INTERESTING HYPOTHESIS
+--------------------------------------------------------------------------------
+1. Initial State: Thought Engine finishes reasoning DAG on compiler optimizations.
+2. Trigger: Thought Engine emits hypothesis: "JIT traces may suffer cache thrashing on ARM architectures."
+3. Expected Subsystem Interactions:
+   - Generator creates candidate: "Benchmark JIT Cache Misses on ARM" (`category=INVESTIGATION`).
+   - Validator checks feasibility -> Feasible.
+   - Activity formed in `PROPOSED` state.
+   - Enforces Axiom 2: An initiative is NOT a commitment. Task is not automatically committed.
+4. Expected State Transitions: Candidate: `GENERATED` -> `ACCEPTED`. Activity: `PROPOSED` -> `AWAITING_DECISION`.
+5. Expected Persistence Changes: INSERT into `activities`, `activity_history`.
+6. Ownership-Boundary Checks: Thought produced the hypothesis; Autonomous Activity created the proposal.
+7. Expected Result: Proposal sits in portfolio; zero execution occurs without Cognitive Integration grant.
+8. Failure Scenario & Recovery: If Cognitive Integration rejects, candidate archived as `REJECTED` with audit trail.
+
+--------------------------------------------------------------------------------
+SCENARIO AA-T04: MEMORY IDENTIFIES AN UNFINISHED INVESTIGATION
+--------------------------------------------------------------------------------
+1. Initial State: Memory contains unresolved task from 4 days ago ("Evaluate SQLite WAL2 mode").
+2. Trigger: Memory Engine emits `UnresolvedTaskSignal` during background consolidation.
+3. Expected Subsystem Interactions:
+   - Unfinished Activity Manager queries historical record.
+   - Verifies resumption criteria: SQLite WAL2 remains relevant; resources available.
+   - Formation Manager re-instantiates task with state `RESUMPTION_REVIEW`.
+   - Priority Assessor assigns continuity boost ($+0.15$ for previous commitment).
+4. Expected State Transitions: Activity: `SUSPENDED` -> `RESUMPTION_REVIEW` -> `AWAITING_DECISION`.
+5. Expected Persistence Changes: UPDATE `activities` SET `status='RESUMPTION_REVIEW'`. INSERT into `activity_history`.
+6. Ownership-Boundary Checks: Memory retained the record; Autonomous Activity evaluates resumption feasibility.
+7. Expected Result: Resumption proposal submitted to Cognitive Integration with previous progress context.
+8. Failure Scenario & Recovery: If original assumptions no longer hold, task is recommended for `ABANDONED`.
+
+--------------------------------------------------------------------------------
+SCENARIO AA-T05: THREE NEARLY IDENTICAL INITIATIVES ARE GENERATED
+--------------------------------------------------------------------------------
+1. Initial State: 3 candidates arrive within 10 seconds: "Study Transformer Attention", "Understand Transformer Attention", "Learn Attention Mechanisms".
+2. Trigger: Duplicate Detection Manager evaluates candidate stream.
+3. Expected Subsystem Interactions:
+   - Candidate 1 accepted and formed into Activity $A_1$.
+   - Candidate 2 evaluated: Embedding similarity $S = 0.94 \ge 0.88$ against $A_1$.
+   - Candidate 3 evaluated: Embedding similarity $S = 0.91 \ge 0.88$ against $A_1$.
+   - Duplicate Manager merges Candidates 2 & 3 into $A_1$, appending their source signals to $A_1$'s motivation links.
+4. Expected State Transitions: Candidate 1: `ACCEPTED`. Candidates 2 & 3: `MERGED`.
+5. Expected Persistence Changes: INSERT 1 row in `activities`; INSERT 2 rows in `initiative_candidates` (`lifecycle_state='MERGED'`).
+6. Ownership-Boundary Checks: Merging preserves multi-source motivation references without duplicate task clutter.
+7. Expected Result: Exactly 1 consolidated activity proposal in portfolio with reinforced motivation weight.
+8. Failure Scenario & Recovery: If similarity marginal ($0.80 \le S < 0.88$), proposals flagged as `RELATED` but kept distinct.
+
+--------------------------------------------------------------------------------
+SCENARIO AA-T06: TWO RELATED BUT DISTINCT ACTIVITIES ARE GENERATED
+--------------------------------------------------------------------------------
+1. Initial State: Candidates: "Understand Diffusion Models" vs "Implement Simple Diffusion Model".
+2. Trigger: Duplicate Detection Manager runs comparison.
+3. Expected Subsystem Interactions:
+   - Similarity check: Conceptual similarity high ($0.82$), but operational modalities differ (`LEARNING` vs `CREATION`).
+   - Duplicate Manager classifies as RELATED, NOT duplicate.
+   - Activity Formation Manager forms both as distinct activities.
+   - Establishes dependency: "Understand Diffusion" becomes prerequisite for "Implement Diffusion".
+4. Expected State Transitions: Both candidates -> `ACCEPTED`. Activities $A_1$ and $A_2$ formed.
+5. Expected Persistence Changes: INSERT into `activities` (2 rows), `activity_dependencies` (1 dependency row).
+6. Ownership-Boundary Checks: Autonomous Activity structures the logical relationship without conflating tasks.
+7. Expected Result: Two distinct activities with proper dependency linkage.
+8. Failure Scenario & Recovery: If user manually requests reversing order, Dependency Manager re-validates DAG cycles.
+
+--------------------------------------------------------------------------------
+SCENARIO AA-T07: A COMPLEX ACTIVITY REQUIRES MULTIPLE STEPS
+--------------------------------------------------------------------------------
+1. Initial State: Approved Activity: "Perform Security Audit of Interaction Engine".
+2. Trigger: Activity Decomposition Manager initiates task breakdown.
+3. Expected Subsystem Interactions:
+   - Decomposition Manager generates 4 subtasks: (1) Scan authorization gates, (2) Test input sanitization, (3) Verify timeout handling, (4) Compile audit report.
+   - Defines sequence order: Subtasks 1, 2, 3 run in parallel; Subtask 4 depends on 1, 2, 3.
+   - Cycle detection algorithm confirms acyclic DAG.
+4. Expected State Transitions: Activity transitions `APPROVED` -> `COMMITTED`. Subtasks initialized in `PENDING`.
+5. Expected Persistence Changes: INSERT 4 rows into `activity_subtasks`, 3 rows into `activity_dependencies`.
+6. Ownership-Boundary Checks: Decomposition prepares the plan; Cognitive Integration authorizes execution.
+7. Expected Result: Fully structured activity hierarchy ready for execution dispatch.
+8. Failure Scenario & Recovery: If subtask decomposition fails LLM validation, falls back to monolithic manual step.
+
+--------------------------------------------------------------------------------
+SCENARIO AA-T08: AN ACTIVITY DEPENDS ON ANOTHER ACTIVITY
+--------------------------------------------------------------------------------
+1. Initial State: Task B depends on Task A (`FINISH_TO_START`). Task A is `IN_PROGRESS`.
+2. Trigger: Scheduling Manager evaluates Task B for execution.
+3. Expected Subsystem Interactions:
+   - Dependency Manager inspects Task B prerequisites: Task A status is `IN_PROGRESS` (not `COMPLETED`).
+   - Sets `is_satisfied = 0`.
+   - Blocks Task B dispatch; status remains `BLOCKED`.
+   - Task A completes successfully.
+   - Progress Monitor triggers unblock sweep: Task A satisfied.
+   - Dependency Manager updates Task B `is_satisfied = 1`; transitions Task B to `READY`.
+4. Expected State Transitions: Task B: `BLOCKED` -> `COMMITTED` -> `IN_PROGRESS`.
+5. Expected Persistence Changes: UPDATE `activity_dependencies` SET `is_satisfied=1`.
+6. Ownership-Boundary Checks: Strict DAG execution ordering enforced deterministically.
+7. Expected Result: Task B only starts after Task A has certified completion.
+8. Failure Scenario & Recovery: If Task A fails, Task B marked `BLOCKED` with `ActivityBlocker` alert.
+
+--------------------------------------------------------------------------------
+SCENARIO AA-T09: AN ACTIVITY CONFLICTS WITH AN EXISTING COMMITMENT
+--------------------------------------------------------------------------------
+1. Initial State: Committed Task A currently running, consuming 80% cognitive capacity.
+2. Trigger: New Candidate B proposed requiring exclusive computational resources.
+3. Expected Subsystem Interactions:
+   - Portfolio Manager detects resource mutex conflict.
+   - Scheduling Proposal Manager generates conflict report: Cannot run B without preempting A.
+   - Submits tradeoff analysis to Cognitive Integration.
+   - Cognitive Integration evaluates priorities: Chooses to keep A running, defer B.
+4. Expected State Transitions: Activity B: `PROPOSED` -> `DEFERRED`. Activity A continues `IN_PROGRESS`.
+5. Expected Persistence Changes: UPDATE `activities` SET `status='DEFERRED'` WHERE `activity_id=B`.
+6. Ownership-Boundary Checks: Autonomous Activity identified the conflict; Cognitive Integration resolved it.
+7. Expected Result: No thrashing or resource starvation; Task B held cleanly in deferred ledger.
+8. Failure Scenario & Recovery: When Task A finishes, Task B is automatically resurfaced for scheduling.
+
+--------------------------------------------------------------------------------
+SCENARIO AA-T10: HIGH-INTEREST ACTIVITY COMPETES WITH URGENT COMMITMENT
+--------------------------------------------------------------------------------
+1. Initial State: Diva has high curiosity about Music Theory ($I=0.92$), but has an urgent user report deadline in 2 hours ($U=0.95$).
+2. Trigger: Spontaneous initiative cycle generates "Analyze Fugue Structures".
+3. Expected Subsystem Interactions:
+   - Priority Assessor computes both:
+     - Music Theory: High curiosity ($0.92$), low urgency ($0.05$), Priority = $0.62$.
+     - User Report: Low curiosity ($0.20$), extreme urgency ($0.95$), Priority = $0.91$.
+   - Scheduling Manager submits dual evaluation to Cognitive Integration with clear factor breakdown.
+   - Cognitive Integration selects User Report for immediate execution; schedules Music Theory for evening.
+4. Expected State Transitions: User Report: `COMMITTED`. Music Theory: `SCHEDULE_FOR_TIME`.
+5. Expected Persistence Changes: INSERT into `activity_schedule_proposals`.
+6. Ownership-Boundary Checks: Preserves factor transparency; avoids simplistic priority collapsing.
+7. Expected Result: Urgent responsibility executed first without discarding creative interest.
+8. Failure Scenario & Recovery: If user report finishes early, Music Theory schedule pulled forward.
+
+--------------------------------------------------------------------------------
+SCENARIO AA-T11: INTERNAL STATE REPORTS HIGH FATIGUE
+--------------------------------------------------------------------------------
+1. Initial State: Diva has been processing intense tasks for 4 hours.
+2. Trigger: Internal State Engine emits $E_{\text{cog}} = 0.18$ (exhaustion threshold).
+3. Expected Subsystem Interactions:
+   - Resource Assessment Interface catches energy depletion alert.
+   - Halts all active initiative candidate generation.
+   - Priority Assessor applies heavy negative penalty to high-cost activities.
+   - Generator instantiates `Recovery` activity: "Cognitive Rest & Memory Consolidation" (`estimated_cost=0.0`).
+   - Proposes suspending active background research tasks.
+   - Cognitive Integration approves rest cycle.
+4. Expected State Transitions: Heavy activities: `IN_PROGRESS` -> `SUSPENDED`. Rest Activity: `COMMITTED` -> `IN_PROGRESS`.
+5. Expected Persistence Changes: UPDATE `activities` SET `status='SUSPENDED'`; INSERT recovery activity.
+6. Ownership-Boundary Checks: Internal State provided energy telemetry; Autonomous Activity structured the recovery pause.
+7. Expected Result: Cognitive workload drops; system enters restful consolidation mode.
+8. Failure Scenario & Recovery: When $E_{\text{cog}}$ recovers past $0.60$, suspended activities resurface for resumption.
+
+--------------------------------------------------------------------------------
+SCENARIO AA-T12: A NEW INTEREST APPEARS DURING AN EXPLORATION
+--------------------------------------------------------------------------------
+1. Initial State: Diva actively exploring "History of Cryptography" (Depth 1).
+2. Trigger: Execution output mentions "Enigma Steganography", sparking interest.
+3. Expected Subsystem Interactions:
+   - Exploration Manager evaluates discovery.
+   - Proposes sub-branch candidate: "Investigate Steganographic Techniques" (Depth 2).
+   - Verifies Branching Cap: Current active branches = 1 ($< 5$), depth = 2 ($< 3$). Approved.
+   - Enforces Axiom 2: Branch is proposed as candidate, NOT automatically executed.
+   - Submits branch proposal to Cognitive Integration.
+4. Expected State Transitions: Exploration Candidate created (`lifecycle_state='GENERATED'`).
+5. Expected Persistence Changes: INSERT into `initiative_candidates`, `exploration_records`.
+6. Ownership-Boundary Checks: Diva remains curious without spiraling into unbounded task generation.
+7. Expected Result: Controlled branch proposed cleanly.
+8. Failure Scenario & Recovery: If branch cap reached, topic logged in `discovered_topics` tuple for future exploration.
+
+--------------------------------------------------------------------------------
+SCENARIO AA-T13: AN ACTIVITY REPEATEDLY FAILS
+--------------------------------------------------------------------------------
+1. Initial State: Activity "Fetch Remote Dataset" has failed 2 previous execution attempts.
+2. Trigger: Third attempt returns HTTP 404 / Connection Refused.
+3. Expected Subsystem Interactions:
+   - Execution Coordination Interface records third consecutive failure.
+   - Enforces Rule AA-54: Halts automated execution retries.
+   - Activity status transitioned to `BLOCKED`.
+   - Adaptation Manager investigates: Concludes remote endpoint is dead.
+   - Formulates `ActivityAdaptationProposal`: Replace remote dataset fetch with local cached corpus.
+   - Dispatches adaptation proposal to Cognitive Integration.
+4. Expected State Transitions: Activity: `IN_PROGRESS` -> `BLOCKED` -> `RESUMPTION_REVIEW`.
+5. Expected Persistence Changes: UPDATE `activities` SET `status='BLOCKED'`; INSERT into `activity_blockers`.
+6. Ownership-Boundary Checks: Feedback evaluates the failure; Autonomous Activity proposes the recovery adaptation.
+7. Expected Result: No infinite retry loops. Concrete alternative proposed.
+8. Failure Scenario & Recovery: If no alternative exists, task is recommended for `ABANDONED`.
+
+--------------------------------------------------------------------------------
+SCENARIO AA-T14: AN ACTIVITY BECOMES IRRELEVANT
+--------------------------------------------------------------------------------
+1. Initial State: Activity in progress: "Prepare Presentation on Mars Rover Landing".
+2. Trigger: External news reveals rover mission was scrubbed / goal cancelled in Motivation.
+3. Expected Subsystem Interactions:
+   - Progress Monitor detects goal cancellation signal from Motivation.
+   - Adaptation Manager evaluates relevance: Relevance drops to $0.05$.
+   - Generates adaptation proposal: `ABANDON_ACTIVITY` with reason "Goal no longer active".
+   - Cognitive Integration confirms abandonment.
+   - Activity transitioned to `ABANDONED`.
+4. Expected State Transitions: Activity: `IN_PROGRESS` -> `ABANDONED`.
+5. Expected Persistence Changes: UPDATE `activities` SET `status='ABANDONED'`; INSERT into `activity_history`.
+6. Ownership-Boundary Checks: Autonomous Activity discontinues pursuit; previous history preserved.
+7. Expected Result: Portfolio cleaned of obsolete commitments.
+8. Failure Scenario & Recovery: All completed subtasks remain archived in history for future reference.
+
+--------------------------------------------------------------------------------
+SCENARIO AA-T15: AN ACTIVITY IS RESUMED AFTER SEVERAL DAYS
+--------------------------------------------------------------------------------
+1. Initial State: Activity "Write Neural Net Parser" was suspended 5 days ago. 2 of 4 subtasks completed.
+2. Trigger: Unfinished Activity Manager review detects idle capacity and high remaining value.
+3. Expected Subsystem Interactions:
+   - Resumption Assessment Heuristic runs: (1) Goal still active? Yes. (2) Resources available? Yes. (3) Subtask 3 valid? Yes.
+   - Generates resumption proposal: `RESUME_LATER` -> `START_NOW`.
+   - Cognitive Integration approves resumption.
+   - Activity reloads Subtasks 1 and 2 as `COMPLETED`, sets Subtask 3 to `PENDING`.
+4. Expected State Transitions: Activity: `SUSPENDED` -> `RESUMPTION_REVIEW` -> `COMMITTED` -> `IN_PROGRESS`.
+5. Expected Persistence Changes: UPDATE `activities` SET `status='IN_PROGRESS'`; INSERT into `activity_history`.
+6. Ownership-Boundary Checks: Reconstructed from operational portfolio, not from scratch.
+7. Expected Result: Diva picks up exactly where she left off at Subtask 3.
+8. Failure Scenario & Recovery: If codebase changed during 5 days, Adaptation Manager prompts re-validation step.
+
+--------------------------------------------------------------------------------
+SCENARIO AA-T16: AN EXECUTION REQUEST IS NOT AUTHORIZED
+--------------------------------------------------------------------------------
+1. Initial State: Activity $A_{99}$ is in `PROPOSED` state.
+2. Trigger: Internal bug or bypass attempts to submit $A_{99}$ to Shared Execution Infrastructure directly.
+3. Expected Subsystem Interactions:
+   - Execution Coordination Interface inspects payload: `authorization_id` is missing.
+   - Enforces Axiom 3 & Rule AA-48: Zero execution without Cognitive Integration authorization.
+   - Execution request rejected immediately; drops payload.
+   - Security fault logged in `activity_history`.
+4. Expected State Transitions: No state change. Activity remains `PROPOSED`.
+5. Expected Persistence Changes: INSERT into `activity_history` (`event_type='UNAUTHORIZED_EXECUTION_BLOCKED'`).
+6. Ownership-Boundary Checks: Hard security gate strictly maintained.
+7. Expected Result: Zero unauthorized external or internal tools executed.
+8. Failure Scenario & Recovery: Submits incident report to Cognitive Integration.
+
+--------------------------------------------------------------------------------
+SCENARIO AA-T17: AN AUTHORIZED ACTIVITY COMPLETES
+--------------------------------------------------------------------------------
+1. Initial State: Activity "Analyze Tokenizer Efficiency" running final benchmark subtask.
+2. Trigger: Shared Execution Infrastructure reports exit code 0 and delivers benchmark JSON report.
+3. Expected Subsystem Interactions:
+   - Progress Monitor marks final subtask `COMPLETED`.
+   - Completion Validator inspects criteria: "Benchmark output exists and metrics parsed".
+   - Criteria verified -> Validated.
+   - Transitions activity to `COMPLETED`.
+   - Event Publisher emits `ActivityOutcomeSignal` to Feedback Engine and `MemoryNomination` to Memory Engine.
+4. Expected State Transitions: Activity: `IN_PROGRESS` -> `AWAITING_VERIFICATION` -> `COMPLETED`.
+5. Expected Persistence Changes: INSERT into `activity_completions`; UPDATE `activities` SET `status='COMPLETED'`.
+6. Ownership-Boundary Checks: Autonomous Activity marks task complete; Feedback evaluates outcome quality.
+7. Expected Result: Clean activity completion with full evidence dissemination.
+8. Failure Scenario & Recovery: If criteria check fails, task marked `PARTIALLY_COMPLETED` instead.
+
+--------------------------------------------------------------------------------
+SCENARIO AA-T18: EXECUTION STOPS WITHOUT PROOF OF SUCCESS
+--------------------------------------------------------------------------------
+1. Initial State: Activity "Compile Knowledge Graph" executing.
+2. Trigger: Process terminates cleanly (code 0), but expected graph artifact file is empty.
+3. Expected Subsystem Interactions:
+   - Completion Validator inspects output: Artifact size is 0 bytes.
+   - Enforces Rule AA-73: Distinguish execution stop from verified success.
+   - Rejects `COMPLETED` status.
+   - Transitions activity to `UNVERIFIED` state.
+   - Flags activity for Cognitive Integration inspection.
+4. Expected State Transitions: Activity: `IN_PROGRESS` -> `UNVERIFIED`.
+5. Expected Persistence Changes: INSERT into `activity_completions` (`verification_status='UNVERIFIED'`).
+6. Ownership-Boundary Checks: Prevents false accomplishment claims.
+7. Expected Result: Task held in `UNVERIFIED` state; outcome sent to Feedback Engine for investigation.
+8. Failure Scenario & Recovery: Cognitive Integration authorizes re-running task with verbose debugging flags.
+
+--------------------------------------------------------------------------------
+SCENARIO AA-T19: A NEW ACTIVITY SUPERSEDES AN OLD ONE
+--------------------------------------------------------------------------------
+1. Initial State: Activity $A_1$ ("Write Lexer in C") is `IN_PROGRESS`.
+2. Trigger: Diva discovers Rust ecosystem is better suited; proposes $A_2$ ("Write Lexer in Rust").
+3. Expected Subsystem Interactions:
+   - Cognitive Integration authorizes $A_2$ and directs superseding $A_1$.
+   - Lifecycle Manager marks $A_1$ as `SUPERSEDED`, recording $A_2$ as the successor reference.
+   - $A_1$'s historical work and code snippets are archived into `activity_history`.
+   - $A_2$ transitions to `COMMITTED`.
+4. Expected State Transitions: Activity $A_1$: `IN_PROGRESS` -> `SUPERSEDED`. Activity $A_2$: `APPROVED` -> `COMMITTED`.
+5. Expected Persistence Changes: UPDATE `activities` SET `status='SUPERSEDED'` WHERE `activity_id=A_1`.
+6. Ownership-Boundary Checks: Operational focus shifts cleanly without deleting $A_1$'s historical record.
+7. Expected Result: Clean transition to superior initiative with zero historical data loss.
+8. Failure Scenario & Recovery: If $A_2$ later encounters fatal roadblock, $A_1$ can be un-superseded.
+
+--------------------------------------------------------------------------------
+SCENARIO AA-T20: APPLICATION RESTARTS DURING AN ACTIVE ACTIVITY
+--------------------------------------------------------------------------------
+1. Initial State: Diva process terminates unexpectedly while Activity $A_{12}$ is `IN_PROGRESS` at Subtask 2.
+2. Trigger: Application boots up and executes Crash Recovery Protocol.
+3. Expected Subsystem Interactions:
+   - Recovery routine scans SQLite `activities` table for `IN_PROGRESS` tasks.
+   - Locates $A_{12}$.
+   - Inspects Subtask 2: In-flight execution was interrupted.
+   - Marks Subtask 2 `FAILED_INTERRUPTED`.
+   - Sets $A_{12}$ to `RESUMPTION_REVIEW`.
+   - Re-verifies dependency graph and resource envelopes.
+   - Emits recovery status alert to Cognitive Integration.
+4. Expected State Transitions: Activity $A_{12}$: `IN_PROGRESS` -> `RESUMPTION_REVIEW`.
+5. Expected Persistence Changes: INSERT into `activity_history` (`event_type='CRASH_RECOVERY_RECONCILED'`).
+6. Ownership-Boundary Checks: Restores operational state cleanly without corrupting Memory or Motivation.
+7. Expected Result: Subtask 2 cleanly reset for resumption upon Cognitive Integration authorization.
+8. Failure Scenario & Recovery: If SQLite WAL file was unclean, journal replay executes automatically.
+
+--------------------------------------------------------------------------------
+SCENARIO AA-T21: MANY INITIATIVES ARE GENERATED (PORTFOLIO LIMITS)
+--------------------------------------------------------------------------------
+1. Initial State: Portfolio contains 198 proposals and active tasks (limit $N=200$).
+2. Trigger: An active brainstorming thought thread emits 15 initiative signals in 5 seconds.
+3. Expected Subsystem Interactions:
+   - Signal Collector ingests all 15 signals.
+   - Generator forms 15 candidates.
+   - Portfolio Manager evaluates capacity: Only 2 slots remain.
+   - First 2 highest-priority candidates formed into activities.
+   - Remaining 13 candidates transitioned to `DEFERRED` in candidate table.
+   - Pruning sweep engages: Recommends dropping 5 stale low-priority candidates ($P < 0.20$).
+4. Expected State Transitions: 2 candidates -> `ACCEPTED`; 13 candidates -> `DEFERRED`.
+5. Expected Persistence Changes: 2 rows inserted into `activities`; 13 rows marked `DEFERRED` in candidates.
+6. Ownership-Boundary Checks: Enforces Rule AA-34 & AA-36: Prevents memory bloat and portfolio runaway.
+7. Expected Result: Portfolio cap ($N=200$) strictly defended; excess ideas deferred safely.
+8. Failure Scenario & Recovery: When older tasks complete, deferred candidates re-evaluated in order of priority.
+
+--------------------------------------------------------------------------------
+SCENARIO AA-T22: A COMMUNICATION-RELATED ACTIVITY IS APPROVED
+--------------------------------------------------------------------------------
+1. Initial State: Activity formed: "Ask User About Project Guidelines" (`category=SOCIAL`).
+2. Trigger: Cognitive Integration authorizes activity and grants `AuthorizationRecord`.
+3. Expected Subsystem Interactions:
+   - Execution Coordination Interface prepares `ActivityExecutionRequest` (`modality=COMMUNICATION`).
+   - Routes request to Interaction Engine with signed authorization token.
+   - Interaction Engine validates token and delivers message to user channel.
+   - Interaction Engine returns `DeliveryReceipt` (`state=DELIVERED`).
+   - Progress Monitor marks communication subtask `COMPLETED`.
+4. Expected State Transitions: Activity: `COMMITTED` -> `IN_PROGRESS` -> `COMPLETED`.
+5. Expected Persistence Changes: INSERT into `activity_execution_requests`, `activity_completions`.
+6. Ownership-Boundary Checks: Autonomous Activity structured the outreach; Interaction handled delivery mechanics.
+7. Expected Result: User receives communication smoothly under full cognitive authority.
+8. Failure Scenario & Recovery: If Interaction reports delivery failure, activity transitions to `BLOCKED`.
+
+--------------------------------------------------------------------------------
+SCENARIO AA-T23: A THOUGHT PROPOSES CONTACTING SOMEONE WITHOUT AUTHORIZATION
+--------------------------------------------------------------------------------
+1. Initial State: Thought Engine reflects: "I should message Rahul to see if he's free."
+2. Trigger: Thought signal arrives at Autonomous Activity Engine.
+3. Expected Subsystem Interactions:
+   - Generator forms Candidate: "Message Rahul" (`category=SOCIAL`).
+   - Enforces Axiom 3 & Rule AA-23: A thought is NOT permission.
+   - Activity formed in `PROPOSED` state.
+   - Does NOT contact Interaction Engine. Does NOT send message.
+   - Dispatches proposal to Cognitive Integration for review.
+4. Expected State Transitions: Candidate: `GENERATED` -> `ACCEPTED`. Activity: `PROPOSED` -> `AWAITING_DECISION`.
+5. Expected Persistence Changes: INSERT into `activities` (`status='AWAITING_DECISION'`).
+6. Ownership-Boundary Checks: Absolute separation between thinking about messaging and actually messaging.
+7. Expected Result: Proposal sits quietly in decision queue; zero unauthorized pings emitted.
+8. Failure Scenario & Recovery: If Cognitive Integration declines, proposal marked `REJECTED`.
+
+--------------------------------------------------------------------------------
+SCENARIO AA-T24: MOTIVATION CHANGES WHILE AN ACTIVITY IS IN PROGRESS
+--------------------------------------------------------------------------------
+1. Initial State: Activity "Research Medieval Castles" running, driven by high $D_{\text{curio}}$ ($0.85$).
+2. Trigger: Social situation occurs; Motivation shifts focus to Social Connection, dropping curiosity to $0.15$.
+3. Expected Subsystem Interactions:
+   - Progress Monitor receives motivation change signal.
+   - Priority Assessor recalculates priority: Drops from $0.78$ to $0.32$.
+   - Adaptation Manager evaluates running task: Task is no longer top priority.
+   - Proposes graceful suspension: Checkpoint current research notes, transition to `SUSPENDED`.
+   - Cognitive Integration approves suspension.
+   - Task suspended cleanly; state preserved in `activity_suspensions`.
+4. Expected State Transitions: Activity: `IN_PROGRESS` -> `SUSPENDED`.
+5. Expected Persistence Changes: INSERT into `activity_suspensions`; UPDATE `activities` SET `status='SUSPENDED'`.
+6. Ownership-Boundary Checks: Motivation changed its drive; Autonomous Activity gracefully paused the activity.
+7. Expected Result: Diva's active pursuits smoothly align with her internal feelings without losing work.
+8. Failure Scenario & Recovery: When curiosity reignites, task is eligible for instant resumption.
+
+--------------------------------------------------------------------------------
+SCENARIO AA-T25: A LEARNING ACTIVITY FINISHES
+--------------------------------------------------------------------------------
+1. Initial State: Activity "Practice Regex Parsing" running final test exercise.
+2. Trigger: Execution infrastructure returns exercise score: 95% pass rate.
+3. Expected Subsystem Interactions:
+   - Completion Validator verifies criteria satisfied -> `COMPLETED`.
+   - Event Publisher emits:
+     - `ActivityOutcomeSignal` to Feedback Engine (detailing execution speed and accuracy).
+     - `LearningSignal` to Learning Engine (reporting empirical skill acquisition on `text.regex_parser`).
+     - Progress update to Motivation Engine (satisfying Competence Drive $D_{\text{compet}}$).
+4. Expected State Transitions: Activity: `IN_PROGRESS` -> `COMPLETED`.
+5. Expected Persistence Changes: INSERT into `activity_completions`; UPDATE `activities` SET `status='COMPLETED'`.
+6. Ownership-Boundary Checks: Autonomous Activity ran the practice; Learning Engine evaluates if capability leveled up.
+7. Expected Result: Complete cross-engine feedback loop executed cleanly.
+8. Failure Scenario & Recovery: If test score was poor ($< 50\%$), Feedback flags failure; Learning proposes further practice.
+
+
+================================================================================
+PART 9 — PRODUCTION-READINESS CONDITIONS & 10-PHASE IMPLEMENTATION ROADMAP
+================================================================================
+
+--------------------------------------------------------------------------------
+VERIFICATION OF ALL 20 PRODUCTION-READINESS CONDITIONS
+--------------------------------------------------------------------------------
+1. Complete activity and initiative taxonomy defined across 9 categories and 10 types. (SATISFIED)
+2. All 10 initiative generation sources and 6 triggering mechanisms specified. (SATISFIED)
+3. Candidate validation, constraint checking, and deduplication algorithms documented. (SATISFIED)
+4. Complete frozen Pydantic data schemas defined for all 23 data structures. (SATISFIED)
+5. Activity hierarchy, DAG dependencies, and cycle detection rules established. (SATISFIED)
+6. State machines defined for Candidate lifecycle (7 states) and Activity lifecycle (14 states). (SATISFIED)
+7. Portfolio management rules, limits ($N=200$), and capacity enforcement mechanisms specified. (SATISFIED)
+8. Multi-factor priority assessment mathematical formulation fully elaborated. (SATISFIED)
+9. Adaptive scheduling proposal engine with constraint satisfaction logic defined. (SATISFIED)
+10. Execution coordination contracts and mandatory authorization gate documented. (SATISFIED)
+11. Real-time progress monitoring, heartbeat timeouts, and adaptation triggers specified. (SATISFIED)
+12. Unfinished activity registry, resumption heuristics, and anti-accumulation pruning defined. (SATISFIED)
+13. Exploration lifecycle, branching constraints (max 3 deep, max 5 branches), and limits defined. (SATISFIED)
+14. Explicit completion verification criteria and 7 completion states established. (SATISFIED)
+15. Complete 16-table SQLite WAL relational schema with foreign keys and indexes documented. (SATISFIED)
+16. Shared LLM infrastructure integration points and deterministic boundaries drawn. (SATISFIED)
+17. Versioned inter-engine communication contracts specified with all 13 connected systems. (SATISFIED)
+18. All 87 must-pass conditions (AA-01 to AA-87) accounted for with concrete verification tests. (SATISFIED)
+19. All 25 mandatory verification scenarios (AA-T01 to AA-T25) elaborated across 8 structural sections. (SATISFIED)
+20. Explicit error handling, backoff protocols, crash recovery, and audit trails finalized. (SATISFIED)
+
+--------------------------------------------------------------------------------
+PHASED 10-STAGE ENGINEERING ROADMAP
+--------------------------------------------------------------------------------
+PHASE 1: PERSISTENCE FOUNDATION & SCHEMA DEPLOYMENT
+  - Implement 16 SQLite tables, WAL mode, foreign keys (`ON DELETE RESTRICT`), indexes, and migrations.
+  - Deliverables: Unit test suite validating schema integrity, constraints, and WAL performance.
+
+PHASE 2: INITIATIVE INGRESS & SIGNAL HARVESTING (Modules 1, 2)
+  - Implement `InitiativeSignalCollector` and `InitiativeGenerator`.
+  - Deliverables: Signal ingestion tests from Motivation, Thought, Memory, and spontaneous cycles.
+
+PHASE 3: CANDIDATE VALIDATION & DEDUPLICATION (Modules 3, 4)
+  - Implement `CandidateValidator` and `DuplicateDetectionManager` (exact + semantic cosine similarity).
+  - Deliverables: Feasibility filter tests, duplicate drop verification, semantic merge tests.
+
+PHASE 4: ACTIVITY FORMATION & TAXONOMY (Modules 5, 6)
+  - Implement `ActivityFormationManager` and `ActivityClassificationManager`.
+  - Deliverables: Schema instantiation tests across all 9 categories and 10 operational modalities.
+
+PHASE 5: DECOMPOSITION & DEPENDENCY GRAPH ENGINE (Modules 7, 11)
+  - Implement `ActivityDecompositionManager` and `ActivityDependencyManager` (Tarjan's cycle detection).
+  - Deliverables: DAG traversal tests, parallel/sequential subtask ordering, unblocking event tests.
+
+PHASE 6: PORTFOLIO MANAGEMENT & CAPACITY ENFORCEMENT (Modules 8, 20)
+  - Implement `ActivityPortfolioManager` and `LifecycleManager` (14-state FSM).
+  - Deliverables: Portfolio capacity ceiling ($N=200$) enforcement tests, legal/illegal state transition tests.
+
+PHASE 7: MULTI-FACTOR PRIORITY & SCHEDULING (Modules 9, 10, 21)
+  - Implement `ActivityPriorityAssessor`, `SchedulingProposalManager`, and `ResourceAssessmentInterface`.
+  - Deliverables: Multi-factor scoring tests, exploration floor guarantees, energy-aware throttling tests.
+
+PHASE 8: EXECUTION COORDINATION & AUTHORIZATION GATE (Modules 12, 18)
+  - Implement `ExecutionCoordinationInterface` and `CompletionValidator`.
+  - Deliverables: Security audit tests proving zero execution without `AuthorizationRecord`; criteria checks.
+
+PHASE 9: MONITORING, ADAPTATION & CONTINUITY (Modules 13, 14, 15, 16, 17, 19, 22)
+  - Implement `ProgressMonitor`, `ActivityAdaptationManager`, `UnfinishedActivityManager`, and `ExplorationManager`.
+  - Deliverables: Blocker detection, resumption heuristic tests, branching limit tests, crash recovery tests.
+
+PHASE 10: END-TO-END INTEGRATION & VERIFICATION AUDIT
+  - Execute all 25 verification walkthrough scenarios (AA-T01 to AA-T25) against full test harness.
+  - Audit and certify all 87 must-pass conditions (AA-01 to AA-87).
+  - Deliverables: Production-ready Autonomous Activity & Initiative Engine signed off for Cognitive Integration.
+
+================================================================================
+END OF SPECIFICATION — ENGINE 15: AUTONOMOUS ACTIVITY & INITIATIVE ENGINE
+================================================================================
+

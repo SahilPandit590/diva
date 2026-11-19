@@ -1,0 +1,3458 @@
+================================================================================
+DIVA COGNITIVE ARCHITECTURE — MEMORY ENGINE VERSION 3.0
+HYBRID MEMORY ARCHITECTURE: IMPLEMENTATION PLAN & PRODUCTION SPECIFICATION
+Document Version: 3.0.0 (Hybrid Memory Ownership — Production Master Specification)
+Target Framework: Python 3.12+ (Asyncio) / SQLite WAL / Pydantic v2 / FTS5 / sqlite-vec
+Architecture: Modular, Asynchronous, Event-Driven / Hybrid Independent + Collaborative
+Status: Architectural Specification — Implementation-Approved Direction
+Deployment Target: Single-process local application, progressively hardened
+================================================================================
+
+TABLE OF CONTENTS
+--------------------------------------------------------------------------------
+EXECUTIVE ARCHITECTURAL SUMMARY & VERSION 3.0 MANDATE
+  The Hybrid Memory Ownership Principle
+  What Version 3.0 Introduces vs. Version 2.0
+  The Four Architecture Decisions (Finalized)
+  The 18 Mandatory Architectural Invariants
+
+PART 1 — DATA STRUCTURES & TYPE SYSTEM
+  1.1  Representation Types & Knowledge Development States
+  1.2  Epistemic Model: Claims, Assessments, Evidence
+  1.3  Typed Claim Relationships
+  1.4  Entity & Association Data Structures
+  1.5  Memory Representation Lineage Tree
+  1.6  Continuity Checkpoint Data Structures
+  1.7  Development Request & Result Contracts
+  1.8  Lifecycle Dimension Separation (Development / Validity / Retention)
+  1.9  Importance, Activation & Development Priority Mathematics
+
+PART 2 — DATABASE ARCHITECTURE & SCHEMA
+  2.1  Database Domain Organization (14 Logical Domains)
+  2.2  Experience Domain Tables (input_events, experiences, experience_payloads)
+  2.3  Knowledge Domain Tables (claims, claim_assessments, claim_versions)
+  2.4  Provenance Domain Tables (evidence_references, derivation_links)
+  2.5  Entity Domain Tables (entities, entity_aliases, entity_attributes)
+  2.6  Association Domain Tables (memory_relationships, claim_relationships)
+  2.7  Representation Domain Tables (memory_representations, representation_lineage)
+  2.8  Appraisal Domain Tables (memory_appraisals, appraisal_history)
+  2.9  Development Domain Tables (development_requests, development_proposals, development_reviews)
+  2.10 Consolidation Domain Tables (consolidation_jobs, consolidation_coverage, residual_claims)
+  2.11 Retrieval Domain Tables (retrieval_events, memory_embeddings, fts_index)
+  2.12 Retention Domain Tables (retention_records, archive_records, memory_dependencies)
+  2.13 Continuity Domain Tables (continuity_checkpoints)
+  2.14 Governance Domain Tables (access_policies, audit_events, schema_versions)
+  2.15 Background Job Domain Tables (background_jobs, background_leases, outbox_events)
+  2.16 Bitemporal Record Design (World Time vs. Diva Time)
+  2.17 SQLite Configuration & PRAGMA Invariants
+
+PART 3 — ALGORITHMS & PROCESSING LOGIC
+  3.1  Memory Intake Processing Pipeline
+  3.2  Pattern Detection Algorithms (Deterministic Development Path A)
+  3.3  Entity Resolution & Deduplication Algorithms
+  3.4  Retrieval Algorithm Stack (SQL + FTS5 + Graph + Vector)
+  3.5  Candidate Ranking Algorithm (Importance × Activation × Recency × Relevance)
+  3.6  Spreading Activation Algorithm (NetworkX)
+  3.7  HyDE Query Projection (Ephemeral — Never Evidence)
+  3.8  Consolidation Verification Algorithm (Seven-Gate Protocol)
+  3.9  Incremental Consolidation Processing Loop
+  3.10 Memory Development Lifecycle State Machine
+  3.11 Bounded Development Workflow (Anti-Infinite-Recursion Protocol)
+  3.12 Bitemporal Query Algorithms (World Time / Diva Time projections)
+  3.13 Importance & Activation Score Calculation Algorithms
+  3.14 Background Job Processing & Idempotency Protocol
+  3.15 Outbox Transactional Event Dispatch
+
+PART 4 — INDEXING STRATEGY & SEARCH ARCHITECTURE
+  4.1  Primary Relational Indexes (B-Tree, Covering Indexes)
+  4.2  FTS5 Full-Text Index Configuration & Query Patterns
+  4.3  Vector Index Configuration (sqlite-vec / HNSW)
+  4.4  Graph Index (Adjacency List Schema & In-Memory NetworkX Projection)
+  4.5  Composite Retrieval Query Fusion (SQL UNION + Score Blending)
+  4.6  Retrieval Intent Routing (Factual / Episodic / Temporal / Associative / etc.)
+
+PART 5 — ENGINE SUBSYSTEM SPECIFICATIONS
+  5.1  Subsystem 1: Memory Intake
+  5.2  Subsystem 2: Experience Store
+  5.3  Subsystem 3: Knowledge Store
+  5.4  Subsystem 4: Entity & Association
+  5.5  Subsystem 5: Memory Development
+  5.6  Subsystem 6: Retrieval Engine
+  5.7  Subsystem 7: Consolidation Engine
+  5.8  Subsystem 8: Retention Engine
+  5.9  Subsystem 9: Memory Continuity
+  5.10 Subsystem 10: Memory Governance
+
+PART 6 — ENGINE INTERFACE, EVENT BUS & COLLABORATION PROTOCOL
+  6.1  MemoryEngineProtocol Interface Contract
+  6.2  Embedding & Reasoning Provider Interfaces
+  6.3  Memory Development Protocol (Three Operation Kinds)
+  6.4  Development Authority Matrix
+  NOTE: Asynchronous Event Catalog is documented in Part 3, Section 3.15.
+  NOTE: Inter-Engine Collaboration Schemas are encoded in DevelopmentRequest/Result contracts (Part 1).
+  NOTE: Cognitive/Autonomous Domain Isolation Protocol is detailed in Part 7.
+
+PART 7 — ACCESS CONTROL & GOVERNANCE
+  7.1  Memory Ownership Dimensions (Owner Domain / Subject / Origin / Access Scope)
+  7.2  Access Policy Enforcement Architecture (Allowlist Model & 14 Seed Policies)
+  7.3  Audit Event Model (Complete Event Type Catalog & Invariants)
+  7.4  Cognitive vs. Autonomous Memory Partition Invariants
+
+PART 8 — IMPLEMENTATION MILESTONES & PHASE ROADMAP
+  8.1  Milestone 01: Architectural Foundation
+  8.2  Milestone 02: Experience Intake & Persistence
+  8.3  Milestone 03: Claims & Knowledge Store
+  8.4  Milestone 04: Entity & Association Graph
+  8.5  Milestone 05: Retrieval Engine Stack
+  8.6  Milestone 06: Hybrid Development Engine
+  8.7  Milestone 07: Consolidation & Retention
+  8.8  Milestone 08: Continuity Integration
+  8.9  Milestone 09: Production Hardening
+  8.10 Deferred Capabilities (Post-Shared LLM Infrastructure)
+
+PART 9 — MUST-PASS CONDITIONS & VERIFICATION SCENARIOS
+  9.1  Must-Pass Conditions (45 Testable Invariant Checkpoints)
+  9.2  Verification Scenarios (20 End-to-End Scenarios)
+
+
+================================================================================
+EXECUTIVE ARCHITECTURAL SUMMARY & VERSION 3.0 MANDATE
+================================================================================
+
+Version 3.0 of the Memory Engine introduces a foundational architectural upgrade:
+the HYBRID MEMORY OWNERSHIP PRINCIPLE.
+
+Version 2.0 treated the Memory Engine primarily as an advanced storage, retrieval, and
+consolidation system — a database with structured epistemic records. It was passive:
+other engines stored information, and Memory retrieved it on request.
+
+Version 3.0 introduces a bidirectional development relationship:
+
+  MEMORY CAN DEVELOP ITS OWN KNOWLEDGE STRUCTURES INDEPENDENTLY
+  WHILE SPECIALIZED ENGINES RETAIN AUTHORITY OVER THEIR OWN INTERPRETATION DOMAINS.
+
+This distinction matters because:
+
+  - Memory can DISCOVER that three experiences share a recurring pattern.
+  - Thought Engine can INVESTIGATE why that pattern exists.
+  - Emotion Engine can EVALUATE the pattern's emotional significance.
+  - Social Cognition can INTERPRET the interpersonal implications.
+  - Learning Engine can IDENTIFY what process should be improved.
+  - Memory can INTEGRATE validated contributions into its knowledge structures.
+
+This is a feedback loop, not a one-way storage pipeline.
+
+
+THE HYBRID OWNERSHIP PRINCIPLE — TWO DEVELOPMENT PATHS:
+---------------------------------------------------------
+
+PATH A — Independent Memory Development (Memory-Owned):
+  Operations Memory performs without requesting another cognitive engine:
+  - Experience organization and temporal ordering.
+  - Entity association and alias resolution.
+  - Pattern frequency detection (co-occurrence, recurrence).
+  - Duplicate detection and record deduplication.
+  - Knowledge generalization proposals (not automatic acceptance).
+  - Memory consolidation (with seven-gate verification).
+  - Contradiction detection between claims.
+  - Retrieval gap and unresolved-question identification.
+
+PATH B — Collaborative Cognitive Development (Cross-Engine):
+  Operations requiring specialized engines:
+  - Thought Engine: Investigate why a detected pattern exists.
+  - Emotion Engine: Re-assess or develop emotional appraisals.
+  - Social Cognition: Interpret interpersonal and relationship patterns.
+  - Learning Engine: Identify procedural lessons and skill improvements.
+  - Motivation Engine: Assess relevance to current goals and drives.
+
+
+THE FOUR FINALIZED ARCHITECTURE DECISIONS:
+------------------------------------------
+
+Decision 1 — WHEN DOES MEMORY DEVELOPMENT HAPPEN?
+  Selected: HYBRID PROCESSING
+  Immediate lightweight operations on new data arrival; deeper background development
+  when resources are available. No continuous polling; event-triggered + scheduled.
+
+Decision 2 — HOW ARE GENERALIZATIONS ACCEPTED?
+  Selected: RISK-BASED ACCEPTANCE
+  Simple evidence-backed organizational representations can be accepted by Memory
+  internally after deterministic validation. Uncertain, consequential, or contradicted
+  interpretations require specialized cognitive review before acceptance.
+
+Decision 3 — CAN RETRIEVAL TRIGGER DEVELOPMENT?
+  Selected: GENERATE DEVELOPMENT PROPOSALS
+  Retrieval may expose knowledge gaps, contradictions, or patterns and schedule
+  development jobs. Retrieval never directly modifies or consolidates knowledge.
+
+Decision 4 — COGNITIVE vs. AUTONOMOUS MEMORY?
+  Selected: SHARED CORE WITH INDEPENDENT DOMAIN ADAPTERS
+  One common Memory Engine implementation with separate cognitive and autonomous
+  domain interfaces, isolated data partitions, and independent access policies.
+
+
+================================================================================
+PART 1 — DATA STRUCTURES & TYPE SYSTEM
+================================================================================
+
+This part defines every core data structure, enum, Pydantic model, and mathematical
+type used throughout the Memory Engine. All structures are immutable (frozen=True) unless
+explicitly noted as mutable runtime state.
+
+
+1.1 REPRESENTATION TYPES & KNOWLEDGE DEVELOPMENT STATES
+--------------------------------------------------------
+
+REPRESENTATION TYPES — What kind of memory record is this?
+
+  RAW_EXPERIENCE:   Unprocessed event record, as captured at intake time.
+  EPISODIC:         A specific bounded experience with actors, time, and context.
+  SEMANTIC:         A generalized fact, concept, or world-knowledge claim.
+  AUTOBIOGRAPHICAL: Part of Diva's self-narrative, identity, or personal history.
+  RELATIONSHIP:     Representation of an interpersonal dynamic or social bond.
+  PROCEDURAL:       A learned skill, process, or strategy (how-to knowledge).
+  GENERALIZED:      A pattern, abstraction, or generalization derived from episodes.
+  CONSOLIDATED:     An integrated representation combining multiple related records.
+  REFLECTIVE:       A metacognitive record about Diva's own knowledge or behavior.
+
+A single experience can be associated with MULTIPLE representation types simultaneously.
+Representations do not replace one another — they layer on top of the original record.
+
+DEVELOPMENT STATUS STATES — Where is a knowledge structure in its lifecycle?
+
+  RAW:          Stored; no processing performed beyond intake validation.
+  ORGANIZED:    Sorted into temporal sequences, entity associations resolved.
+  ASSOCIATED:   Connections established to related memories and concepts.
+  PROPOSED:     A candidate representation generated but not yet validated.
+  UNDER_REVIEW: Awaiting specialized cognitive engine assessment.
+  ACCEPTED:     Validated and integrated into established knowledge structures.
+  DISPUTED:     Contradicting evidence exists; active conflict not resolved.
+  SUPERSEDED:   Replaced by a more accurate or comprehensive representation.
+  ARCHIVED:     Moved to cold storage; source records preserved; not in active index.
+
+LIFECYCLE DIMENSIONS — Kept Separate (Three Independent Dimensions):
+
+  Dimension 1: Development Status  → (above enum)
+  Dimension 2: Validity Status     → CURRENT | HISTORICAL | RETRACTED | REFUTED
+  Dimension 3: Retention Status    → ACTIVE | CONSOLIDATED | ARCHIVED | DEPENDENCY_LOCKED
+
+An archived memory may still contain a CURRENT validity claim.
+A DISPUTED claim may still be ACTIVE in retention.
+These dimensions MUST NOT be collapsed into a single enum.
+
+DOMAIN PARTITION — Cognitive vs. Autonomous:
+
+  COGNITIVE:   Owned by the deliberate cognitive processing domain (Engines 1-14).
+  AUTONOMOUS:  Owned by Diva's independent background activity domain.
+  SHARED:      Accessible to both domains under explicit access grants.
+
+Data in the COGNITIVE partition is inaccessible to AUTONOMOUS processing by default.
+Data in the AUTONOMOUS partition is inaccessible to COGNITIVE processing by default.
+Shared data requires an explicit access_policy record and an audit event.
+
+
+1.2 EPISTEMIC MODEL: CLAIMS, ASSESSMENTS, EVIDENCE
+---------------------------------------------------
+
+Claims are the atomic epistemic unit of Diva's knowledge system.
+A claim is a proposition with independent epistemic dimensions.
+
+EPISTEMIC TYPE — How was this claim produced?
+
+  OBSERVATION:     Directly sensed by Diva's Input/Perception engine. Highest raw
+                   fidelity, but Perception may still misinterpret signals.
+  REPORTED:        A claim made by another agent (user, system, source document).
+                   Memory preserves the report without asserting its truth.
+  INFERENCE:       Derived by logical or statistical reasoning from observed evidence.
+  INTERPRETATION:  A cognitive evaluation of meaning (Emotion, Social Cognition, Thought).
+  OPINION:         An evaluative stance, preference, or aesthetic judgment.
+  UNKNOWN:         Epistemic type cannot be established from available provenance.
+
+EVIDENCE STATUS — How well is the claim supported?
+
+  UNVERIFIED:    No corroborating evidence beyond initial source; not disputed.
+  SUPPORTED:     At least one independent evidence record aligns.
+  CORROBORATED:  Multiple independent evidence records consistently support the claim.
+  DISPUTED:      At least one piece of conflicting evidence exists; not resolved.
+  REFUTED:       The claim has been directly contradicted by reliable evidence.
+
+CLAIM LIFECYCLE — Where is this claim in its operational lifecycle?
+
+  ACTIVE:      Currently part of Diva's knowledge base; accessible to reasoning.
+  HISTORICAL:  Was accurate for a past time window; superseded by later records.
+  SUPERSEDED:  Replaced by a more precise or updated claim (linked by CORRECTS relationship).
+  RETRACTED:   Withdrawn due to discovered source error or deliberate correction.
+
+CLAIM DATA STRUCTURE (Primary Pydantic Contract):
+
+  MemoryClaim (frozen=True):
+    claim_id:           UUID         — UUIDv7, monotonically ordered
+    subject_entity_id:  UUID | None  — FK to entities table (may be None for universal claims)
+    predicate:          str          — Relationship verb / property name (lowercase slug)
+    object_value:       str          — Literal string value or FK-reference identifier
+    canonical_statement:str          — Human-readable full sentence form of the claim
+    epistemic_type:     EpistemicType
+    evidence_status:    EvidenceStatus
+    lifecycle:          ClaimLifecycle
+    domain_partition:   DomainPartition
+    source_engine:      str          — Engine that submitted the claim
+    source_session_id:  UUID         — Session during which the claim was submitted
+    world_time_start:   datetime     — When this was true in the world (may be NULL = unknown)
+    world_time_end:     datetime | None — When this stopped being true (NULL = still valid)
+    diva_time_recorded: datetime     — When Diva first recorded this claim
+    provenance_hash:    str          — SHA-256 of canonical_statement + source_engine + diva_time
+    version:            int          — Monotonically incrementing; starts at 1
+
+  ClaimAssessment (frozen=True):
+    assessment_id:      UUID
+    claim_id:           UUID         — FK to claims
+    assessor_engine:    str          — Which engine produced this assessment
+    assessor_session:   UUID         — Session context during assessment
+    confidence:         float        — [0.0, 1.0]; assessor's confidence, NOT objective probability
+    rationale:          str          — Explanation of the confidence value
+    assessed_at:        datetime
+    assessment_method:  str          — e.g. "DETERMINISTIC_RULE", "LLM_INFERENCE", "HEURISTIC"
+
+  EvidenceReference (frozen=True):
+    evidence_id:        UUID
+    claim_id:           UUID         — FK to claims (this evidence supports or opposes this claim)
+    source_memory_id:   UUID | None  — FK to experiences (original event evidence)
+    source_claim_id:    UUID | None  — FK to claims (a claim as evidence for another claim)
+    relationship:       EvidenceRole — SUPPORTS | OPPOSES | CONTEXTUALIZES
+    weight:             float        — [0.0, 1.0]; relative evidence strength
+    added_at:           datetime
+
+NOTE ON CONFIDENCE:
+  Confidence is a property of a specific ClaimAssessment by an identified assessor.
+  It is NOT a property of the claim itself. The claim has an evidence_status derived
+  from the totality of evidence records, not from one engine's confidence score.
+
+
+1.3 TYPED CLAIM RELATIONSHIPS
+------------------------------
+
+Relationships between claims are stored as explicit, typed graph edges in the
+claim_relationships table. They are NOT implicit from co-occurrence or proximity.
+
+ClaimRelationshipType:
+  SUPPORTS:        Claim A provides supporting evidence for Claim B.
+  CONTRADICTS:     Claim A and Claim B make mutually exclusive assertions.
+  DERIVED_FROM:    Claim A was derived by inference or generalization from Claim B.
+  CORRECTS:        Claim A is a more accurate replacement for Claim B (B → SUPERSEDED).
+  GENERALIZES:     Claim A is a general form of the more specific Claim B.
+  SPECIALIZES:     Claim A is a specific instance of the more general Claim B.
+  SUPERSEDES:      Claim A completely replaces Claim B, which is now HISTORICAL.
+  ASSOCIATED_WITH: Claim A and Claim B are related but no stronger semantics applies.
+  CO_OCCURS_WITH:  Claim A and Claim B appear together frequently; NO causal inference made.
+
+IMPORTANT: CO_OCCURS_WITH does NOT imply causation. Memory can propose a co-occurrence
+relationship. The Thought Engine is responsible for investigating causal explanations.
+Contradiction graphs MAY contain cycles — this is acceptable and expected.
+
+ClaimRelationship (frozen=True):
+  relationship_id:    UUID
+  claim_id_source:    UUID   — FK to claims (from)
+  claim_id_target:    UUID   — FK to claims (to)
+  relationship_type:  ClaimRelationshipType
+  confidence:         float  — [0.0, 1.0]
+  established_by:     str    — Engine or subsystem that established this relationship
+  established_at:     datetime
+  supporting_evidence:list[UUID]  — FKs to evidence_references
+
+
+1.4 ENTITY & ASSOCIATION DATA STRUCTURES
+-----------------------------------------
+
+Entities represent distinct real-world or conceptual objects that appear across memories.
+
+Entity (frozen=True):
+  entity_id:          UUID
+  canonical_name:     str    — The primary, unambiguous identifier name
+  entity_type:        str    — PERSON | ORGANIZATION | LOCATION | CONCEPT | SYSTEM | UNKNOWN
+  domain_partition:   DomainPartition
+  first_observed_at:  datetime
+  last_observed_at:   datetime
+  observation_count:  int
+  status:             str    — ACTIVE | MERGED | INACTIVE
+
+EntityAlias (frozen=True):
+  alias_id:           UUID
+  entity_id:          UUID   — FK to entities
+  alias_text:         str    — Alternate name, nickname, handle, abbreviation
+  alias_type:         str    — NICKNAME | HANDLE | ABBREVIATION | FORMAL_NAME | SYSTEM_ID
+  confidence:         float  — How certain that this alias refers to this entity
+  source_engine:      str
+  established_at:     datetime
+
+EntityAttribute (frozen=True):
+  attribute_id:       UUID
+  entity_id:          UUID   — FK to entities
+  attribute_key:      str    — e.g. "occupation", "relationship_to_diva", "location"
+  attribute_value:    str
+  epistemic_type:     EpistemicType
+  valid_from:         datetime | None
+  valid_until:        datetime | None
+  source_claim_id:    UUID | None — FK to the claim that established this attribute
+
+MemoryRelationship (typed graph edge between memory records):
+  relationship_id:    UUID
+  source_memory_id:   UUID   — FK to experiences or representations
+  target_memory_id:   UUID   — FK to experiences or representations
+  relationship_type:  str    — See Memory Relationship Types below
+  confidence:         float
+  established_by:     str
+  established_at:     datetime
+
+Memory Relationship Types:
+  EXPERIENCED_BEFORE / EXPERIENCED_AFTER   — Temporal ordering between events
+  ASSOCIATED_WITH                          — General topical or contextual association
+  CAUSED_BY / CAUSED               — HYPOTHESIS ONLY; not established by Memory alone
+  PART_OF                                  — Episodic sub-event of a larger event
+  INSTANCE_OF                              — Specific instance of a generalized concept
+  CONTRADICTS                              — Conflicting observations in different events
+  SIMILAR_TO                               — High-similarity representation pair
+  DEVELOPED_FROM                           — Derived/consolidated from these memories
+
+
+1.5 MEMORY REPRESENTATION LINEAGE TREE
+----------------------------------------
+
+Every representation has a lineage tracking its derivation from source records.
+
+MemoryRepresentation (frozen=True):
+  representation_id:   UUID
+  source_experience_id:UUID | None   — FK to original experience record (may be NULL for
+                                        representations derived from other representations)
+  parent_representation_id: UUID | None  — NULL for root representations
+  representation_type: MemoryRepresentationType
+  development_status:  DevelopmentStatus
+  validity_status:     ValidityStatus
+  domain_partition:    DomainPartition
+  content:             str           — The representation's structured content (JSON encoded)
+  content_hash:        str           — SHA-256 of content for tamper-evidence
+  producing_engine:    str           — Engine or subsystem that generated this representation
+  producing_method:    str           — DETERMINISTIC | LLM_ASSISTED | COLLABORATIVE
+  version:             int           — Monotonically incrementing from 1
+  created_at:          datetime
+  superseded_at:       datetime | None — When this version was superseded by next version
+  claims_derived:      list[UUID]    — FKs to claims derived from this representation
+
+RepresentationLineage (frozen=True):
+  lineage_id:         UUID
+  representation_id:  UUID       — FK to memory_representations
+  parent_id:          UUID | None — FK to memory_representations (None = root)
+  lineage_depth:      int        — Distance from root experience (root = 0)
+  derivation_type:    str        — VERSIONED_UPDATE | SPECIALIZED | CONSOLIDATED | REAPPRAISAL
+  created_at:         datetime
+
+LINEAGE INVARIANT: New representation versions NEVER erase or overwrite previous versions.
+superseded_at is SET on the old record and a NEW record is created with parent_representation_id
+pointing to the old record.
+
+
+1.6 CONTINUITY CHECKPOINT DATA STRUCTURES
+-------------------------------------------
+
+Memory Continuity persists authorized snapshots of state OWNED BY OTHER ENGINES.
+It does NOT own cognitive state directly.
+
+ContinuityCheckpoint (frozen=True):
+  checkpoint_id:              UUID
+  session_id:                 UUID
+  schema_version:             int     — Checkpoint schema version for forward-compat validation
+  workspace_snapshot_ref:     UUID | None  — Reference to Shared Context Workspace snapshot
+  attention_snapshot_ref:     UUID | None  — Reference to Attention Engine state snapshot
+  activity_snapshot_refs:     tuple[UUID, ...]  — Activity Controller task snapshots
+  active_goal_refs:           tuple[UUID, ...]  — Goal identifiers from Motivation Engine
+  unresolved_commitment_refs: tuple[UUID, ...]  — Incomplete commitments from Decision Engine
+  created_at:                 datetime
+  valid:                      bool    — Passes integrity check
+  restoration_attempted:      bool
+  restoration_succeeded:      bool | None
+
+RESTORATION PROTOCOL:
+  1. Memory Continuity retrieves latest valid checkpoint with valid=True.
+  2. Schema version is compared against current; mismatch triggers migration check.
+  3. For each snapshot_ref, Memory Continuity notifies the OWNING ENGINE with the ref UUID.
+  4. Each owning engine independently validates its own snapshot and restores its state.
+  5. Memory Continuity does NOT interpret or parse the snapshot content itself.
+  6. Autonomous processing checkpoints are stored in a SEPARATE table with restricted access.
+
+
+1.7 DEVELOPMENT REQUEST & RESULT CONTRACTS
+-------------------------------------------
+
+DevelopmentRequest (frozen=True):
+  request_id:              UUID
+  operation_type:          str           — See Development Operation Types below
+  initiating_subsystem:    str           — Which Memory subsystem initiated this request
+  requesting_engine:       str | None    — Set when another engine requests development
+  target_memory_ids:       tuple[UUID, ...]   — Memory records to be investigated
+  target_claim_ids:        tuple[UUID, ...]   — Claims to be investigated
+  development_objective:   str           — Natural language goal statement
+  evidence_requirements:   tuple[str, ...]   — What evidence must be validated
+  parent_operation_id:     UUID | None   — For bounded depth tracking
+  processing_depth:        int           — Current depth in development chain
+  max_processing_depth:    int           — Hard limit (default: 5)
+  resource_budget:         ResourceBudget — CPU time, token budget, wall-clock limit
+  idempotency_key:         str           — Hash for duplicate request detection
+  priority:                int           — 0 = CRITICAL, 10 = BACKGROUND
+  requested_at:            datetime
+  deadline_at:             datetime | None — NULL = no hard deadline
+
+DevelopmentResult (frozen=True):
+  request_id:              UUID          — Correlates to DevelopmentRequest
+  originating_engine:      str           — Engine that produced this result
+  result_status:           str           — ACCEPTED | PROPOSED | REJECTED | DEFERRED
+  proposed_claims:         tuple[ProposedClaim, ...]   — Claims NOT yet assigned DB IDs
+  proposed_relationships:  tuple[ProposedRelationship, ...] — Relationships to establish
+  supporting_evidence_ids: tuple[UUID, ...]   — FKs to existing evidence records
+  opposing_evidence_ids:   tuple[UUID, ...]   — FKs to conflicting evidence records
+  unresolved_questions:    tuple[str, ...]    — Open questions for future investigation
+  rationale:               str           — Explanation of the result
+  produced_at:             datetime
+
+NOTE: ProposedClaim and ProposedRelationship do NOT carry database UUIDs.
+Memory Governance assigns persistent identities upon accepting a submission.
+No external engine can fabricate a valid database identity by supplying its own UUID.
+
+Development Operation Types:
+  DEDUPLICATION:         Identify and merge duplicate records.
+  ENTITY_LINKING:        Propose entity associations across memory records.
+  PATTERN_DETECTION:     Identify recurrence or co-occurrence patterns.
+  CONTRADICTION_CHECK:   Find conflicting claims across the knowledge base.
+  GENERALIZATION:        Propose a generalized representation from specific episodes.
+  CAUSAL_INVESTIGATION:  Request Thought Engine to investigate a detected co-occurrence.
+  EMOTIONAL_REAPPRAISAL: Request Emotion Engine to re-evaluate an emotional record.
+  SOCIAL_INTERPRETATION: Request Social Cognition to interpret interpersonal patterns.
+  PROCEDURAL_EXTRACTION: Request Learning Engine to identify procedural lessons.
+  CONSOLIDATION:         Request integration of related experiences.
+
+
+1.8 LIFECYCLE DIMENSION SEPARATION
+------------------------------------
+
+The memory lifecycle has THREE INDEPENDENT DIMENSIONS that must NEVER be collapsed:
+
+DEVELOPMENT DIMENSION:
+  RAW → ORGANIZED → ASSOCIATED → PROPOSED → UNDER_REVIEW → ACCEPTED | DISPUTED
+  ACCEPTED can transition to SUPERSEDED.
+  DISPUTED may resolve to ACCEPTED or remain indefinitely.
+
+VALIDITY DIMENSION:
+  CURRENT:    This record accurately represents the current state of knowledge.
+  HISTORICAL: This record was accurate for a past time window; not currently valid.
+  RETRACTED:  Withdrawn by the originating engine due to source error or correction.
+  REFUTED:    Directly contradicted by reliable, authoritative evidence.
+
+  Validity state changes are ALWAYS represented as new events, never as updates to old records.
+
+RETENTION DIMENSION:
+  ACTIVE:            In primary storage; fully indexed; retrieved normally.
+  CONSOLIDATED:      Original is in primary storage; a consolidated representation exists.
+  DEPENDENCY_LOCKED: Cannot be archived because active records depend on this one.
+  ARCHIVAL_ELIGIBLE: All retention conditions satisfied; may move to cold storage.
+  ARCHIVED:          Moved to cold archive; retrievable but not in hot indexes.
+
+ORTHOGONALITY RULE:
+  Any combination of these three dimensions is valid:
+  - An ARCHIVED (retention) memory can be CURRENT (validity) and ACCEPTED (development).
+  - A DISPUTED (development) claim can be ACTIVE (retention) and HISTORICAL (validity).
+  - A CONSOLIDATED (retention) record can be SUPERSEDED (development) and RETRACTED (validity).
+
+
+1.9 IMPORTANCE, ACTIVATION & DEVELOPMENT PRIORITY MATHEMATICS
+--------------------------------------------------------------
+
+FOUR DISTINCT NUMERICAL DIMENSIONS (never collapsed into one score):
+
+  Dimension A: PERMANENT IMPORTANCE   I_perm ∈ [0.0, 1.0]
+    Long-term structural significance. Set at intake; updated via explicit reassessment events.
+    Not subject to time decay. Changes only through deliberate cognitive events.
+
+  Dimension B: TEMPORARY IMPORTANCE   I_temp(t) ∈ [0.0, 1.0]
+    Current task or situation relevance. Decays when associated tasks complete.
+    I_temp(t) = I_temp_initial × max(0, 1 - (t - t_assigned) / task_lifetime)
+
+  COMPOSITE IMPORTANCE:
+    I_total(M, t) = max(I_perm(M), I_temp(M, t))
+    This ensures temporary relevance does not permanently elevate importance scores.
+
+  Dimension C: RETRIEVAL ACTIVATION   A(M, t) ∈ [0.0, +∞)
+    Based on ACT-R memory activation model:
+    B(M, t) = ln( Σ_j t_j^(-d) )    [base-level activation: sum of recency-weighted accesses]
+      where t_j = time since j-th access, d = decay parameter (default: 0.5)
+    S(M, t) = Σ_k W_k × S_k(M)      [associative spread from currently active concepts W_k]
+    A(M, t) = B(M, t) + S(M, t)
+
+    Implementation note: B(M, t) is approximated during batch retrieval using the
+    Anderson (2004) approximation:
+      B(M, t) = ln(n / (1 - d)) - d × ln(L)
+      where n = total access count, L = lifetime since creation
+
+  Dimension D: DEVELOPMENT PRIORITY   P_dev ∈ [0.0, 1.0]
+    Determines which memories are worth developing further:
+    P_dev(M) = w1 × I_total(M, t) + w2 × R(M) + w3 × U(M) + w4 × D(M)
+
+    Where:
+      R = Recurrence strength (pattern frequency score)
+      U = Uncertainty level (gap between CORROBORATED and UNVERIFIED evidence)
+      D = Dependency significance (count of downstream memories depending on this record)
+      w1, w2, w3, w4 = configurable weights (default: 0.4, 0.2, 0.2, 0.2)
+      Weights are empirically tunable; not permanently fixed.
+
+    P_dev determines SCHEDULING PRIORITY for development jobs, NOT truth probability.
+
+
+================================================================================
+PART 2 — DATABASE ARCHITECTURE & SCHEMA
+================================================================================
+
+SQLite 3.45+ in WAL mode is the SINGLE SOURCE OF TRUTH for all persistent memory state.
+FTS5 and vector indexes are REBUILDABLE DERIVED INDEXES — they can be dropped and
+reconstructed from the canonical relational tables without data loss.
+
+SQLite is chosen over PostgreSQL or other databases because:
+  - Zero-latency local access (no network hop, no connection overhead).
+  - Single-file portability matches Diva's local embedded deployment.
+  - WAL mode provides non-blocking concurrent readers with serialized writers.
+  - FTS5 is a first-class extension requiring no additional process.
+  - sqlite-vec provides native C KNN vector search without a separate vector server.
+  - Full ACID compliance with foreign key enforcement and atomic transactions.
+
+
+2.17 SQLITE CONFIGURATION & PRAGMA INVARIANTS
+----------------------------------------------
+(Listed first because all schema operations depend on this configuration.)
+
+Mandatory PRAGMA settings applied at every connection open:
+
+  PRAGMA journal_mode = WAL;              -- Write-Ahead Logging for concurrent reads
+  PRAGMA synchronous = NORMAL;            -- Safe under WAL; faster than FULL
+  PRAGMA foreign_keys = ON;              -- Enforce all FK constraints
+  PRAGMA busy_timeout = 30000;            -- 30-second busy wait before SQLITE_BUSY error
+  PRAGMA cache_size = -65536;             -- 64 MB page cache (negative = KB units)
+  PRAGMA page_size = 4096;               -- Optimal for modern OS page sizes
+  PRAGMA temp_store = MEMORY;             -- Temp tables in memory, not disk
+  PRAGMA mmap_size = 268435456;           -- 256 MB memory-mapped I/O
+  PRAGMA wal_autocheckpoint = 1000;       -- Checkpoint every 1000 WAL pages
+  PRAGMA strict = ON;                     -- Strict type checking (SQLite 3.37+)
+  PRAGMA auto_vacuum = INCREMENTAL;       -- Incremental page reclamation
+
+SERIALIZED WRITER CONSTRAINT: All write operations route through a single AsyncIO
+write-serialization lock (asyncio.Lock). Concurrent reads from WAL are unrestricted.
+No connection pool for writes — a single persistent write connection is maintained.
+
+
+2.1 DATABASE DOMAIN ORGANIZATION
+---------------------------------
+
+The schema is organized into 14 logical domains. Each domain is a grouping of related
+tables. All tables live in the same SQLite database file unless explicitly noted.
+
+DOMAIN                 | PURPOSE
+-----------------------|--------------------------------------------------------
+01. Experience         | Immutable raw event and experience records
+02. Knowledge          | Claims, assessments, versioned updates
+03. Provenance         | Evidence references, derivation links
+04. Entity             | Entity identity, aliases, attributes
+05. Association        | Memory-to-memory and claim-to-claim typed relationships
+06. Representation     | Multi-type representation records and lineage tree
+07. Appraisal          | Per-domain cognitive appraisals (Emotion, Social, etc.)
+08. Development        | Development requests, proposals, reviews
+09. Consolidation      | Consolidation jobs, source coverage, residual claims
+10. Retrieval          | Access events, vector embeddings, FTS5 shadow tables
+11. Retention          | Retention records, archive logs, dependency tracking
+12. Continuity         | Continuity checkpoints
+13. Governance         | Access policies, audit log, schema version tracking
+14. Background Jobs    | Background job queue, worker leases, transactional outbox
+
+
+2.2 EXPERIENCE DOMAIN TABLES
+------------------------------
+
+TABLE: input_events
+  Captures every incoming signal before any processing. Immutable once written.
+
+  CREATE TABLE input_events (
+    event_id          TEXT NOT NULL PRIMARY KEY,  -- UUIDv7
+    source_engine     TEXT NOT NULL,              -- e.g. "PERCEPTION", "THOUGHT", "USER"
+    channel           TEXT NOT NULL,              -- e.g. "TEXT", "SYSTEM_EVENT", "TOOL_RESULT"
+    domain_partition  TEXT NOT NULL CHECK (domain_partition IN ('COGNITIVE','AUTONOMOUS','SHARED')),
+    session_id        TEXT NOT NULL,              -- FK to sessions (not enforced; sessions may expire)
+    raw_content       TEXT NOT NULL,              -- Original payload serialized to JSON
+    content_hash      TEXT NOT NULL,              -- SHA-256(raw_content)
+    received_at       TEXT NOT NULL,              -- ISO-8601 UTC timestamp
+    processed         INTEGER NOT NULL DEFAULT 0, -- 0=pending, 1=processed
+    processing_job_id TEXT,                       -- FK to background_jobs if async processing
+    schema_version    INTEGER NOT NULL DEFAULT 1
+  ) STRICT;
+
+  INDEX: idx_input_events_session ON input_events (session_id, received_at);
+  INDEX: idx_input_events_source  ON input_events (source_engine, received_at);
+  INDEX: idx_input_events_pending ON input_events (processed) WHERE processed = 0;
+
+TABLE: experiences
+  Canonical episodic experience records. One experience per meaningful event.
+  NOT every conversation turn becomes an experience — intake policy decides.
+
+  CREATE TABLE experiences (
+    experience_id         TEXT NOT NULL PRIMARY KEY,  -- UUIDv7
+    source_event_id       TEXT,              -- FK to input_events (NULL if internally generated)
+    session_id            TEXT NOT NULL,
+    domain_partition      TEXT NOT NULL CHECK (domain_partition IN ('COGNITIVE','AUTONOMOUS','SHARED')),
+    experience_summary    TEXT NOT NULL,     -- Brief human-readable description
+    participants          TEXT NOT NULL,     -- JSON array of entity_ids involved
+    world_time_start      TEXT,              -- ISO-8601; when this occurred in the world
+    world_time_end        TEXT,              -- NULL if point-in-time event
+    diva_time_recorded    TEXT NOT NULL,     -- When Diva recorded this
+    development_status    TEXT NOT NULL DEFAULT 'RAW',
+    validity_status       TEXT NOT NULL DEFAULT 'CURRENT',
+    retention_status      TEXT NOT NULL DEFAULT 'ACTIVE',
+    permanent_importance  REAL NOT NULL DEFAULT 0.5 CHECK (permanent_importance BETWEEN 0.0 AND 1.0),
+    temporary_importance  REAL NOT NULL DEFAULT 0.0 CHECK (temporary_importance BETWEEN 0.0 AND 1.0),
+    access_count          INTEGER NOT NULL DEFAULT 0,
+    last_accessed_at      TEXT,
+    provenance_hash       TEXT NOT NULL,     -- SHA-256 for tamper detection
+    schema_version        INTEGER NOT NULL DEFAULT 1
+  ) STRICT;
+
+  INDEX: idx_experiences_session     ON experiences (session_id, diva_time_recorded);
+  INDEX: idx_experiences_world_time  ON experiences (world_time_start, world_time_end);
+  INDEX: idx_experiences_status      ON experiences (development_status, validity_status);
+  INDEX: idx_experiences_importance  ON experiences (permanent_importance DESC);
+  INDEX: idx_experiences_partition   ON experiences (domain_partition);
+
+TABLE: experience_payloads
+  Stores the full structured payload of each experience separately for efficient access.
+  Original payloads are IMMUTABLE after creation.
+
+  CREATE TABLE experience_payloads (
+    payload_id      TEXT NOT NULL PRIMARY KEY,
+    experience_id   TEXT NOT NULL REFERENCES experiences(experience_id) ON DELETE RESTRICT,
+    payload_format  TEXT NOT NULL,           -- "JSON" | "TEXT" | "BINARY"
+    payload_data    BLOB NOT NULL,           -- Full original payload bytes
+    content_hash    TEXT NOT NULL,           -- SHA-256 of payload_data
+    created_at      TEXT NOT NULL,
+    is_archived     INTEGER NOT NULL DEFAULT 0,
+    archive_path    TEXT                     -- Path to cold archive if archived
+  ) STRICT;
+
+  INDEX: idx_payloads_experience ON experience_payloads (experience_id);
+
+
+2.3 KNOWLEDGE DOMAIN TABLES
+-----------------------------
+
+TABLE: claims
+  Atomic propositional units of Diva's knowledge. Immutable content; status updates
+  are made via new claim_versions records, not by modifying this row.
+
+  CREATE TABLE claims (
+    claim_id              TEXT NOT NULL PRIMARY KEY,  -- UUIDv7
+    subject_entity_id     TEXT REFERENCES entities(entity_id) ON DELETE RESTRICT,
+    predicate             TEXT NOT NULL,
+    object_value          TEXT NOT NULL,
+    canonical_statement   TEXT NOT NULL,
+    epistemic_type        TEXT NOT NULL CHECK (epistemic_type IN
+                            ('OBSERVATION','REPORTED','INFERENCE','INTERPRETATION','OPINION','UNKNOWN')),
+    evidence_status       TEXT NOT NULL DEFAULT 'UNVERIFIED',
+    lifecycle             TEXT NOT NULL DEFAULT 'ACTIVE',
+    domain_partition      TEXT NOT NULL,
+    source_engine         TEXT NOT NULL,
+    source_session_id     TEXT NOT NULL,
+    source_experience_id  TEXT REFERENCES experiences(experience_id) ON DELETE RESTRICT,
+    world_time_start      TEXT,
+    world_time_end        TEXT,
+    diva_time_recorded    TEXT NOT NULL,
+    provenance_hash       TEXT NOT NULL UNIQUE,  -- Prevents duplicate claim creation
+    version               INTEGER NOT NULL DEFAULT 1,
+    schema_version        INTEGER NOT NULL DEFAULT 1
+  ) STRICT;
+
+  INDEX: idx_claims_entity     ON claims (subject_entity_id, predicate);
+  INDEX: idx_claims_epistemic  ON claims (epistemic_type, evidence_status);
+  INDEX: idx_claims_lifecycle  ON claims (lifecycle, domain_partition);
+  INDEX: idx_claims_world_time ON claims (world_time_start, world_time_end);
+  INDEX: idx_claims_source     ON claims (source_engine, source_session_id);
+
+TABLE: claim_assessments
+  Engine-specific assessments of confidence for a claim. NOT properties of the claim.
+
+  CREATE TABLE claim_assessments (
+    assessment_id      TEXT NOT NULL PRIMARY KEY,
+    claim_id           TEXT NOT NULL REFERENCES claims(claim_id) ON DELETE RESTRICT,
+    assessor_engine    TEXT NOT NULL,
+    assessor_session   TEXT NOT NULL,
+    confidence         REAL NOT NULL CHECK (confidence BETWEEN 0.0 AND 1.0),
+    rationale          TEXT NOT NULL,
+    assessment_method  TEXT NOT NULL,
+    assessed_at        TEXT NOT NULL,
+    superseded         INTEGER NOT NULL DEFAULT 0,  -- 1 if a newer assessment exists
+    superseded_by      TEXT REFERENCES claim_assessments(assessment_id)
+  ) STRICT;
+
+  INDEX: idx_assessments_claim      ON claim_assessments (claim_id, superseded);
+  INDEX: idx_assessments_assessor   ON claim_assessments (assessor_engine, claim_id);
+
+TABLE: claim_versions
+  Every time a claim's status or validity changes, a new version record is added.
+  The claim row itself is NOT updated — this table drives the current state projection.
+
+  CREATE TABLE claim_versions (
+    version_id         TEXT NOT NULL PRIMARY KEY,
+    claim_id           TEXT NOT NULL REFERENCES claims(claim_id) ON DELETE RESTRICT,
+    version_number     INTEGER NOT NULL,
+    previous_version   TEXT REFERENCES claim_versions(version_id),
+    change_type        TEXT NOT NULL,  -- STATUS_UPDATE | EVIDENCE_ADDED | LIFECYCLE_CHANGE
+    old_state          TEXT NOT NULL,  -- JSON snapshot of previous state
+    new_state          TEXT NOT NULL,  -- JSON snapshot of new state
+    changed_by         TEXT NOT NULL,  -- Engine or subsystem
+    change_reason      TEXT NOT NULL,
+    changed_at         TEXT NOT NULL
+  ) STRICT;
+
+  UNIQUE INDEX: uniq_claim_versions ON claim_versions (claim_id, version_number);
+  INDEX: idx_claim_versions_history ON claim_versions (claim_id, changed_at);
+
+
+2.4 PROVENANCE DOMAIN TABLES
+------------------------------
+
+TABLE: evidence_references
+  Explicitly typed links between claims and their evidential support.
+
+  CREATE TABLE evidence_references (
+    evidence_id          TEXT NOT NULL PRIMARY KEY,
+    claim_id             TEXT NOT NULL REFERENCES claims(claim_id) ON DELETE RESTRICT,
+    source_memory_id     TEXT REFERENCES experiences(experience_id) ON DELETE RESTRICT,
+    source_claim_id      TEXT REFERENCES claims(claim_id) ON DELETE RESTRICT,
+    relationship         TEXT NOT NULL CHECK (relationship IN ('SUPPORTS','OPPOSES','CONTEXTUALIZES')),
+    weight               REAL NOT NULL DEFAULT 0.5 CHECK (weight BETWEEN 0.0 AND 1.0),
+    added_by             TEXT NOT NULL,
+    added_at             TEXT NOT NULL,
+    CHECK (source_memory_id IS NOT NULL OR source_claim_id IS NOT NULL)
+  ) STRICT;
+
+  INDEX: idx_evidence_claim    ON evidence_references (claim_id, relationship);
+  INDEX: idx_evidence_memory   ON evidence_references (source_memory_id);
+
+TABLE: derivation_links
+  Tracks how representations and claims were derived from source records.
+
+  CREATE TABLE derivation_links (
+    link_id              TEXT NOT NULL PRIMARY KEY,
+    derived_id           TEXT NOT NULL,   -- ID of the derived record (representation or claim)
+    derived_type         TEXT NOT NULL,   -- 'REPRESENTATION' | 'CLAIM'
+    source_id            TEXT NOT NULL,   -- ID of the source record
+    source_type          TEXT NOT NULL,   -- 'EXPERIENCE' | 'CLAIM' | 'REPRESENTATION'
+    derivation_method    TEXT NOT NULL,   -- How it was derived
+    derived_at           TEXT NOT NULL,
+    deriving_engine      TEXT NOT NULL
+  ) STRICT;
+
+  INDEX: idx_derivation_derived ON derivation_links (derived_id, derived_type);
+  INDEX: idx_derivation_source  ON derivation_links (source_id, source_type);
+
+
+2.5 ENTITY DOMAIN TABLES
+--------------------------
+
+TABLE: entities
+  CREATE TABLE entities (
+    entity_id           TEXT NOT NULL PRIMARY KEY,
+    canonical_name      TEXT NOT NULL,
+    entity_type         TEXT NOT NULL,
+    domain_partition    TEXT NOT NULL,
+    first_observed_at   TEXT NOT NULL,
+    last_observed_at    TEXT NOT NULL,
+    observation_count   INTEGER NOT NULL DEFAULT 1,
+    status              TEXT NOT NULL DEFAULT 'ACTIVE',
+    merged_into         TEXT REFERENCES entities(entity_id),  -- Set when MERGED
+    provenance_hash     TEXT NOT NULL
+  ) STRICT;
+
+  INDEX: idx_entities_name      ON entities (canonical_name, entity_type);
+  INDEX: idx_entities_partition ON entities (domain_partition, status);
+
+TABLE: entity_aliases
+  CREATE TABLE entity_aliases (
+    alias_id         TEXT NOT NULL PRIMARY KEY,
+    entity_id        TEXT NOT NULL REFERENCES entities(entity_id) ON DELETE RESTRICT,
+    alias_text       TEXT NOT NULL,
+    alias_type       TEXT NOT NULL,
+    confidence       REAL NOT NULL DEFAULT 1.0 CHECK (confidence BETWEEN 0.0 AND 1.0),
+    source_engine    TEXT NOT NULL,
+    established_at   TEXT NOT NULL,
+    superseded       INTEGER NOT NULL DEFAULT 0
+  ) STRICT;
+
+  UNIQUE INDEX: uniq_alias_text ON entity_aliases (alias_text, alias_type) WHERE superseded = 0;
+  INDEX: idx_aliases_entity   ON entity_aliases (entity_id, superseded);
+
+TABLE: entity_attributes
+  CREATE TABLE entity_attributes (
+    attribute_id      TEXT NOT NULL PRIMARY KEY,
+    entity_id         TEXT NOT NULL REFERENCES entities(entity_id) ON DELETE RESTRICT,
+    attribute_key     TEXT NOT NULL,
+    attribute_value   TEXT NOT NULL,
+    epistemic_type    TEXT NOT NULL,
+    valid_from        TEXT,
+    valid_until       TEXT,
+    source_claim_id   TEXT REFERENCES claims(claim_id) ON DELETE RESTRICT,
+    created_at        TEXT NOT NULL,
+    superseded        INTEGER NOT NULL DEFAULT 0
+  ) STRICT;
+
+  INDEX: idx_attributes_entity ON entity_attributes (entity_id, attribute_key, superseded);
+
+
+2.6 ASSOCIATION DOMAIN TABLES
+-------------------------------
+
+TABLE: memory_relationships  (typed graph edges between experience/representation records)
+  CREATE TABLE memory_relationships (
+    relationship_id    TEXT NOT NULL PRIMARY KEY,
+    source_memory_id   TEXT NOT NULL,
+    target_memory_id   TEXT NOT NULL,
+    relationship_type  TEXT NOT NULL,
+    confidence         REAL NOT NULL DEFAULT 0.5 CHECK (confidence BETWEEN 0.0 AND 1.0),
+    established_by     TEXT NOT NULL,
+    established_at     TEXT NOT NULL,
+    superseded         INTEGER NOT NULL DEFAULT 0,
+    development_job_id TEXT  -- FK to development_requests that established this
+  ) STRICT;
+
+  INDEX: idx_mem_rel_source ON memory_relationships (source_memory_id, relationship_type);
+  INDEX: idx_mem_rel_target ON memory_relationships (target_memory_id, relationship_type);
+  INDEX: idx_mem_rel_type   ON memory_relationships (relationship_type, superseded);
+
+TABLE: claim_relationships  (typed graph edges between claim records)
+  CREATE TABLE claim_relationships (
+    relationship_id      TEXT NOT NULL PRIMARY KEY,
+    claim_id_source      TEXT NOT NULL REFERENCES claims(claim_id) ON DELETE RESTRICT,
+    claim_id_target      TEXT NOT NULL REFERENCES claims(claim_id) ON DELETE RESTRICT,
+    relationship_type    TEXT NOT NULL,
+    confidence           REAL NOT NULL DEFAULT 0.5,
+    established_by       TEXT NOT NULL,
+    established_at       TEXT NOT NULL,
+    supporting_evidence  TEXT NOT NULL DEFAULT '[]',  -- JSON array of evidence_reference UUIDs
+    superseded           INTEGER NOT NULL DEFAULT 0,
+    CHECK (claim_id_source != claim_id_target)
+  ) STRICT;
+
+  INDEX: idx_cl_rel_source ON claim_relationships (claim_id_source, relationship_type);
+  INDEX: idx_cl_rel_target ON claim_relationships (claim_id_target, relationship_type);
+
+
+2.7 REPRESENTATION DOMAIN TABLES
+----------------------------------
+
+TABLE: memory_representations
+  CREATE TABLE memory_representations (
+    representation_id         TEXT NOT NULL PRIMARY KEY,
+    source_experience_id      TEXT REFERENCES experiences(experience_id) ON DELETE RESTRICT,
+    parent_representation_id  TEXT REFERENCES memory_representations(representation_id),
+    representation_type       TEXT NOT NULL,
+    development_status        TEXT NOT NULL DEFAULT 'RAW',
+    validity_status           TEXT NOT NULL DEFAULT 'CURRENT',
+    domain_partition          TEXT NOT NULL,
+    content                   TEXT NOT NULL,     -- JSON-encoded content
+    content_hash              TEXT NOT NULL,     -- SHA-256(content)
+    producing_engine          TEXT NOT NULL,
+    producing_method          TEXT NOT NULL,     -- DETERMINISTIC | LLM_ASSISTED | COLLABORATIVE
+    version                   INTEGER NOT NULL DEFAULT 1,
+    created_at                TEXT NOT NULL,
+    superseded_at             TEXT,
+    claims_derived            TEXT NOT NULL DEFAULT '[]'  -- JSON array of claim_ids
+  ) STRICT;
+
+  INDEX: idx_repr_experience ON memory_representations (source_experience_id);
+  INDEX: idx_repr_parent     ON memory_representations (parent_representation_id);
+  INDEX: idx_repr_type       ON memory_representations (representation_type, development_status);
+  INDEX: idx_repr_partition  ON memory_representations (domain_partition, validity_status);
+
+TABLE: representation_lineage
+  CREATE TABLE representation_lineage (
+    lineage_id          TEXT NOT NULL PRIMARY KEY,
+    representation_id   TEXT NOT NULL REFERENCES memory_representations(representation_id),
+    parent_id           TEXT REFERENCES memory_representations(representation_id),
+    lineage_depth       INTEGER NOT NULL DEFAULT 0,
+    derivation_type     TEXT NOT NULL,
+    created_at          TEXT NOT NULL
+  ) STRICT;
+
+  INDEX: idx_lineage_repr   ON representation_lineage (representation_id);
+  INDEX: idx_lineage_depth  ON representation_lineage (lineage_depth, representation_id);
+
+
+2.8 APPRAISAL DOMAIN TABLES
+-----------------------------
+
+TABLE: memory_appraisals
+  Stores cognitive appraisals submitted by specialized engines (Emotion, Social Cognition).
+  An appraisal is NOT a property of the experience — it is a contribution from an engine
+  that owns that domain of interpretation.
+
+  CREATE TABLE memory_appraisals (
+    appraisal_id      TEXT NOT NULL PRIMARY KEY,
+    experience_id     TEXT NOT NULL REFERENCES experiences(experience_id) ON DELETE RESTRICT,
+    appraising_engine TEXT NOT NULL,   -- "EMOTION" | "SOCIAL_COGNITION" | "THOUGHT" | etc.
+    appraisal_type    TEXT NOT NULL,   -- "EMOTIONAL" | "SOCIAL" | "COGNITIVE" | "PROCEDURAL"
+    appraisal_content TEXT NOT NULL,   -- JSON-structured appraisal output
+    confidence        REAL NOT NULL CHECK (confidence BETWEEN 0.0 AND 1.0),
+    appraised_at      TEXT NOT NULL,
+    session_id        TEXT NOT NULL,
+    version           INTEGER NOT NULL DEFAULT 1,
+    superseded        INTEGER NOT NULL DEFAULT 0
+  ) STRICT;
+
+  INDEX: idx_appraisal_experience ON memory_appraisals (experience_id, appraising_engine);
+  INDEX: idx_appraisal_type       ON memory_appraisals (appraisal_type, superseded);
+
+TABLE: appraisal_history
+  Every version of every appraisal is preserved. Reappraisals create new records here.
+
+  CREATE TABLE appraisal_history (
+    history_id       TEXT NOT NULL PRIMARY KEY,
+    appraisal_id     TEXT NOT NULL REFERENCES memory_appraisals(appraisal_id),
+    version_number   INTEGER NOT NULL,
+    content_snapshot TEXT NOT NULL,   -- JSON snapshot of that version's content
+    recorded_at      TEXT NOT NULL,
+    reason           TEXT NOT NULL
+  ) STRICT;
+
+  UNIQUE INDEX: uniq_appraisal_history ON appraisal_history (appraisal_id, version_number);
+
+
+2.9 DEVELOPMENT DOMAIN TABLES
+-------------------------------
+
+TABLE: development_requests
+  CREATE TABLE development_requests (
+    request_id             TEXT NOT NULL PRIMARY KEY,
+    operation_type         TEXT NOT NULL,
+    initiating_subsystem   TEXT NOT NULL,
+    requesting_engine      TEXT,
+    target_memory_ids      TEXT NOT NULL DEFAULT '[]',   -- JSON array
+    target_claim_ids       TEXT NOT NULL DEFAULT '[]',   -- JSON array
+    development_objective  TEXT NOT NULL,
+    evidence_requirements  TEXT NOT NULL DEFAULT '[]',   -- JSON array
+    parent_operation_id    TEXT REFERENCES development_requests(request_id),
+    processing_depth       INTEGER NOT NULL DEFAULT 0,
+    max_processing_depth   INTEGER NOT NULL DEFAULT 5,
+    resource_budget        TEXT NOT NULL,                -- JSON ResourceBudget
+    idempotency_key        TEXT NOT NULL UNIQUE,
+    priority               INTEGER NOT NULL DEFAULT 5,
+    status                 TEXT NOT NULL DEFAULT 'PENDING',
+    requested_at           TEXT NOT NULL,
+    deadline_at            TEXT,
+    started_at             TEXT,
+    completed_at           TEXT
+  ) STRICT;
+
+  INDEX: idx_dev_req_status    ON development_requests (status, priority, requested_at);
+  INDEX: idx_dev_req_parent    ON development_requests (parent_operation_id);
+  INDEX: idx_dev_req_idem      ON development_requests (idempotency_key);
+
+TABLE: development_proposals
+  CREATE TABLE development_proposals (
+    proposal_id          TEXT NOT NULL PRIMARY KEY,
+    request_id           TEXT NOT NULL REFERENCES development_requests(request_id),
+    originating_engine   TEXT NOT NULL,
+    result_status        TEXT NOT NULL,  -- ACCEPTED | PROPOSED | REJECTED | DEFERRED
+    proposed_claims      TEXT NOT NULL DEFAULT '[]',       -- JSON array of proposed claims
+    proposed_relations   TEXT NOT NULL DEFAULT '[]',       -- JSON array of proposed relationships
+    supporting_evidence  TEXT NOT NULL DEFAULT '[]',       -- JSON array of UUIDs
+    opposing_evidence    TEXT NOT NULL DEFAULT '[]',       -- JSON array of UUIDs
+    unresolved_questions TEXT NOT NULL DEFAULT '[]',
+    rationale            TEXT NOT NULL,
+    produced_at          TEXT NOT NULL
+  ) STRICT;
+
+  INDEX: idx_proposals_request ON development_proposals (request_id, result_status);
+
+TABLE: development_reviews
+  CREATE TABLE development_reviews (
+    review_id         TEXT NOT NULL PRIMARY KEY,
+    proposal_id       TEXT NOT NULL REFERENCES development_proposals(proposal_id),
+    reviewing_engine  TEXT NOT NULL,  -- "MEMORY_GOVERNANCE" | specialized engine
+    decision          TEXT NOT NULL,  -- ACCEPT | REJECT | DEFER | REQUEST_MORE_EVIDENCE
+    decision_reason   TEXT NOT NULL,
+    reviewed_at       TEXT NOT NULL,
+    resulting_records TEXT NOT NULL DEFAULT '[]'  -- JSON array of IDs created on ACCEPT
+  ) STRICT;
+
+  INDEX: idx_reviews_proposal ON development_reviews (proposal_id, decision);
+
+
+2.10 CONSOLIDATION DOMAIN TABLES
+----------------------------------
+
+TABLE: consolidation_jobs
+  CREATE TABLE consolidation_jobs (
+    job_id               TEXT NOT NULL PRIMARY KEY,
+    trigger_type         TEXT NOT NULL,  -- PATTERN_DETECTED | THRESHOLD | MANUAL | SCHEDULED
+    source_memory_ids    TEXT NOT NULL,  -- JSON array of experience UUIDs being consolidated
+    status               TEXT NOT NULL DEFAULT 'PENDING',
+    seven_gate_results   TEXT,           -- JSON results of each gate (set when verification runs)
+    all_gates_passed     INTEGER,        -- NULL until verified; 1 if all 7 pass
+    resulting_repr_id    TEXT REFERENCES memory_representations(representation_id),
+    initiated_at         TEXT NOT NULL,
+    completed_at         TEXT,
+    failure_reason       TEXT
+  ) STRICT;
+
+  INDEX: idx_consol_jobs_status ON consolidation_jobs (status, initiated_at);
+
+TABLE: consolidation_coverage
+  One row per source memory per consolidation job, tracking coverage completeness.
+
+  CREATE TABLE consolidation_coverage (
+    coverage_id      TEXT NOT NULL PRIMARY KEY,
+    job_id           TEXT NOT NULL REFERENCES consolidation_jobs(job_id),
+    source_memory_id TEXT NOT NULL REFERENCES experiences(experience_id),
+    claim_ids        TEXT NOT NULL DEFAULT '[]',  -- JSON: all claims from this source
+    covered_claim_ids TEXT NOT NULL DEFAULT '[]', -- JSON: claims accounted for in result
+    coverage_pct     REAL,                        -- Computed by Gate 3: Claim Coverage
+    CHECK (coverage_pct IS NULL OR coverage_pct BETWEEN 0.0 AND 1.0)
+  ) STRICT;
+
+  UNIQUE INDEX: uniq_coverage ON consolidation_coverage (job_id, source_memory_id);
+
+TABLE: residual_claims
+  Claims from source memories that could not be safely generalized into the consolidation.
+  Must be preserved separately — no claim may be silently discarded.
+
+  CREATE TABLE residual_claims (
+    residual_id      TEXT NOT NULL PRIMARY KEY,
+    job_id           TEXT NOT NULL REFERENCES consolidation_jobs(job_id),
+    claim_id         TEXT NOT NULL REFERENCES claims(claim_id),
+    reason           TEXT NOT NULL,  -- Why this claim could not be consolidated
+    created_at       TEXT NOT NULL
+  ) STRICT;
+
+  INDEX: idx_residual_job ON residual_claims (job_id);
+
+
+2.11 RETRIEVAL DOMAIN TABLES
+------------------------------
+
+TABLE: retrieval_events
+  Logs every retrieval request for activation calculation and audit purposes.
+
+  CREATE TABLE retrieval_events (
+    retrieval_id      TEXT NOT NULL PRIMARY KEY,
+    requesting_engine TEXT NOT NULL,
+    retrieval_intent  TEXT NOT NULL,  -- FACTUAL | EPISODIC | TEMPORAL | ASSOCIATIVE | etc.
+    query_text        TEXT,
+    retrieved_ids     TEXT NOT NULL DEFAULT '[]',  -- JSON array of experience/representation IDs
+    retrieved_count   INTEGER NOT NULL DEFAULT 0,
+    retrieval_methods TEXT NOT NULL DEFAULT '[]',  -- JSON: ["SQL", "FTS5", "VECTOR", "GRAPH"]
+    total_latency_ms  INTEGER,
+    session_id        TEXT NOT NULL,
+    retrieved_at      TEXT NOT NULL
+  ) STRICT;
+
+  INDEX: idx_retrieval_session ON retrieval_events (session_id, retrieved_at);
+  INDEX: idx_retrieval_engine  ON retrieval_events (requesting_engine, retrieval_intent);
+
+TABLE: memory_embeddings
+  Vector embeddings for semantic retrieval. Rebuilable derived index.
+
+  -- Requires sqlite-vec extension loaded at connection time:
+  -- SELECT load_extension('./sqlite_vec');
+
+  CREATE VIRTUAL TABLE memory_embeddings USING vec0(
+    memory_id    TEXT PRIMARY KEY,
+    embedding    float[384],          -- 384-dim for bge-small; adjust for other models
+    model_id     TEXT,
+    created_at   TEXT
+  );
+
+  Alternative schema when sqlite-vec unavailable:
+  CREATE TABLE memory_embeddings_fallback (
+    embedding_id  TEXT NOT NULL PRIMARY KEY,
+    memory_id     TEXT NOT NULL,
+    model_id      TEXT NOT NULL,
+    embedding     BLOB NOT NULL,  -- raw float32 bytes
+    dimensions    INTEGER NOT NULL,
+    created_at    TEXT NOT NULL
+  ) STRICT;
+
+FTS5 VIRTUAL TABLE:
+  CREATE VIRTUAL TABLE memories_fts USING fts5(
+    memory_id UNINDEXED,
+    experience_summary,
+    canonical_statements,     -- Concatenated claim canonical_statement texts
+    entity_names,             -- Space-separated entity canonical names
+    tokenize = 'porter unicode61'  -- Porter stemmer + Unicode normalization
+  );
+
+  FTS CONTENT SYNC: The memories_fts table is populated and updated by the
+  MemoryIndexingService background job. It is NEVER written directly by experience
+  persistence code. It is a projection, not the source of truth.
+
+
+2.12 RETENTION DOMAIN TABLES
+------------------------------
+
+TABLE: retention_records
+  CREATE TABLE retention_records (
+    record_id              TEXT NOT NULL PRIMARY KEY,
+    memory_id              TEXT NOT NULL,  -- experience_id or representation_id
+    memory_type            TEXT NOT NULL,  -- 'EXPERIENCE' | 'REPRESENTATION'
+    permanent_importance   REAL NOT NULL DEFAULT 0.5,
+    development_priority   REAL NOT NULL DEFAULT 0.5,
+    retention_status       TEXT NOT NULL DEFAULT 'ACTIVE',
+    dependency_count       INTEGER NOT NULL DEFAULT 0,
+    consolidation_eligible INTEGER NOT NULL DEFAULT 0,
+    archival_eligible      INTEGER NOT NULL DEFAULT 0,
+    last_evaluated_at      TEXT,
+    evaluation_trigger     TEXT   -- What triggered last re-evaluation
+  ) STRICT;
+
+  UNIQUE INDEX: uniq_retention ON retention_records (memory_id, memory_type);
+  INDEX: idx_retention_status    ON retention_records (retention_status, archival_eligible);
+
+TABLE: archive_records
+  CREATE TABLE archive_records (
+    archive_id        TEXT NOT NULL PRIMARY KEY,
+    memory_id         TEXT NOT NULL,
+    memory_type       TEXT NOT NULL,
+    archive_path      TEXT NOT NULL,  -- Path to cold archive file
+    archived_at       TEXT NOT NULL,
+    compression_type  TEXT NOT NULL DEFAULT 'ZSTD',
+    original_size_kb  INTEGER,
+    archived_size_kb  INTEGER,
+    checksum          TEXT NOT NULL,
+    retrieval_tested  INTEGER NOT NULL DEFAULT 0
+  ) STRICT;
+
+TABLE: memory_dependencies
+  Tracks which records depend on which others (prevents premature archival).
+
+  CREATE TABLE memory_dependencies (
+    dependency_id    TEXT NOT NULL PRIMARY KEY,
+    dependent_id     TEXT NOT NULL,   -- The record that NEEDS the source
+    dependency_type  TEXT NOT NULL,   -- 'SOURCE' | 'EVIDENCE' | 'ENTITY' | 'CLAIM'
+    source_id        TEXT NOT NULL,   -- The record that must NOT be deleted
+    created_at       TEXT NOT NULL
+  ) STRICT;
+
+  INDEX: idx_dependencies_source    ON memory_dependencies (source_id);
+  INDEX: idx_dependencies_dependent ON memory_dependencies (dependent_id);
+
+
+2.13 CONTINUITY DOMAIN TABLES
+-------------------------------
+
+TABLE: continuity_checkpoints
+  CREATE TABLE continuity_checkpoints (
+    checkpoint_id              TEXT NOT NULL PRIMARY KEY,
+    session_id                 TEXT NOT NULL,
+    schema_version             INTEGER NOT NULL,
+    workspace_snapshot_ref     TEXT,  -- Opaque ref; interpreted by Shared Context Workspace
+    attention_snapshot_ref     TEXT,  -- Opaque ref; interpreted by Attention Engine
+    activity_snapshot_refs     TEXT NOT NULL DEFAULT '[]',  -- JSON array
+    active_goal_refs           TEXT NOT NULL DEFAULT '[]',  -- JSON array
+    unresolved_commitment_refs TEXT NOT NULL DEFAULT '[]',  -- JSON array
+    created_at                 TEXT NOT NULL,
+    valid                      INTEGER NOT NULL DEFAULT 1,
+    restoration_attempted      INTEGER NOT NULL DEFAULT 0,
+    restoration_succeeded      INTEGER,
+    domain_partition           TEXT NOT NULL  -- Cognitive vs. Autonomous checkpoints are SEPARATE
+  ) STRICT;
+
+  INDEX: idx_checkpoint_session ON continuity_checkpoints (session_id, domain_partition, created_at);
+  INDEX: idx_checkpoint_valid   ON continuity_checkpoints (valid, domain_partition);
+
+
+2.14 GOVERNANCE DOMAIN TABLES
+-------------------------------
+
+TABLE: access_policies
+  CREATE TABLE access_policies (
+    policy_id         TEXT NOT NULL PRIMARY KEY,
+    target_resource   TEXT NOT NULL,  -- Resource identifier pattern
+    resource_type     TEXT NOT NULL,  -- 'MEMORY' | 'CLAIM' | 'ENTITY' | 'ALL'
+    domain_partition  TEXT NOT NULL,
+    permitted_engines TEXT NOT NULL,  -- JSON array of engine names
+    access_modes      TEXT NOT NULL,  -- JSON array: ["READ", "WRITE", "DELETE"]
+    created_by        TEXT NOT NULL,
+    created_at        TEXT NOT NULL,
+    expires_at        TEXT,
+    active            INTEGER NOT NULL DEFAULT 1
+  ) STRICT;
+
+  INDEX: idx_policies_partition ON access_policies (domain_partition, resource_type, active);
+
+TABLE: audit_events
+  Immutable audit log. Every write operation (create, update status, archive, delete) appends here.
+
+  CREATE TABLE audit_events (
+    audit_id        TEXT NOT NULL PRIMARY KEY,
+    event_type      TEXT NOT NULL,  -- EXPERIENCE_CREATED | CLAIM_CREATED | CLAIM_STATUS_CHANGED, etc.
+    target_id       TEXT NOT NULL,
+    target_type     TEXT NOT NULL,
+    actor_engine    TEXT NOT NULL,
+    actor_session   TEXT NOT NULL,
+    old_state       TEXT,           -- JSON snapshot before change
+    new_state       TEXT,           -- JSON snapshot after change
+    event_at        TEXT NOT NULL,
+    policy_id       TEXT REFERENCES access_policies(policy_id)
+  ) STRICT;
+
+  INDEX: idx_audit_target  ON audit_events (target_id, target_type, event_at);
+  INDEX: idx_audit_actor   ON audit_events (actor_engine, event_at);
+  INDEX: idx_audit_type    ON audit_events (event_type, event_at);
+
+TABLE: schema_versions
+  CREATE TABLE schema_versions (
+    version_id    INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    version_name  TEXT NOT NULL,
+    applied_at    TEXT NOT NULL,
+    migration_sql TEXT NOT NULL,
+    checksum      TEXT NOT NULL
+  ) STRICT;
+
+
+2.15 BACKGROUND JOB DOMAIN TABLES
+-----------------------------------
+
+TABLE: background_jobs
+  Persistent job queue. All background operations are registered here before execution.
+
+  CREATE TABLE background_jobs (
+    job_id          TEXT NOT NULL PRIMARY KEY,
+    job_type        TEXT NOT NULL,   -- INDEXING | PATTERN_DETECTION | CONSOLIDATION | etc.
+    input_data      TEXT NOT NULL,   -- JSON input payload
+    status          TEXT NOT NULL DEFAULT 'PENDING',
+    priority        INTEGER NOT NULL DEFAULT 5,
+    max_attempts    INTEGER NOT NULL DEFAULT 3,
+    attempt_count   INTEGER NOT NULL DEFAULT 0,
+    idempotency_key TEXT NOT NULL UNIQUE,
+    created_at      TEXT NOT NULL,
+    scheduled_at    TEXT,
+    started_at      TEXT,
+    completed_at    TEXT,
+    error_message   TEXT,
+    result_data     TEXT            -- JSON output on completion
+  ) STRICT;
+
+  INDEX: idx_jobs_status   ON background_jobs (status, priority, scheduled_at);
+  INDEX: idx_jobs_idem     ON background_jobs (idempotency_key);
+
+TABLE: background_leases
+  Prevents duplicate concurrent processing of the same job.
+
+  CREATE TABLE background_leases (
+    lease_id      TEXT NOT NULL PRIMARY KEY,
+    job_id        TEXT NOT NULL REFERENCES background_jobs(job_id) UNIQUE,
+    worker_id     TEXT NOT NULL,
+    acquired_at   TEXT NOT NULL,
+    expires_at    TEXT NOT NULL,  -- Lease auto-expires; enables recovery from crashed workers
+    heartbeat_at  TEXT NOT NULL
+  ) STRICT;
+
+TABLE: outbox_events
+  Transactional outbox for event publication. Committed atomically with the
+  operation that triggered the event. Published asynchronously by outbox worker.
+
+  CREATE TABLE outbox_events (
+    outbox_id       TEXT NOT NULL PRIMARY KEY,
+    event_name      TEXT NOT NULL,   -- e.g. "memory.experience_persisted"
+    event_payload   TEXT NOT NULL,   -- JSON
+    source_engine   TEXT NOT NULL,
+    created_at      TEXT NOT NULL,
+    published       INTEGER NOT NULL DEFAULT 0,
+    published_at    TEXT,
+    publish_attempts INTEGER NOT NULL DEFAULT 0
+  ) STRICT;
+
+  INDEX: idx_outbox_unpublished ON outbox_events (published, created_at) WHERE published = 0;
+
+
+2.16 BITEMPORAL RECORD DESIGN (World Time vs. Diva Time)
+---------------------------------------------------------
+
+Every knowledge record maintains two independent time dimensions:
+
+  WORLD TIME (world_time_start, world_time_end):
+    When something was true or occurred in reality.
+    world_time_end = NULL means "this is still valid" or "unknown end time".
+    May be NULL for claims where temporal validity is unknown.
+
+  DIVA TIME (diva_time_recorded):
+    When Diva first observed, recorded, or derived this claim.
+    Always a concrete timestamp; never NULL.
+
+This enables two distinct query types:
+
+  Query A — "What was true in the world at time T?"
+    WHERE world_time_start <= T AND (world_time_end IS NULL OR world_time_end > T)
+    AND lifecycle = 'ACTIVE'  (excludes HISTORICAL, RETRACTED, REFUTED)
+
+  Query B — "What did Diva believe at her-time T_diva (even if world-state has since changed)?"
+    WITH state_at_diva_time AS (
+      SELECT c.*, MAX(cv.version_number) as latest_version
+      FROM claims c
+      JOIN claim_versions cv ON cv.claim_id = c.claim_id
+      WHERE cv.changed_at <= T_diva
+      GROUP BY c.claim_id
+    ) -- then join to get the state at that version
+
+CORRECTION PRINCIPLE: Old records are NEVER modified to reflect corrections.
+Instead, new claim_versions records with lifecycle changes (HISTORICAL, SUPERSEDED)
+are appended, and the correcting claims reference the old ones via CORRECTS relationships.
+
+
+================================================================================
+PART 3 — ALGORITHMS & PROCESSING LOGIC
+================================================================================
+
+3.1 MEMORY INTAKE PROCESSING PIPELINE
+---------------------------------------
+
+The intake pipeline runs for every incoming submission. It is synchronous for the
+critical validation path and spawns async background jobs for deeper processing.
+
+STAGE 1: INTAKE VALIDATION (synchronous, ~1-5ms)
+  Input: Raw submission from source engine
+  Steps:
+    1. Validate JSON payload schema against engine-specific Pydantic model.
+    2. Reject if content_hash does not match SHA-256(raw_content).
+    3. Reject if source_engine not in permitted_submitters policy list.
+    4. Reject if domain_partition is COGNITIVE and requestor is AUTONOMOUS (or vice versa).
+    5. Check idempotency: compute submission_hash = SHA-256(source_engine + content + session_id).
+       If hash exists in input_events.content_hash, return existing event_id (idempotent).
+    6. Extract metadata: source, channel, session, timestamp.
+
+STAGE 2: EPISTEMIC TAGGING (synchronous, ~1ms)
+  Steps:
+    1. Preserve original epistemic_type from source engine metadata.
+    2. NEVER downgrade an INTERPRETATION to OBSERVATION silently.
+    3. NEVER upgrade REPORTED to OBSERVATION (reported facts remain reported).
+    4. If no epistemic_type provided by source, assign UNKNOWN.
+    5. Write input_event record (immutable from this point).
+
+STAGE 3: EXPERIENCE WORTHINESS FILTER (synchronous, ~1-5ms)
+  Determines whether this input becomes a persistent experience.
+  Uses a scored decision table:
+
+    Score contributors (each in [0, 1], weighted sum):
+      - Novelty:        1.0 if no near-duplicate found in last 24h; else 0.0
+      - Source quality: 1.0 for PERCEPTION; 0.8 for THOUGHT; 0.6 for external tools
+      - Semantic weight: 0.0–1.0 based on keyword salience score (TF-IDF against existing)
+      - Flagged important: 1.0 if source engine set importance_flag=True
+      - Session relevance: 0.5 baseline for active session inputs
+
+    Weights: novelty(0.3) + source(0.2) + semantic(0.2) + flagged(0.2) + session(0.1)
+
+    If total score >= threshold (default: 0.4): persist as experience.
+    If score < 0.4: store reference in input_events.processed=1; no experience record.
+    Threshold is configurable; initial value should be validated empirically.
+
+STAGE 4: ENTITY EXTRACTION & RESOLUTION (synchronous fast path / async for deep NLP)
+  Steps:
+    1. Run deterministic entity extraction:
+       - Regex patterns for known entity types (email, URL, file path, structured IDs).
+       - Keyword matching against entity_aliases index (SQL LIKE on alias_text).
+    2. For each candidate entity name:
+       a. Query entity_aliases for exact match → linked to existing entity.
+       b. Query entities.canonical_name for exact match.
+       c. If no match: create provisional entity record (status=ACTIVE, low confidence).
+    3. If embedding provider available: schedule async similarity check for entity linking.
+    4. Record entity IDs in experience.participants JSON array.
+
+STAGE 5: ATOMIC CLAIM EXTRACTION (synchronous for structured inputs, async for free-text)
+  For structured submissions (source provides pre-formed claims): validate and persist directly.
+  For free-text submissions: schedule CLAIM_EXTRACTION background job with priority=3.
+  Claims must preserve epistemic_type from their originating source.
+
+STAGE 6: DEVELOPMENT SCHEDULING (async)
+  After experience is committed to SQLite:
+    1. Compute development_priority score using formula from Section 1.9.
+    2. If P_dev >= 0.6: schedule PATTERN_DETECTION background job (priority=5).
+    3. If novelty_score = 1.0 (highly novel): schedule ENTITY_LINKING job (priority=4).
+    4. Update FTS5 index via INDEXING background job (priority=8, lowest urgency).
+    5. If embedding provider available: schedule EMBEDDING_GENERATION job (priority=7).
+    6. Write outbox_events record for "memory.experience_received" event (committed atomically).
+
+STAGE 7: OUTBOX DISPATCH (async, decoupled from intake)
+  OutboxWorker polls outbox_events WHERE published=0 ORDER BY created_at ASC.
+  Publishes events to subscribed engines via in-process AsyncIO event bus.
+  Marks outbox_events.published=1 on successful dispatch.
+  On failure: increments publish_attempts; retries with exponential backoff.
+
+
+3.2 PATTERN DETECTION ALGORITHMS (DETERMINISTIC — PATH A)
+-----------------------------------------------------------
+
+Pattern detection uses deterministic algorithms only. No LLM required.
+
+ALGORITHM: Temporal Co-Occurrence Pattern Detection
+  Runs on a rolling window of recent experiences.
+
+  Input: Set of experience_ids in window W (default: last 7 days or last 100 experiences)
+  Steps:
+    1. Build a co-occurrence matrix C where C[e_i][e_j] = number of times entity_set(e_i)
+       and entity_set(e_j) share at least one entity, within a configurable time window.
+    2. For each pair (e_i, e_j) where C[e_i][e_j] >= THRESHOLD (default: 3):
+       a. Query existing memory_relationships for a CO_OCCURS_WITH relationship.
+       b. If none exists: create a DevelopmentRequest with operation_type=PATTERN_DETECTION
+          and processing_depth=0.
+       c. If exists but confidence < 0.5: schedule update job.
+    3. Build entity frequency map: freq[entity_id] = count of experiences containing entity.
+    4. Flag entities with freq > RECURRENCE_THRESHOLD (default: 5) as recurring.
+       Create development job for ENTITY_PATTERN investigation.
+
+  Data Structure: Sparse Co-occurrence Matrix implemented as:
+    dict[tuple[UUID, UUID], int]  (sorted UUID pairs as keys to avoid double-counting)
+
+ALGORITHM: Contradiction Detection
+  Triggered after every new claim is persisted.
+
+  Steps:
+    1. Query existing claims WHERE subject_entity_id = new_claim.subject_entity_id
+       AND predicate = new_claim.predicate AND lifecycle = 'ACTIVE'.
+    2. For each matching claim c_existing:
+       a. If c_existing.object_value != new_claim.object_value:
+          - Check world time ranges: if ranges overlap, potential contradiction.
+          - If overlap exists: create claim_relationship(CONTRADICTS) between both.
+          - Set evidence_status = 'DISPUTED' on both via claim_versions update.
+          - Write outbox event "memory.claim_disputed".
+    3. Query claim_relationships WHERE claim_id_source = new_claim.claim_id
+       AND relationship_type = 'CONTRADICTS' (transitive contradiction check).
+
+ALGORITHM: Duplicate Detection
+  Runs as background job triggered by DEDUPLICATION operation type.
+
+  Steps:
+    1. EXACT DUPLICATE: Compare content_hash of new experience against existing.
+       If match found: mark new experience as SUPERSEDED; link to original.
+    2. NEAR-DUPLICATE (textual): Use FTS5 to find experiences with high BM25 overlap.
+       If BM25 score > NEAR_DUP_THRESHOLD (default: 15.0): flag for review.
+    3. SEMANTIC DUPLICATE (if embeddings available): cosine similarity >= 0.95.
+       Flag for review; do NOT auto-merge without governance approval.
+
+ALGORITHM: Temporal Sequence Organization
+  Runs after a set of related experiences are detected.
+
+  Steps:
+    1. Collect all experiences WHERE entity_id IN common_entity_set.
+    2. Sort by world_time_start ASC NULLS LAST.
+    3. For consecutive pairs (e_i, e_i+1) in sorted order:
+       a. If no EXPERIENCED_BEFORE relationship exists: create one.
+       b. If exists but world_time values have changed: update with new version.
+    4. Compute temporal gap statistics: min/max/avg gap in seconds.
+    5. Flag unusually short or long gaps for investigation (PATTERN_DETECTION job).
+
+
+3.3 ENTITY RESOLUTION & DEDUPLICATION ALGORITHMS
+--------------------------------------------------
+
+ALGORITHM: Entity Resolution Pipeline
+  Goal: Determine whether a candidate name refers to an existing entity.
+
+  Step 1 — EXACT ALIAS MATCH (SQL, O(log n) with index):
+    SELECT e.entity_id FROM entity_aliases a
+    JOIN entities e ON a.entity_id = e.entity_id
+    WHERE LOWER(a.alias_text) = LOWER(:candidate_name)
+      AND a.superseded = 0 AND e.status = 'ACTIVE';
+    If result: return existing entity_id. DONE.
+
+  Step 2 — FUZZY ALIAS MATCH (FTS5 on alias_text):
+    SELECT entity_id, rank FROM entity_aliases
+    WHERE alias_text MATCH :candidate_name ORDER BY rank LIMIT 5;
+    For each candidate: compute normalized Levenshtein distance.
+    If distance <= FUZZY_THRESHOLD (default: 2 chars): flag as probable match.
+    Create provisional alias with confidence = 1.0 - (distance / max_length).
+
+  Step 3 — SEMANTIC SIMILARITY (Embedding, if available):
+    Embed candidate_name. Compute cosine similarity against entity canonical_name embeddings.
+    If similarity >= 0.90: propose entity merge for governance review.
+    DO NOT auto-merge without explicit governance approval.
+
+  Step 4 — NEW ENTITY CREATION (if no match found):
+    Generate entity_id (UUIDv7).
+    Insert into entities with canonical_name = candidate_name, status = 'ACTIVE'.
+    Insert into entity_aliases with alias_type = 'FORMAL_NAME', confidence = 1.0.
+
+  Merge Algorithm (when two entities are confirmed duplicates):
+    1. Keep the entity with the lower entity_id (first observed) as the CANONICAL.
+    2. Set duplicate.status = 'MERGED', duplicate.merged_into = canonical.entity_id.
+    3. Update all entity_aliases.entity_id references to canonical.
+    4. Update all entity_attributes.entity_id references to canonical.
+    5. Update all experiences.participants JSON arrays (replace old_id with canonical).
+    6. Write audit_events record for the merge.
+    INVARIANT: Never delete the merged entity record. The historical reference must remain.
+
+
+3.4 RETRIEVAL ALGORITHM STACK (SQL + FTS5 + GRAPH + VECTOR)
+------------------------------------------------------------
+
+Retrieval uses a multi-layer cascade. Each layer contributes candidates;
+a final ranking step merges and scores the unified candidate set.
+
+LAYER 1 — STRUCTURED SQL RETRIEVAL (always available)
+  Used for: Factual, Temporal, Entity-specific, Bitemporal queries.
+  Algorithm:
+    SELECT experience_id, permanent_importance, diva_time_recorded,
+           last_accessed_at, access_count
+    FROM experiences
+    WHERE domain_partition = :requester_partition
+      AND validity_status = 'CURRENT'
+      AND (:entity_filter IS NULL OR participants LIKE '%' || :entity_filter || '%')
+      AND (:time_start IS NULL OR world_time_start >= :time_start)
+      AND (:time_end IS NULL OR world_time_end <= :time_end OR world_time_end IS NULL)
+    ORDER BY permanent_importance DESC, diva_time_recorded DESC
+    LIMIT :candidate_limit;   -- Default: 50 candidates before ranking
+
+LAYER 2 — FTS5 FULL-TEXT RETRIEVAL (always available)
+  Used for: Keyword matching, name lookups, exact phrase retrieval.
+  Algorithm:
+    SELECT memory_id, rank FROM memories_fts
+    WHERE memories_fts MATCH :query_tokens
+    ORDER BY rank LIMIT 50;
+  FTS5 returns BM25 scores (negative; lower = better match).
+  Normalize to [0, 1]: score = 1 / (1 + abs(bm25_rank)).
+  Configuration: porter unicode61 tokenizer with prefix queries enabled.
+
+LAYER 3 — GRAPH SPREADING ACTIVATION (available; depends on NetworkX projection)
+  Used for: Associative retrieval, related-concept queries.
+  Algorithm:
+    1. Load adjacency data from memory_relationships into NetworkX DiGraph G.
+       G is a cached in-memory projection, refreshed every N minutes or on change.
+    2. For each seed_id (from query context or seed memories):
+       Run spreading activation:
+         activation[seed_id] = 1.0
+         For each neighbor n of seed_id:
+           activation[n] = max(activation[n], activation[seed_id] * edge_weight[seed_id→n] * decay)
+         decay = 0.5 (configurable)
+         MAX_HOPS = 3 (configurable, hard limit)
+    3. Collect all nodes with activation >= SPREAD_THRESHOLD (default: 0.1).
+    4. Return as candidate set with spreading activation score.
+  Data Structure: NetworkX DiGraph (in-memory, NOT source of truth).
+    Node attributes: {memory_id, permanent_importance, development_status}
+    Edge attributes: {relationship_type, confidence, weight}
+    Weight for spreading: edge.confidence × relationship_type_weight_table[relationship_type]
+      relationship_type_weight_table:
+        CAUSED_BY: 0.9; PART_OF: 0.8; SIMILAR_TO: 0.6; ASSOCIATED_WITH: 0.4;
+        CO_OCCURS_WITH: 0.2; CONTRADICTS: -0.3 (negative activation)
+
+LAYER 4 — VECTOR KNN RETRIEVAL (optional; requires sqlite-vec and embedding provider)
+  Used for: Semantic similarity queries, natural language question retrieval.
+  Algorithm:
+    1. Embed query text using embedding provider (EmbeddingProvider.embed([query])).
+    2. Execute KNN query against memory_embeddings vec0 table:
+       SELECT memory_id, distance FROM memory_embeddings
+       WHERE embedding MATCH :query_embedding AND k = 50;
+    3. Convert cosine distance to similarity: similarity = 1.0 - distance.
+    4. If embedding provider unavailable: skip this layer entirely; retrieve empty set.
+
+HyDE PROJECTION (Hypothetical Document Embeddings):
+  When FTS5 returns weak results and embedding provider is available:
+  1. Generate a hypothetical answer document H for query Q (via LLM or template).
+  2. Embed H to get h_emb.
+  3. Use h_emb as the VECTOR query instead of q_emb.
+  CRITICAL INVARIANT: H is used ONLY as a query projection vector.
+    H is NEVER stored in the database.
+    H is NEVER returned to the requesting engine as evidence.
+    H is NEVER treated as a memory record.
+    H exists only ephemerally during the retrieval process.
+
+
+3.5 CANDIDATE RANKING ALGORITHM
+---------------------------------
+
+After collecting candidates from Layers 1-4, a unified scoring function ranks them.
+
+UNIFIED RETRIEVAL SCORE:
+  S_unified(M) = w_sql  × s_sql(M)
+               + w_fts  × s_fts(M)
+               + w_graph × s_graph(M)
+               + w_vec  × s_vec(M)
+               + w_act  × s_activation(M)
+               + w_imp  × I_total(M, t)
+               + w_perm × s_permission(M)
+
+  Default weights: w_sql=0.15, w_fts=0.25, w_graph=0.15, w_vec=0.25, w_act=0.15, w_imp=0.05
+  Weights sum to 1.0. Configurable per retrieval_intent type.
+  s_permission(M) = 0.0 if access denied; this is a HARD ZERO that eliminates candidates.
+
+  After scoring:
+    1. Filter out candidates with s_permission = 0.0.
+    2. Filter out candidates where validity_status ∈ (RETRACTED, REFUTED)
+       UNLESS retrieval_intent = CONTRADICTION (which explicitly needs refuted records).
+    3. Sort by S_unified DESC.
+    4. Apply token_budget_limit: greedy inclusion from top-ranked until budget exhausted.
+
+TOKEN BUDGET ASSEMBLY (Greedy Knapsack):
+  Input: Ranked candidates [M1, M2, ..., Mn], token_budget (provided by requesting engine)
+  Algorithm:
+    result = []
+    remaining_budget = token_budget
+    for M in ranked_candidates:
+      token_cost = estimate_tokens(M.content)  # heuristic: 1 token ≈ 4 chars
+      if token_cost <= remaining_budget:
+        result.append(M)
+        remaining_budget -= token_cost
+      if remaining_budget < MIN_REMAINING (default: 100): break
+    return result
+
+
+3.6 RETRIEVAL INTENT ROUTING
+-------------------------------
+
+The retrieval intent determines which layers are activated and how weights are adjusted.
+
+INTENT         | SQL | FTS5 | GRAPH | VECTOR | Notes
+---------------|-----|------|-------|--------|--------------------------------
+FACTUAL        |  ✓  |  ✓   |   ✗   |   ✓    | entity+predicate SQL query
+EPISODIC       |  ✓  |  ✓   |   ✓   |   ✓    | temporal filter + spreading
+TEMPORAL       |  ✓  |  ✗   |   ✗   |   ✗    | bitemporal query only
+ASSOCIATIVE    |  ✗  |  ✓   |   ✓   |   ✓    | spreading activation primary
+AUTOBIOGRAPHICAL| ✓  |  ✓   |   ✓   |   ✓    | filter on AUTOBIOGRAPHICAL type
+REFLECTIVE     |  ✓  |  ✓   |   ✓   |   ✓    | filter on REFLECTIVE type
+RELATIONSHIP   |  ✓  |  ✓   |   ✓   |   ✗    | entity_id pair filter
+CONTRADICTION  |  ✓  |  ✗   |   ✗   |   ✗    | claim_relationships CONTRADICTS
+
+
+3.7 CONSOLIDATION VERIFICATION ALGORITHM (SEVEN-GATE PROTOCOL)
+----------------------------------------------------------------
+
+Consolidation requires passing ALL SEVEN GATES before the result is committed.
+Each gate is an independent verifier. Failure at any gate rejects the consolidation.
+
+GATE 1: ENTITY PRESERVATION
+  Rule: Every entity_id referenced in source memory records must appear in the
+        consolidated representation's entity references or be explicitly excluded.
+  Algorithm:
+    source_entities = UNION of participants JSON arrays from all source experiences
+    result_entities = entity IDs referenced in consolidated representation
+    missing = source_entities - result_entities
+    If |missing| > 0: FAIL with list of missing entity_ids.
+
+GATE 2: CONTRADICTION PRESERVATION
+  Rule: If source memories contain CONTRADICTS claim_relationships, the consolidated
+        representation must either preserve the conflict or explicitly note unresolved status.
+  Algorithm:
+    contradictions = SELECT * FROM claim_relationships
+      WHERE claim_id_source IN :source_claim_ids
+        AND relationship_type = 'CONTRADICTS'
+    For each contradiction: check that consolidated result preserves it in content JSON.
+    If any contradiction is silently absent: FAIL.
+
+GATE 3: CLAIM COVERAGE
+  Rule: Every claim from source memories must be either:
+        a) Covered by the consolidated representation, OR
+        b) Recorded as a residual_claim (too specific to generalize safely).
+  Algorithm:
+    source_claims = SELECT claim_id FROM claims
+      WHERE source_experience_id IN :source_memory_ids
+        AND lifecycle = 'ACTIVE'
+    For each claim: check if claim_id appears in coverage.covered_claim_ids
+                    OR in residual_claims for this job.
+    Coverage_pct = |covered + residual| / |source_claims|
+    If coverage_pct < 1.0: FAIL with uncovered claim_ids.
+
+GATE 4: SOURCE TRACEABILITY
+  Rule: Every piece of information in the consolidated representation must have a
+        traceable derivation_link back to a source memory or claim.
+  Algorithm:
+    For each fact in consolidated content (JSON keys): check corresponding derivation_links.
+    If any fact lacks a derivation_link: FAIL.
+
+GATE 5: RESIDUAL INFORMATION PRESERVATION
+  Rule: Claims that could not be safely generalized must be preserved as residual_claims.
+        No claim may be silently discarded.
+  Algorithm:
+    discarded = source_claims - covered_claims - residual_claims
+    If |discarded| > 0: FAIL with list of discarded claim_ids.
+
+GATE 6: TEMPORAL AND CONTEXTUAL PRESERVATION
+  Rule: The consolidated representation must specify the temporal scope and context
+        conditions under which it applies. Claims that apply to specific time windows
+        must not be presented as timeless generalizations.
+  Algorithm:
+    If consolidated content.temporal_scope is NULL or empty string: FAIL.
+    If any source claim has non-NULL world_time_start:
+      Verify consolidated content includes temporal_scope JSON field.
+
+GATE 7: EPISTEMIC PRESERVATION
+  Rule: The epistemic type of claims must NOT be upgraded through summarization.
+        INTERPRETATION cannot become OBSERVATION.
+        REPORTED cannot become OBSERVATION.
+        INFERENCE cannot become OBSERVATION.
+        OPINION cannot become any factual type.
+  Algorithm:
+    For each claim in consolidated content:
+      original_epistemic = lookup original claim epistemic_type
+      consolidated_epistemic = claim.epistemic_type in content
+      If EPISTEMIC_RANK[consolidated_epistemic] > EPISTEMIC_RANK[original_epistemic]: FAIL.
+    EPISTEMIC_RANK: OBSERVATION=5, REPORTED=3, INFERENCE=4, INTERPRETATION=2, OPINION=1, UNKNOWN=0
+
+ALL 7 GATES PASSED → Write consolidated representation to memory_representations.
+                    → Update consolidation_jobs.all_gates_passed = 1.
+                    → Update retention_records for source memories to CONSOLIDATED.
+                    → Emit "memory.consolidation_verified" outbox event.
+ANY GATE FAILS    → Reject consolidation job. Record failure_reason.
+                    → Emit "memory.consolidation_rejected" outbox event.
+                    → Schedule RESIDUAL_ANALYSIS development job for unaccounted claims.
+
+
+3.8 INCREMENTAL CONSOLIDATION PROCESSING LOOP
+----------------------------------------------
+
+Full-corpus consolidation is NEVER attempted in a single pass.
+Memory uses incremental consolidation to avoid catastrophic history rewriting.
+
+LOOP:
+  Trigger: Event "memory.pattern_detected" OR scheduled background job (every 6h).
+
+  Step 1 — ELIGIBLE EXPERIENCE IDENTIFICATION:
+    SELECT e.experience_id FROM experiences e
+    JOIN retention_records r ON r.memory_id = e.experience_id
+    WHERE r.retention_status = 'ACTIVE'
+      AND r.consolidation_eligible = 1
+      AND e.development_status = 'ASSOCIATED'
+      AND e.permanent_importance >= 0.3
+    ORDER BY r.development_priority DESC
+    LIMIT 20;  -- Process in small batches
+
+  Step 2 — RELATED REPRESENTATION LOOKUP:
+    For each eligible experience: find existing memory_representations that reference it.
+    Check if an existing CONSOLIDATED representation already covers this group.
+
+  Step 3 — INCREMENTAL PROPOSAL GENERATION:
+    Generate a consolidation proposal covering only the NEWLY ELIGIBLE experiences
+    plus the most relevant existing consolidated representation (not the entire corpus).
+
+  Step 4 — SEVEN-GATE VERIFICATION (Section 3.7)
+
+  Step 5 — REPRESENTATION VERSION UPDATE:
+    If gates pass: create new memory_representations record with version = old + 1.
+    Set old representation.superseded_at = now().
+    new_repr.parent_representation_id = old_repr.representation_id.
+
+  Step 6 — SOURCE MEMORY RETENTION UPDATE:
+    If all source memories are fully covered and have no active dependencies:
+      Set retention_records.retention_status = 'CONSOLIDATED'.
+      Set retention_records.archival_eligible = 1.
+      Trigger DEPENDENCY CHECK before archival.
+
+
+3.9 MEMORY DEVELOPMENT LIFECYCLE STATE MACHINE
+-----------------------------------------------
+
+The DevelopmentStatus of a memory record follows a strict finite state machine.
+
+States:
+  RAW → ORGANIZED → ASSOCIATED → {PROPOSED, ACCEPTED}
+  PROPOSED → UNDER_REVIEW → {ACCEPTED, DISPUTED}
+  DISPUTED → {ACCEPTED, SUPERSEDED}
+  ACCEPTED → SUPERSEDED  (when a newer version is created)
+  Any state → ARCHIVED  (only via Retention Engine with governance approval)
+
+Transition Rules:
+  RAW → ORGANIZED:          Memory Intake or background INDEXING job completes.
+  ORGANIZED → ASSOCIATED:   Entity links and temporal sequence established.
+  ASSOCIATED → PROPOSED:    Memory Development generates a generalization candidate.
+  ASSOCIATED → ACCEPTED:    Simple organizational structure needs no proposal (risk-based).
+  PROPOSED → UNDER_REVIEW:  When a specialized engine review is requested.
+  UNDER_REVIEW → ACCEPTED:  Governance review approves the proposal.
+  UNDER_REVIEW → DISPUTED:  Contradicting evidence found during review.
+  DISPUTED → ACCEPTED:      Contradiction resolved; proposal validated.
+  ACCEPTED → SUPERSEDED:    A new version replaces this record.
+
+FSM is implemented as a lookup table:
+  VALID_TRANSITIONS = {
+    'RAW': ['ORGANIZED'],
+    'ORGANIZED': ['ASSOCIATED', 'ARCHIVED'],
+    'ASSOCIATED': ['PROPOSED', 'ACCEPTED', 'ARCHIVED'],
+    'PROPOSED': ['UNDER_REVIEW', 'ACCEPTED', 'ARCHIVED'],
+    'UNDER_REVIEW': ['ACCEPTED', 'DISPUTED'],
+    'DISPUTED': ['ACCEPTED', 'SUPERSEDED', 'ARCHIVED'],
+    'ACCEPTED': ['SUPERSEDED', 'ARCHIVED'],
+    'SUPERSEDED': ['ARCHIVED'],
+  }
+  Any transition not in VALID_TRANSITIONS raises InvalidStateTransitionError.
+
+
+3.10 BOUNDED DEVELOPMENT WORKFLOW (ANTI-INFINITE-RECURSION)
+------------------------------------------------------------
+
+PROBLEM: Without bounds, Memory detecting a pattern could trigger Thought to investigate,
+which produces an interpretation, which triggers Memory to detect another pattern, and so on.
+
+SOLUTION: Every development operation carries anti-recursion metadata.
+
+STRUCTURAL BOUNDS on DevelopmentRequest:
+  parent_operation_id:    UUID | None  — Chain of operations
+  processing_depth:       int           — Current depth (starts at 0)
+  max_processing_depth:   int           — Hard cap (default: 5; never exceeds 10)
+  idempotency_key:        str           — Prevents re-processing identical inputs
+  resource_budget:        ResourceBudget— CPU ms, token count, wall-clock seconds
+
+DEPTH ENFORCEMENT:
+  def schedule_development_job(request: DevelopmentRequest) -> None:
+      if request.processing_depth >= request.max_processing_depth:
+          log_warning("Max processing depth reached; scheduling deferred for next cycle")
+          create_low_priority_job(request, scheduled_at=now() + timedelta(hours=24))
+          return
+      create_background_job(request)
+
+IDEMPOTENCY ENFORCEMENT:
+  idempotency_key = SHA-256(operation_type + sorted(target_memory_ids) + development_objective)
+  Before creating any DevelopmentRequest: check background_jobs.idempotency_key.
+  If exists AND status ∈ (PENDING, RUNNING, COMPLETED): return existing job_id.
+
+RESOURCE BUDGET STRUCTURE (ResourceBudget):
+  max_cpu_ms:          int   — Maximum CPU time in milliseconds (default: 5000)
+  max_tokens:          int   — Maximum LLM tokens if LLM used (default: 4096)
+  max_wall_clock_secs: int   — Maximum wall-clock seconds (default: 30)
+  max_db_reads:        int   — Maximum SQL read queries (default: 1000)
+
+CIRCUIT BREAKER: If the same (source_entity_set, operation_type) combination has triggered
+more than N (default: 5) development jobs in the past 24h, suppress further jobs for
+that combination for 24h (write to a cooldown table).
+
+
+3.11 BACKGROUND JOB PROCESSING & IDEMPOTENCY PROTOCOL
+-------------------------------------------------------
+
+All background processing follows the At-Least-Once Delivery with Idempotent Consumers pattern.
+
+JOB LIFECYCLE:
+  PENDING → (worker acquires lease) → RUNNING → COMPLETED | FAILED
+  FAILED: If attempt_count < max_attempts: status → PENDING (retry with backoff)
+           If attempt_count >= max_attempts: status → DEAD_LETTER (requires manual review)
+
+LEASE PROTOCOL:
+  Worker acquire:
+    BEGIN IMMEDIATE;
+    SELECT job_id FROM background_jobs
+      WHERE status = 'PENDING'
+        AND (scheduled_at IS NULL OR scheduled_at <= CURRENT_TIMESTAMP)
+      ORDER BY priority ASC, created_at ASC LIMIT 1 FOR UPDATE;
+    INSERT INTO background_leases VALUES (lease_id, job_id, worker_id, now, now+30s, now);
+    UPDATE background_jobs SET status = 'RUNNING', started_at = now WHERE job_id = ?;
+    COMMIT;
+
+  Worker heartbeat: UPDATE background_leases SET heartbeat_at = now, expires_at = now+30s
+                    WHERE lease_id = ? AND worker_id = ?;  (every 10 seconds)
+
+  Lease expiry recovery: Scheduled monitor checks for leases WHERE expires_at < now.
+    If expired: set job status = PENDING, delete expired lease, increment attempt_count.
+
+IDEMPOTENCY: Every job handler must be idempotent.
+  At start: check if already-processed results exist for this job's idempotency_key.
+  If yes: skip processing; mark COMPLETED immediately; write idempotency audit record.
+
+
+3.12 OUTBOX TRANSACTIONAL EVENT DISPATCH
+-----------------------------------------
+
+The transactional outbox pattern ensures that committed database operations and their
+corresponding events are NEVER decoupled. No "fire-and-forget" event emission is permitted.
+
+Write Path (always within the same transaction as the data operation):
+  BEGIN;
+  -- Insert the memory record (experience, claim, etc.)
+  INSERT INTO experiences (...) VALUES (...);
+  -- Insert the outbox event in the SAME transaction
+  INSERT INTO outbox_events (outbox_id, event_name, event_payload, source_engine, created_at, published)
+    VALUES (uuid7(), 'memory.experience_persisted', json_payload, 'MEMORY_INTAKE', now(), 0);
+  COMMIT;
+  -- If COMMIT fails: neither the experience nor the event is written.
+  -- If COMMIT succeeds: both are durably written.
+
+OutboxWorker (async background coroutine):
+  While running:
+    SELECT outbox_id, event_name, event_payload FROM outbox_events
+      WHERE published = 0 ORDER BY created_at ASC LIMIT 20;
+    For each event:
+      Publish to in-process AsyncIO event bus (broadcast to subscribed handlers).
+      BEGIN;
+      UPDATE outbox_events SET published = 1, published_at = now() WHERE outbox_id = ?;
+      COMMIT;
+      If publish or update fails: increment publish_attempts; sleep exponential backoff.
+    Sleep 100ms;
+
+COMPLETE EVENT CATALOG:
+
+  Intake Events:
+    memory.experience_received        — After passing intake validation
+    memory.experience_persisted       — After SQLite commit of experience record
+    memory.experience_filtered        — When intake decides NOT to create experience
+
+  Claim Events:
+    memory.claim_created              — New claim persisted
+    memory.claim_disputed             — Contradiction detected; evidence_status = DISPUTED
+    memory.claim_corrected            — New version supersedes previous claim
+
+  Pattern Events:
+    memory.pattern_detected           — Pattern frequency threshold exceeded
+    memory.development_proposed       — DevelopmentResult submitted
+    memory.development_accepted       — Memory Governance accepts a proposal
+    memory.development_rejected       — Memory Governance rejects a proposal
+
+  Consolidation Events:
+    memory.consolidation_started      — Consolidation job created
+    memory.consolidation_verified     — All 7 gates passed
+    memory.consolidation_rejected     — Any gate failed
+
+  Retention Events:
+    memory.archive_eligible           — Retention record flagged archival_eligible=1
+    memory.memory_archived            — Cold archive write confirmed
+
+  Continuity Events:
+    memory.checkpoint_created         — Continuity checkpoint written
+    memory.checkpoint_restored        — Restoration completed
+    memory.restoration_failed         — Restoration could not be completed
+
+
+================================================================================
+PART 4 — INDEXING STRATEGY & SEARCH ARCHITECTURE
+================================================================================
+
+4.1 PRIMARY RELATIONAL INDEXES (B-TREE)
+-----------------------------------------
+
+SQLite B-tree indexes are created on every column combination used in WHERE clauses,
+JOIN conditions, and ORDER BY expressions appearing in hot query paths.
+
+Covering indexes (include all queried columns) are used where query pattern warrants:
+
+  CREATE INDEX idx_exp_active_partition ON experiences
+    (domain_partition, validity_status, development_status, permanent_importance DESC)
+    WHERE validity_status = 'CURRENT' AND retention_status = 'ACTIVE';
+
+  CREATE INDEX idx_claims_entity_pred ON claims
+    (subject_entity_id, predicate, lifecycle, evidence_status)
+    WHERE lifecycle = 'ACTIVE';
+
+  CREATE INDEX idx_claims_world_time ON claims
+    (world_time_start, world_time_end)
+    WHERE world_time_start IS NOT NULL;
+
+  CREATE INDEX idx_outbox_pending ON outbox_events (created_at)
+    WHERE published = 0;
+
+  CREATE INDEX idx_jobs_runnable ON background_jobs
+    (priority ASC, created_at ASC)
+    WHERE status = 'PENDING';
+
+Partial indexes (WHERE clause on index) are used extensively to keep index size small
+and maintain near-constant lookup time as tables grow.
+
+4.2 FTS5 FULL-TEXT INDEX CONFIGURATION
+-----------------------------------------
+
+FTS5 is configured with:
+  tokenize = 'porter unicode61 remove_diacritics 2'
+    - porter: English stemming (run/runs/running → run)
+    - unicode61: full Unicode case folding
+    - remove_diacritics 2: strip accents for accent-insensitive matching
+
+FTS5 table covers:
+  experience_summary       — Searchable event description
+  canonical_statements     — Space-joined claim statements for this memory
+  entity_names             — Space-joined entity canonical names and aliases
+
+QUERY PATTERNS:
+
+  Phrase query:         memories_fts MATCH '"machine learning"'
+  Prefix query:         memories_fts MATCH 'algorith*'
+  Proximity query:      memories_fts MATCH 'NEAR("neural" "network", 5)'
+  Boolean:              memories_fts MATCH 'python AND debugging'
+  Column-scoped:        memories_fts MATCH 'entity_names : Alex'
+
+FTS5 Content Synchronization:
+  FTS5 is maintained as an external content table (content='experiences').
+  Synchronization is NOT automatic — a background INDEXING job runs:
+    INSERT INTO memories_fts (rowid, memory_id, experience_summary, ...)
+    SELECT rowid, experience_id, experience_summary, ... FROM experiences
+    WHERE experience_id NOT IN (SELECT memory_id FROM memories_fts_content)
+      AND development_status >= 'ORGANIZED';
+
+  On experience update (status changes only — content is immutable):
+    DELETE FROM memories_fts WHERE memory_id = :experience_id;
+    INSERT INTO memories_fts ... (re-index with updated metadata)
+
+  FTS5 index is fully REBUILDABLE from experiences + claims tables.
+  Rebuild command: INSERT INTO memories_fts(memories_fts) VALUES ('rebuild');
+
+4.3 VECTOR INDEX CONFIGURATION (sqlite-vec)
+--------------------------------------------
+
+sqlite-vec provides C-extension KNN search within SQLite.
+The vec0 virtual table stores float32 embeddings with cosine distance by default.
+
+  CREATE VIRTUAL TABLE memory_embeddings USING vec0(
+    memory_id    TEXT PRIMARY KEY,
+    embedding    float[384]        -- Dimension matches embedding model output
+  );
+
+Embedding model: BAAI/bge-small-en-v1.5 (384 dimensions, ONNX via FastEmbed)
+  - Inference time: < 10ms on CPU for single text
+  - Memory footprint: ~65 MB ONNX model loaded
+  - MTEB retrieval score: competitive for local embedded use
+
+Fallback when sqlite-vec unavailable:
+  Store raw float32 bytes in memory_embeddings_fallback.embedding BLOB.
+  KNN computed in-process using numpy:
+    distances = 1 - (query_vec @ stored_vecs.T) / (||query|| × ||stored||)
+  Performance degrades linearly with corpus size; acceptable up to ~50K records.
+
+HNSW parameters (when using sqlite-vec 0.1.6+ with HNSW support):
+  M = 16          (number of connections per node at non-zero layers)
+  ef_construction = 200  (candidates during index build)
+  ef_search = 50  (candidates during search; tunable at query time)
+
+Embedding Generation Job:
+  Trigger: 'memory.experience_persisted' event consumed by EmbeddingWorker.
+  For each new experience:
+    text = experience.experience_summary + " " + joined_canonical_statements
+    embedding = await embedding_provider.embed([text])
+    INSERT OR REPLACE INTO memory_embeddings (memory_id, embedding) VALUES (?, ?);
+  On provider unavailability: job returns to PENDING with 60s delay.
+
+4.4 GRAPH INDEX (ADJACENCY LIST + NetworkX PROJECTION)
+-------------------------------------------------------
+
+Persistent graph state lives in memory_relationships and claim_relationships tables
+as relational adjacency lists. This is the SOURCE OF TRUTH.
+
+NetworkX is a cached IN-MEMORY projection used for:
+  - Spreading activation algorithm (3.6)
+  - Community detection (Louvain algorithm for concept clustering)
+  - PageRank for entity importance ranking
+  - Shortest path between memory records (Dijkstra)
+  - Cycle detection in contradiction graphs
+
+NetworkX graph is rebuilt from SQLite on:
+  - Application startup
+  - Every GRAPH_REFRESH_INTERVAL (default: 300 seconds)
+  - After any batch of > 50 new memory_relationships records are written
+
+Graph Construction Query:
+  SELECT source_memory_id, target_memory_id, relationship_type, confidence
+  FROM memory_relationships WHERE superseded = 0 AND domain_partition = :partition;
+
+Edge weight in NetworkX:
+  weight = confidence × RELATIONSHIP_WEIGHT_TABLE[relationship_type]
+  RELATIONSHIP_WEIGHT_TABLE:
+    EXPERIENCED_BEFORE: 0.3, EXPERIENCED_AFTER: 0.3
+    CAUSED_BY: 0.9,     CAUSED: 0.9
+    PART_OF: 0.8,       SIMILAR_TO: 0.6
+    ASSOCIATED_WITH: 0.4, CO_OCCURS_WITH: 0.2
+    CONTRADICTS: -0.3   (negative — suppresses activation flow)
+    DEVELOPED_FROM: 0.7, INSTANCE_OF: 0.5
+
+Memory constraint: NetworkX graph is capped at MAX_GRAPH_NODES = 100,000.
+If corpus exceeds this: graph is built from TOP-N most important nodes only
+(ordered by permanent_importance DESC).
+
+
+================================================================================
+PART 5 — ENGINE SUBSYSTEM SPECIFICATIONS
+================================================================================
+
+5.1 SUBSYSTEM 1: MEMORY INTAKE
+--------------------------------
+
+Service Name: MemoryIntakeService
+Runs as: Async coroutine handler; invoked per submission request.
+Data ownership: input_events table (sole writer).
+
+Responsibilities:
+  - Accept submissions from authorized source engines via submit_experience() and
+    submit_knowledge_contribution() interface methods.
+  - Execute the 7-stage intake pipeline (Section 3.1) synchronously up to Stage 3.
+  - Persist input_event record (always, regardless of experience worthiness decision).
+  - Conditionally persist experience record (Stage 3 filter decision).
+  - Schedule background jobs for entity extraction, claim extraction, indexing, embedding.
+  - Emit transactional outbox events within the same SQLite transaction as the write.
+
+Internal components:
+  - IntakeValidator:       Schema validation, hash verification, permission checks.
+  - EpistemicPreserver:    Ensures epistemic_type is never silently downgraded.
+  - WorthinessScorer:      Scores input against worthiness criteria (Section 3.1 Stage 3).
+  - EntityExtractor:       Deterministic entity candidate extraction (regex + alias lookup).
+  - IntakeJobScheduler:    Creates background_jobs records for async processing.
+
+Key invariants enforced:
+  MEM-001: Original experiences never silently overwritten (input_events is append-only).
+  MEM-002: Every persisted claim has provenance (source_engine + session always required).
+  MEM-003: Inferences never silently become observations (epistemic_type preserved).
+
+
+5.2 SUBSYSTEM 2: EXPERIENCE STORE
+-----------------------------------
+
+Service Name: ExperienceStoreService
+Data ownership: experiences, experience_payloads tables (sole writer).
+
+Responsibilities:
+  - Provide the canonical, immutable record of what happened.
+  - Store full event payloads with integrity hashes.
+  - Support temporal ordering queries and bitemporal projections.
+  - Track development_status, validity_status, and retention_status transitions.
+
+Status update protocol:
+  Statuses are NEVER updated by direct SQL UPDATE on the experiences table.
+  Instead: status changes are written as audit_events records.
+  A SQL view (experiences_current_view) derives the current status from the
+  latest audit_event per experience_id.
+
+  Alternative (simpler for initial implementation): Direct UPDATE with mandatory
+  audit_event written in the same transaction. Upgrade to audit-only later.
+
+5.3 SUBSYSTEM 3: KNOWLEDGE STORE
+----------------------------------
+
+Service Name: KnowledgeStoreService
+Data ownership: claims, claim_assessments, claim_versions, evidence_references tables.
+
+Responsibilities:
+  - Maintain the distinction between claims and beliefs (see Section 1.2).
+  - Accept atomic claim submissions with explicit epistemic typing.
+  - Accept ClaimAssessment contributions from specialized engines.
+  - Maintain ClaimVersion history for all status changes.
+  - Detect and record contradictions between claims on insertion.
+  - Provide claim retrieval by entity, predicate, evidence status, and world time.
+
+Claim creation rules:
+  1. Compute provenance_hash = SHA-256(canonical_statement + source_engine + diva_time_recorded).
+  2. If provenance_hash already exists in claims table: return existing claim_id (idempotent).
+  3. Write claim with lifecycle = ACTIVE, evidence_status = UNVERIFIED.
+  4. Run contradiction check (Section 3.2) within same transaction.
+  5. Write outbox event "memory.claim_created".
+
+Assessment submission rules:
+  1. Only the engine that OWNS the domain may submit assessments for that domain.
+     e.g. Only "EMOTION" engine may submit appraisal_type = "EMOTIONAL" assessments.
+  2. Previous assessments from the same engine for the same claim are marked superseded=1.
+  3. New assessment record created with version = previous.version + 1.
+  4. evidence_status of the claim is RECALCULATED from all active evidence_references:
+     - If any OPPOSES: DISPUTED
+     - If 2+ SUPPORTS: CORROBORATED
+     - If 1 SUPPORTS: SUPPORTED
+     - Else: UNVERIFIED
+
+5.4 SUBSYSTEM 4: ENTITY & ASSOCIATION
+---------------------------------------
+
+Service Name: EntityAssociationService
+Data ownership: entities, entity_aliases, entity_attributes, memory_relationships,
+                claim_relationships tables.
+
+Responsibilities:
+  - Maintain canonical entity registry with alias resolution.
+  - Provide entity resolution pipeline (Section 3.3).
+  - Manage typed graph relationships between memory records.
+  - Enforce: CO_OCCURS_WITH does NOT imply causation.
+  - Maintain relationship confidence scores and version history.
+
+Association creation rules:
+  1. Both source and target memory IDs must exist in experiences or memory_representations.
+  2. relationship_type must be in the defined ClaimRelationshipType enum.
+  3. CAUSAL relationship types (CAUSED_BY, CAUSED) may only be established by
+     development proposals reviewed by Thought Engine — not auto-created by Memory.
+  4. Write audit_event for every new or superseded relationship.
+
+NetworkX projection refresh: EntityAssociationService triggers graph refresh
+after every batch of > 10 new memory_relationships records within a 60-second window.
+
+5.5 SUBSYSTEM 5: MEMORY DEVELOPMENT
+--------------------------------------
+
+Service Name: MemoryDevelopmentService
+Data ownership: development_requests, development_proposals, development_reviews tables.
+
+Responsibilities:
+  - Execute Path A (independent deterministic) development operations.
+  - Coordinate Path B (collaborative) development by routing requests to specialized engines.
+  - Manage development lifecycle state machine (Section 3.9).
+  - Enforce bounded development (Section 3.10): depth limits, idempotency, budget tracking.
+  - Evaluate incoming DevelopmentResult submissions from specialized engines.
+  - Route evaluation decisions to Memory Governance for final authority.
+
+Path A operations executed internally (no cross-engine request):
+  DEDUPLICATION, ENTITY_LINKING, PATTERN_DETECTION, CONTRADICTION_CHECK,
+  TEMPORAL_SEQUENCE, DEPENDENCY_ANALYSIS.
+
+Path B operations requiring specialized engines:
+  CAUSAL_INVESTIGATION → Thought Engine
+  EMOTIONAL_REAPPRAISAL → Emotion Engine
+  SOCIAL_INTERPRETATION → Social Cognition Engine
+  PROCEDURAL_EXTRACTION → Learning Engine
+  MOTIVATIONAL_RELEVANCE → Motivation Engine
+
+Routing mechanism: Emit "memory.development_requested" event with
+  {request_id, operation_type, target_engine, development_objective}.
+  Target engine subscribes to this event and responds via submit_development_result().
+  No direct synchronous method call between engines — event-driven only.
+
+Risk-based acceptance (Decision 2):
+  Simple organizational structures (TEMPORAL_SEQUENCE, ENTITY_LINKING, DEDUPLICATION)
+  with fully deterministic validation → ACCEPT internally after Gate checks.
+  Generalization, causal, emotional, or social proposals → always require specialized review.
+
+
+5.6 SUBSYSTEM 6: RETRIEVAL ENGINE
+-----------------------------------
+
+Service Name: RetrievalEngineService
+Data ownership: retrieval_events table (sole writer for retrieval logs).
+
+Responsibilities:
+  - Accept RetrievalRequest from authorized engines via retrieve_memories() interface.
+  - Route to appropriate layer stack based on retrieval_intent (Section 3.6).
+  - Execute multi-layer candidate retrieval (Section 3.4).
+  - Apply unified ranking algorithm (Section 3.5).
+  - Apply access control filter (zero score for unauthorized records).
+  - Assemble token-budget-constrained context package.
+  - Identify retrieval gaps, contradictions, and patterns exposed during retrieval.
+  - If gaps detected: schedule development job (Decision 3 — GENERATE PROPOSALS).
+  - Log retrieval event; update access_count on retrieved experiences.
+
+Retrieval gap detection:
+  After ranking: if top result S_unified < CONFIDENCE_THRESHOLD (default: 0.4):
+    Create DevelopmentRequest with operation_type = PATTERN_DETECTION
+    and development_objective = "Low-confidence retrieval for query: {query_hash}"
+    with priority = 8 (background, non-urgent).
+  Retrieval NEVER directly modifies or consolidates knowledge records.
+
+
+5.7 SUBSYSTEM 7: CONSOLIDATION ENGINE
+---------------------------------------
+
+Service Name: ConsolidationEngineService
+Data ownership: consolidation_jobs, consolidation_coverage, residual_claims tables.
+
+Responsibilities:
+  - Execute incremental consolidation processing loop (Section 3.8).
+  - Run seven-gate verification protocol (Section 3.7) for every consolidation candidate.
+  - Coordinate with Memory Development for generalization proposals.
+  - Coordinate with specialized engines for collaborative consolidation input.
+  - Create new memory_representations records upon successful consolidation.
+  - Record residual_claims for every claim that could not be generalized.
+  - Never delete or archive source memories without full gate verification.
+
+Consolidation triggers:
+  - Pattern detection threshold exceeded (N related experiences detected).
+  - Scheduled background sweep (default: every 6 hours).
+  - Explicit request from Learning Engine or Cognitive Integration.
+  - Retrieval gap analysis identifies knowledge fragmentation.
+
+Gate failure handling:
+  If any gate fails:
+    - Record failure_reason with specific gate number and failing claim/entity IDs.
+    - Schedule RESIDUAL_ANALYSIS development job.
+    - Emit "memory.consolidation_rejected" event.
+    - Do NOT retry within 24 hours (cooldown prevents repeated failed attempts).
+
+
+5.8 SUBSYSTEM 8: RETENTION ENGINE
+-----------------------------------
+
+Service Name: RetentionEngineService
+Data ownership: retention_records, archive_records, memory_dependencies tables.
+
+Responsibilities:
+  - Evaluate memory importance and retention eligibility.
+  - Manage dependency tracking to prevent premature archival.
+  - Determine archival eligibility only when ALL conditions are satisfied.
+  - Coordinate cold archive write with governance approval.
+  - Ensure archival is ALWAYS reversible (archive records stored permanently).
+
+Retention invariants:
+  MEM-010: Archival must be reversible and dependency-aware.
+  NEVER archive a memory that has active dependency records.
+  NEVER archive a memory that is referenced as source_evidence by an ACTIVE claim.
+  NEVER archive a memory whose permanent_importance >= 0.8.
+  NEVER archive autonomously — always write governance audit_event first.
+
+Archival eligibility criteria (ALL must be true):
+  1. retention_status = 'CONSOLIDATED' (fully covered by a consolidated representation).
+  2. dependency_count = 0 (no other record depends on this one).
+  3. permanent_importance < ARCHIVE_IMPORTANCE_CEILING (default: 0.8).
+  4. Last accessed more than ARCHIVE_MIN_AGE_DAYS (default: 90) ago.
+  5. No active development_requests reference this memory.
+  6. No active consolidation_jobs reference this memory.
+
+Importance is NOT subject to calendar decay.
+Memory is not archived simply because it is old.
+
+
+5.9 SUBSYSTEM 9: MEMORY CONTINUITY
+-------------------------------------
+
+Service Name: MemoryContinuityService
+Data ownership: continuity_checkpoints table.
+
+Responsibilities:
+  - Persist authorized snapshots of state OWNED by other engines.
+  - Create checkpoints on explicit request or on session lifecycle events.
+  - Restore checkpoints by notifying owning engines with snapshot references.
+  - Validate schema versions before restoration.
+  - Maintain separate checkpoint partitions for COGNITIVE and AUTONOMOUS domains.
+
+Memory Continuity does NOT:
+  - Own or interpret the content of Attention Engine state.
+  - Own or interpret the content of Activity Controller task state.
+  - Own or interpret working memory slot contents.
+  - Directly reconstruct state without notifying the owning engine.
+
+Restoration Protocol:
+  1. Query latest valid checkpoint for domain_partition + schema_version.
+  2. Validate: schema_version >= MIN_SUPPORTED_VERSION (migration gate).
+  3. For each snapshot_ref in checkpoint:
+     Emit event "memory.restoration_requested" with {snapshot_ref, owning_engine}.
+  4. Each owning engine receives the event and independently validates its snapshot.
+  5. Owning engine emits "engine.state_restored" or "engine.state_restoration_failed".
+  6. MemoryContinuityService records restoration_succeeded based on engine responses.
+  7. If restoration_succeeded = False for any critical snapshot: emit warning event;
+     start in degraded mode (engines use safe initial state).
+
+Autonomous checkpoints are stored in a SEPARATE row (domain_partition = 'AUTONOMOUS').
+Cognitive engines cannot read autonomous checkpoints and vice versa.
+
+
+5.10 SUBSYSTEM 10: MEMORY GOVERNANCE
+--------------------------------------
+
+Service Name: MemoryGovernanceService
+Data ownership: access_policies, audit_events, schema_versions tables.
+
+Responsibilities:
+  - Enforce ALL access control policies on reads and writes.
+  - Assign persistent UUIDs to accepted development proposals (external engines cannot
+    supply their own database UUIDs for proposed records).
+  - Validate schema compatibility on all incoming data.
+  - Maintain immutable audit log for all persistent state changes.
+  - Review development proposals above the risk-based acceptance threshold.
+  - Enforce version validation on continuity checkpoint restoration.
+
+Governance is the FINAL AUTHORITY on all persistent memory state changes.
+No subsystem may bypass Governance when making persistent changes.
+
+Access enforcement design:
+  - Every read request to RetrievalEngineService passes through check_access_policy().
+  - Every write request passes through check_write_policy().
+  - Access denied → returns empty set for reads, raises MemoryAccessDeniedError for writes.
+  - ALL policy decisions are logged to audit_events regardless of outcome.
+
+check_access_policy(requesting_engine, target_resource, access_mode):
+  1. Find matching policy: SELECT * FROM access_policies
+     WHERE resource_type IN (:resource_type, 'ALL')
+       AND domain_partition = :target_partition
+       AND active = 1
+       AND (expires_at IS NULL OR expires_at > now())
+     ORDER BY resource_type DESC LIMIT 1;
+  2. If no policy found: DENY by default (allowlist model).
+  3. If policy found: check requesting_engine IN permitted_engines JSON array.
+  4. Check access_mode IN access_modes JSON array.
+  5. Write audit_events record (success or denial).
+  6. Return ALLOW or DENY.
+
+
+================================================================================
+PART 6 — ENGINE INTERFACE, EVENT BUS & COLLABORATION PROTOCOL
+================================================================================
+
+6.1 MEMORYENGINEPROTOCOL INTERFACE CONTRACT
+--------------------------------------------
+
+All external interactions with Memory Engine go through this typed Protocol.
+No engine may access SQLite directly; all access is mediated by this interface.
+
+class MemoryEngineProtocol(Protocol):
+
+  # Intake
+  async def submit_experience(
+    self,
+    source_engine: str,
+    session_id: UUID,
+    domain_partition: DomainPartition,
+    content: str,
+    epistemic_type: EpistemicType,
+    importance_flag: bool = False,
+    world_time_start: datetime | None = None,
+    world_time_end: datetime | None = None,
+    metadata: dict[str, Any] | None = None,
+  ) -> ExperienceSubmissionResult:
+    ...
+    # Returns: {experience_id | None, input_event_id, was_persisted, reason}
+
+  async def submit_knowledge_contribution(
+    self,
+    source_engine: str,
+    session_id: UUID,
+    domain_partition: DomainPartition,
+    contribution: DevelopmentResult,
+  ) -> ContributionAcceptanceResult:
+    ...
+    # Returns: {accepted, rejection_reason, assigned_ids}
+
+  # Retrieval
+  async def retrieve_memories(
+    self,
+    requesting_engine: str,
+    session_id: UUID,
+    query: RetrievalQuery,
+  ) -> RetrievalResponse:
+    ...
+    # Returns: {memories: list[MemoryRecord], metadata: RetrievalMetadata}
+
+  async def retrieve_claims(
+    self,
+    requesting_engine: str,
+    session_id: UUID,
+    query: ClaimQuery,
+  ) -> ClaimRetrievalResponse:
+    ...
+
+  # Development
+  async def request_development(
+    self,
+    requesting_engine: str,
+    request: DevelopmentRequest,
+  ) -> DevelopmentRequestAck:
+    ...
+    # Returns: {request_id, status: QUEUED | REJECTED_DEPTH_EXCEEDED | DUPLICATE}
+
+  async def submit_development_result(
+    self,
+    originating_engine: str,
+    result: DevelopmentResult,
+  ) -> DevelopmentResultAck:
+    ...
+    # Returns: {accepted, review_pending, rejection_reason}
+
+  # Consolidation
+  async def request_consolidation(
+    self,
+    requesting_engine: str,
+    source_memory_ids: tuple[UUID, ...],
+    consolidation_objective: str,
+  ) -> ConsolidationJobResult:
+    ...
+
+  # Continuity
+  async def create_checkpoint(
+    self,
+    session_id: UUID,
+    domain_partition: DomainPartition,
+    snapshot_refs: CheckpointSnapshotRefs,
+  ) -> ContinuityCheckpoint:
+    ...
+
+  async def restore_checkpoint(
+    self,
+    session_id: UUID,
+    domain_partition: DomainPartition,
+  ) -> CheckpointRestorationResult:
+    ...
+
+
+6.2 EMBEDDING & REASONING PROVIDER INTERFACES
+----------------------------------------------
+
+Memory Engine depends on two optional provider interfaces.
+If unavailable, deterministic fallbacks activate automatically.
+
+class EmbeddingProvider(Protocol):
+  async def embed(self, texts: list[str]) -> list[list[float]]:
+    # Returns: list of float32 embedding vectors, one per input text.
+    # Raises: EmbeddingProviderUnavailableError when provider is offline.
+    ...
+
+  @property
+  def dimensions(self) -> int:
+    # Returns: dimensionality of output vectors (e.g. 384 for bge-small)
+    ...
+
+  @property
+  def model_id(self) -> str:
+    # Returns: model identifier string for provenance tracking
+    ...
+
+class ReasoningProvider(Protocol):
+  async def generate_structured_output(
+    self,
+    request: DevelopmentRequest,
+    output_schema: type[BaseModel],
+  ) -> DevelopmentResult:
+    # Raises: ReasoningProviderUnavailableError when provider is offline.
+    ...
+
+Default implementations:
+  FastEmbedProvider: wraps FastEmbed ONNX runtime; model loaded lazily on first use.
+  NullEmbeddingProvider: returns empty list; triggers deterministic-only retrieval path.
+  NullReasoningProvider: returns DevelopmentResult with result_status = 'DEFERRED'.
+
+NEITHER PROVIDER is required for:
+  - Experience intake and persistence.
+  - Claim creation and provenance tracking.
+  - SQL and FTS5 retrieval.
+  - Contradiction detection.
+  - Pattern detection (deterministic).
+  - Consolidation (seven-gate verification).
+  - Governance and access control.
+  - Continuity checkpoints.
+
+
+6.3 MEMORY DEVELOPMENT PROTOCOL (THREE OPERATION KINDS)
+---------------------------------------------------------
+
+KIND A — INDEPENDENT OPERATIONS (Memory executes without other engines):
+  Triggered by: background_jobs with types:
+    DEDUPLICATION, ENTITY_LINKING, PATTERN_DETECTION, CONTRADICTION_CHECK,
+    TEMPORAL_SEQUENCE, DEPENDENCY_ANALYSIS, FTS5_INDEXING, EMBEDDING_GENERATION
+
+  Lifecycle:
+    Job PENDING → Worker acquires lease → Job RUNNING
+    → MemoryDevelopmentService.execute_independent(job)
+    → If simple organizational result: Governance risk-based auto-accept
+    → Write development_reviews record (reviewer = "MEMORY_GOVERNANCE_AUTO")
+    → Write accepted records with Governance-assigned UUIDs
+    → Job COMPLETED
+
+KIND B — COLLABORATIVE OPERATIONS (Memory requests specialized engine):
+  Triggered by: Memory Development detecting a pattern requiring domain expertise.
+
+  Lifecycle:
+    MemoryDevelopmentService creates development_requests record (status=PENDING)
+    → Emits outbox event "memory.development_requested" with {request_id, target_engine}
+    → Target engine subscribes and processes asynchronously
+    → Target engine calls submit_development_result(result: DevelopmentResult)
+    → Memory Governance validates:
+        a. originating_engine matches expected target_engine for this request_id
+        b. All proposed claims reference valid source_memory_ids
+        c. No external UUIDs supplied for proposed records (Memory assigns UUIDs)
+        d. Epistemic invariants not violated (MEM-003)
+        e. result_status is not auto-accepting governance bypass
+    → Decision: ACCEPT (create records) | REJECT (record reason) | DEFER (future cycle)
+    → Write development_reviews record
+    → If ACCEPT: assign permanent UUIDs; write memory_representations / claims / relationships
+    → Emit appropriate outbox event
+
+KIND C — INTEGRATION OPERATIONS (Memory receives and integrates):
+  After Kind B result is accepted: Memory creates derivation_links, updates representation
+  lineage, records provenance, emits "memory.development_accepted" event.
+
+
+6.4 DEVELOPMENT AUTHORITY MATRIX
+----------------------------------
+
+Operation                       | Memory Authority              | Specialized Engine Authority
+--------------------------------|-------------------------------|------------------------------
+Store experience                | OWNS — sole writer            | SUBMITS via interface
+Identify duplicates             | OWNS — executes independently | MAY REQUEST via event
+Build associations              | OWNS — sole committer         | MAY PROPOSE via result
+Detect contradictions           | OWNS — always runs            | MAY REPORT via submission
+Generate generalizations        | PROPOSES — governance reviews | MAY CONTRIBUTE via result
+Interpret emotional meaning     | STORES — preserves appraisal  | EMOTION OWNS — submits
+Interpret interpersonal meaning | STORES — preserves appraisal  | SOCIAL COGNITION OWNS
+Reason about causal patterns    | SUPPORTS investigation        | THOUGHT OWNS — submits result
+Identify procedural lessons     | STORES history                | LEARNING OWNS — submits
+Consolidate memories            | OWNS — executes 7-gate check  | MAY CONTRIBUTE via result
+Revise knowledge representation | VALIDATES + INTEGRATES        | PROPOSES via DevelopmentResult
+Assign database UUIDs           | GOVERNANCE OWNS EXCLUSIVELY   | NEVER
+
+CRITICAL: Memory does NOT automatically accept a contribution because it comes from
+the engine that owns that domain. Emotion Engine owns emotional appraisal, but the
+appraisal must still identify: experience_id, appraised_at, appraising_engine,
+confidence, rationale, and supporting evidence_reference IDs.
+Ownership gives interpretation authority, NOT database bypass permission.
+
+
+================================================================================
+PART 7 — ACCESS CONTROL & GOVERNANCE
+================================================================================
+
+7.1 MEMORY OWNERSHIP DIMENSIONS
+---------------------------------
+
+Four independent dimensions MUST NOT be conflated:
+
+Dimension 1 — OWNER DOMAIN:
+  Which Diva subsystem/domain owns this record?
+  Values: 'COGNITIVE' | 'AUTONOMOUS' | 'SHARED'
+  Stored in: experiences.domain_partition, claims.domain_partition
+
+Dimension 2 — SUBJECT:
+  Whom or what does this record describe?
+  Stored as: subject_entity_id FK in claims; participants JSON in experiences
+  Example: An autonomous experience may describe the USER — that does not give
+           the cognitive domain automatic access to it.
+
+Dimension 3 — ORIGIN:
+  Where did this information come from?
+  Stored as: source_engine field in all records
+
+Dimension 4 — ACCESS SCOPE:
+  Which engines are authorized to access this record?
+  Defined in: access_policies table (allowlist model)
+
+These dimensions are ORTHOGONAL. All four must be checked independently.
+
+
+7.2 ACCESS POLICY ENFORCEMENT ARCHITECTURE
+--------------------------------------------
+
+The Memory Engine implements an ALLOWLIST authorization model. No access is
+permitted unless explicitly granted by an active access_policy record.
+
+check_access_policy(requesting_engine, target_resource_id, resource_type, access_mode):
+  Step 1 — POLICY LOOKUP:
+    SELECT * FROM access_policies
+    WHERE resource_type IN (:resource_type, 'ALL')
+      AND domain_partition = :target_partition
+      AND active = 1
+      AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
+    ORDER BY resource_type DESC   -- specific resource > 'ALL' wildcard
+    LIMIT 1;
+
+  Step 2 — ENGINE ALLOWLIST CHECK:
+    If no policy found: DENY (default deny — no open access).
+    If policy found: check requesting_engine IN json_each(permitted_engines).
+
+  Step 3 — MODE CHECK:
+    Check access_mode IN json_each(access_modes).
+    access_modes values: 'READ' | 'WRITE' | 'DELETE' | 'ARCHIVE'
+
+  Step 4 — AUDIT:
+    Always write to audit_events regardless of outcome:
+      {event_type: 'ACCESS_GRANTED' | 'ACCESS_DENIED',
+       target_id, target_type, actor_engine, actor_session, policy_id, event_at}
+
+  Step 5 — RETURN:
+    ALLOW → proceed; DENY → raise MemoryAccessDeniedError (never return partial data).
+
+WRITE POLICY ENFORCEMENT:
+  check_write_policy(requesting_engine, record_type, domain_partition):
+    Uses the same policy lookup with access_mode = 'WRITE'.
+    Additional invariant: If record_type = 'CLAIM' and requesting_engine != 'MEMORY_GOVERNANCE':
+      Engine may SUBMIT a proposed claim via submit_knowledge_contribution() ONLY.
+      Engine may NOT write directly to the claims table.
+      MemoryGovernanceService is the SOLE direct writer to claims.
+
+ACCESS POLICY SEED DATA (applied at Milestone 01):
+  Policy 1: PERCEPTION engine → READ/WRITE to COGNITIVE partition experiences.
+  Policy 2: THOUGHT engine → READ COGNITIVE; SUBMIT development proposals.
+  Policy 3: EMOTION engine → READ COGNITIVE; WRITE emotional appraisals.
+  Policy 4: SOCIAL COGNITION → READ COGNITIVE; WRITE social appraisals.
+  Policy 5: LEARNING engine → READ COGNITIVE; SUBMIT development proposals.
+  Policy 6: MOTIVATION engine → READ COGNITIVE; READ goal-related claims.
+  Policy 7: COGNITIVE INTEGRATION → READ COGNITIVE; WRITE checkpoints.
+  Policy 8: AUTONOMOUS engines → READ/WRITE AUTONOMOUS partition ONLY.
+  Policy 9: MEMORY GOVERNANCE → READ/WRITE ALL partitions (admin access).
+  Policy 10: FEEDBACK engine → READ COGNITIVE; SUBMIT evaluation results.
+  Policy 11: INTERACTION engine → READ COGNITIVE; WRITE interaction experiences.
+  Policy 12: AUTONOMOUS ACTIVITY → READ/WRITE AUTONOMOUS; READ SHARED.
+  Policy 13: SHARED resources → READ by any engine with explicit grant.
+  Policy 14: MEMORY DEVELOPMENT SERVICE → READ ALL; WRITE development records.
+
+
+7.3 AUDIT EVENT MODEL
+-----------------------
+
+The audit_events table is an IMMUTABLE, APPEND-ONLY ledger of all state changes.
+No existing audit record is ever modified or deleted.
+
+Audit Event Types (complete catalog):
+  EXPERIENCE_CREATED         — New experience row committed.
+  EXPERIENCE_STATUS_CHANGED  — development_status or validity_status updated.
+  CLAIM_CREATED              — New claim row committed by Governance.
+  CLAIM_STATUS_CHANGED       — lifecycle or evidence_status updated.
+  CLAIM_ASSESSMENT_ADDED     — New ClaimAssessment submitted by engine.
+  CLAIM_VERSION_CREATED      — New claim_versions row for state change.
+  ENTITY_CREATED             — New entity row committed.
+  ENTITY_MERGED              — Two entities merged (merged_into set).
+  RELATIONSHIP_CREATED       — New memory_relationship or claim_relationship added.
+  RELATIONSHIP_SUPERSEDED    — Relationship marked superseded=1.
+  DEVELOPMENT_REQUESTED      — DevelopmentRequest created.
+  DEVELOPMENT_ACCEPTED       — DevelopmentResult accepted; records assigned UUIDs.
+  DEVELOPMENT_REJECTED       — DevelopmentResult rejected; reason recorded.
+  CONSOLIDATION_STARTED      — ConsolidationJob created.
+  CONSOLIDATION_COMPLETED    — All 7 gates passed; representation created.
+  CONSOLIDATION_REJECTED     — Any gate failed.
+  MEMORY_ARCHIVED            — Retention record transitioned to ARCHIVED.
+  MEMORY_RESTORED            — Cold archive payload successfully restored.
+  CHECKPOINT_CREATED         — ContinuityCheckpoint committed.
+  CHECKPOINT_RESTORED        — Restoration completed successfully.
+  CHECKPOINT_FAILED          — Restoration could not be completed.
+  ACCESS_GRANTED             — Access policy check: ALLOW outcome.
+  ACCESS_DENIED              — Access policy check: DENY outcome.
+  POLICY_CREATED             — New access_policy row committed.
+  POLICY_EXPIRED             — Policy active=0 set after expires_at < now.
+  SCHEMA_MIGRATED            — schema_versions migration successfully applied.
+
+Audit Record Structure:
+  audit_id:      UUID (UUIDv7, monotonically ordered for time-sorted queries)
+  event_type:    One of the catalog types above.
+  target_id:     UUID of the affected record.
+  target_type:   'EXPERIENCE' | 'CLAIM' | 'ENTITY' | 'RELATIONSHIP' | etc.
+  actor_engine:  Engine name that initiated the action.
+  actor_session: Session UUID during which the action occurred.
+  old_state:     JSON snapshot of record before change (NULL for CREATE events).
+  new_state:     JSON snapshot of record after change.
+  policy_id:     FK to access_policies record that authorized this action (NULL for system).
+  event_at:      ISO-8601 UTC timestamp.
+
+AUDIT INVARIANTS:
+  - Every write operation MUST produce a corresponding audit_events entry.
+  - Audit events are written IN THE SAME TRANSACTION as the data operation.
+  - If the data transaction rolls back, the audit event also rolls back.
+  - Audit records are never updated; corrections append new CORRECTION-type events.
+  - Audit log is queryable but never the source of truth for memory state.
+
+7.4 COGNITIVE vs. AUTONOMOUS MEMORY PARTITION INVARIANTS
+
+MEM-014: Autonomous and cognitive memory must remain isolated by default.
+
+Implementation:
+  - Every table that holds memory data has a domain_partition column.
+  - Every READ query includes: AND domain_partition = :requester_partition
+    OR domain_partition = 'SHARED'.
+  - Every WRITE operation sets domain_partition = requester's partition.
+  - Cross-domain sharing requires: an explicit access_policies record,
+    an audit_events entry, and Memory Governance approval.
+  - Continuity checkpoints are stored and restored per domain partition separately.
+
+
+================================================================================
+PART 8 — IMPLEMENTATION MILESTONES & PHASE ROADMAP
+================================================================================
+
+MILESTONE 01 — ARCHITECTURAL FOUNDATION
+  Deliverables:
+    - Python module structure: memory_engine/ with submodules per subsystem.
+    - Pydantic v2 contract definitions for all 25+ frozen data structures.
+    - SQLite database initialization script: 40+ table CREATE statements.
+    - All PRAGMA settings in DatabaseConnectionFactory.
+    - access_policies seed data for all 14 engine permissions.
+    - schema_versions migration framework (up/down migration functions).
+    - MemoryGovernanceService skeleton with check_access_policy().
+    - audit_events writer (must be called on every status change).
+    - background_jobs table + BackgroundJobScheduler (lease acquire, heartbeat, expiry).
+    - outbox_events table + OutboxWorker (publish loop, retry with backoff).
+  Acceptance Criteria:
+    - Database recovers cleanly from simulated crash (WAL checkpoint verification).
+    - Two domain partitions (COGNITIVE, AUTONOMOUS) cannot read each other's records.
+    - audit_events has a row for every write operation attempted (passed or denied).
+    - All 40+ tables created with correct FK constraints and partial indexes.
+
+MILESTONE 02 — EXPERIENCE INTAKE & PERSISTENCE
+  Deliverables:
+    - MemoryIntakeService with 7-stage pipeline.
+    - EpistemicPreserver: validates epistemic_type is never downgraded.
+    - WorthinessScorer: scored worthiness decision table.
+    - Experience persistence with idempotency (SHA-256 dedup).
+    - input_events table fully operational (append-only, immutable).
+    - experiences + experience_payloads persistence with content hashing.
+    - Outbox events: memory.experience_received + memory.experience_persisted.
+    - Basic entity extraction (regex + alias lookup; no embeddings required).
+    - Background job scheduling for ENTITY_LINKING and FTS5_INDEXING.
+  Acceptance Criteria:
+    - MEM-001: Submitting the same content twice creates one experience record.
+    - MEM-003: INTERPRETATION submitted by Perception is preserved as INTERPRETATION;
+               the resulting claim is never stored as OBSERVATION.
+    - Payload content_hash matches SHA-256(payload_data) for every row.
+    - 1000 experience submissions complete in < 10 seconds (single process, WAL mode).
+
+MILESTONE 03 — CLAIMS & KNOWLEDGE STORE
+  Deliverables:
+    - KnowledgeStoreService with claim creation, assessment, and versioning.
+    - Contradiction detection algorithm running on claim insertion.
+    - claim_versions table: every status change produces a version record.
+    - evidence_references: SUPPORTS / OPPOSES / CONTEXTUALIZES tracking.
+    - evidence_status auto-recalculation from evidence_references on new evidence.
+    - Bitemporal query support: world_time + diva_time projections.
+    - derivation_links: provenance tracking for every derived claim.
+  Acceptance Criteria:
+    - MEM-002: Every persisted claim has non-null source_engine and provenance_hash.
+    - MEM-005: Two contradicting claims are linked via CONTRADICTS relationship;
+               both have evidence_status = DISPUTED.
+    - MEM-006: Submitting a corrected claim creates a SUPERSEDES relationship;
+               original claim lifecycle → SUPERSEDED; original content unchanged.
+    - Bitemporal query: "What did Diva believe about entity X on date D?" returns
+      the correct claim version valid at that diva_time.
+
+MILESTONE 04 — ENTITY & ASSOCIATION GRAPH
+  Deliverables:
+    - EntityAssociationService with full resolution pipeline (Section 3.3).
+    - entities, entity_aliases, entity_attributes tables operational.
+    - memory_relationships + claim_relationships with typed graph edges.
+    - NetworkX graph projection built from memory_relationships.
+    - Merge algorithm with DEPENDENCY_LOCKED protection.
+    - Provisional entity creation (confidence < 1.0 until confirmed).
+  Acceptance Criteria:
+    - Entity "Alex" and alias "Alexander" resolve to the same entity_id.
+    - Two entities that should not be merged are NOT merged (threshold > 0.90 similarity).
+    - Merged entity preserves all original aliases and attributes.
+    - CO_OCCURS_WITH relationship is created without implying CAUSED_BY.
+    - NetworkX graph contains all non-superseded memory_relationships after refresh.
+
+MILESTONE 05 — RETRIEVAL ENGINE STACK
+  Deliverables:
+    - RetrievalEngineService with multi-layer cascade (SQL + FTS5 + Graph + Vector).
+    - FTS5 virtual table with porter tokenizer + content sync background job.
+    - Spreading activation algorithm on NetworkX graph.
+    - sqlite-vec integration with FastEmbed (or fallback to numpy KNN).
+    - Unified scoring and token-budget knapsack assembly.
+    - Retrieval intent routing table.
+    - HyDE projection (ephemeral only; never stored).
+    - retrieval_events logging + access_count updates.
+  Acceptance Criteria:
+    - MEM-011: Retrieval of a SUPERSEDED claim explicitly labels it as HISTORICAL.
+    - MEM-012: All retrieval layers function when embedding provider is unavailable.
+    - Factual query (entity + predicate) returns correct claim in < 50ms.
+    - FTS5 phrase query returns matching records in < 20ms.
+    - Cross-domain retrieval (cognitive engine querying autonomous partition): DENY
+      logged in audit_events; empty result set returned.
+
+MILESTONE 06 — HYBRID DEVELOPMENT ENGINE
+  Deliverables:
+    - MemoryDevelopmentService: Path A independent operations.
+    - Pattern detection: co-occurrence matrix, recurrence analysis.
+    - Contradiction detection as independent background job.
+    - Duplicate detection: exact (hash) + near (FTS5 BM25) + semantic (vector).
+    - DevelopmentRequest creation with bounded depth + idempotency enforcement.
+    - Path B collaborative routing: event emission for CAUSAL, EMOTIONAL,
+      SOCIAL, PROCEDURAL operation types.
+    - DevelopmentResult validation and Governance risk-based acceptance.
+    - development_proposals + development_reviews persistence.
+  Acceptance Criteria:
+    - MEM-015: No generative subsystem can certify its own output — Governance always reviews.
+    - MEM-016: Every accepted development operation has a derivation_link record.
+    - MEM-018: A Memory pattern detection does NOT auto-create an unlimited chain of Thought
+               investigations — bounded by max_processing_depth = 5.
+    - Processing depth > 5 results in deferred job, not recursive execution.
+    - Idempotency: identical DevelopmentRequest submitted twice creates one job record.
+
+MILESTONE 07 — CONSOLIDATION & RETENTION
+  Deliverables:
+    - ConsolidationEngineService with seven-gate verification.
+    - Incremental consolidation loop (batch of 20 eligible experiences).
+    - consolidation_coverage tracking: every source claim accounted for.
+    - residual_claims: no claim silently discarded.
+    - RetentionEngineService with eligibility evaluation.
+    - Archival protocol: dependency check + governance approval + cold archive write.
+    - Archive recovery: restore archived payload from cold storage.
+  Acceptance Criteria:
+    - MEM-009: Consolidation covering 15 source experiences accounts for 100% of claims.
+    - MEM-010: Archival of a memory with active dependency records → REJECTED.
+    - Gate 7 (Epistemic Preservation): An INTERPRETATION in source → INTERPRETATION in result;
+               never upgraded to OBSERVATION in consolidated output.
+    - Incremental consolidation run completes in < 5 seconds for 20-experience batch.
+    - Cold-archived experience remains retrievable within 500ms of restoration request.
+
+MILESTONE 08 — CONTINUITY INTEGRATION
+  Deliverables:
+    - MemoryContinuityService with checkpoint creation and restoration.
+    - Separate COGNITIVE and AUTONOMOUS checkpoint rows.
+    - Schema version validation on restoration.
+    - Integration with Shared Context Workspace, Attention Engine, Activity Controller.
+    - Crash simulation: kill process mid-session; verify restoration on restart.
+  Acceptance Criteria:
+    - Restoration notifies each owning engine with its snapshot_ref; Memory does NOT
+      interpret or re-parse the snapshot content itself.
+    - After crash and restart: active goal references are recovered from checkpoint.
+    - AUTONOMOUS checkpoint cannot be read by COGNITIVE engine query.
+    - Schema version mismatch triggers migration check; does not silently corrupt state.
+    - Restoration with partially-failed engine snapshots: starts in degraded mode
+      with warning event rather than crashing.
+
+MILESTONE 09 — PRODUCTION HARDENING
+  Deliverables:
+    - Performance benchmarks: retrieval p99 < 200ms for 100K experiences.
+    - Database migration versioning tested across 3 schema versions.
+    - Background job fault injection: worker crash mid-job → recovery via lease expiry.
+    - Outbox fault injection: outbox event dispatch failure → retry with backoff.
+    - Contradiction graph stress test: 100 contradicting claims with cycles.
+    - Memory governance audit log completeness verification.
+    - Full regression suite against all 45 must-pass conditions.
+    - Load test: 10K experience submissions in < 60 seconds.
+  Acceptance Criteria:
+    - MEM-013: Every background operation is idempotent (re-run produces same result).
+    - Zero data loss on simulated power failure (SQLite WAL checkpoint verification).
+    - All 20 end-to-end verification scenarios pass.
+    - p99 FTS5 retrieval latency < 20ms on 100K experience corpus.
+
+
+================================================================================
+PART 9 — MUST-PASS CONDITIONS & VERIFICATION SCENARIOS
+================================================================================
+
+9.1 MUST-PASS CONDITIONS (45 TESTABLE INVARIANT CHECKPOINTS)
+--------------------------------------------------------------
+
+EXPERIENCE INTEGRITY (MEM-001 group):
+  [MEM-001-A] Submitting the same experience payload twice produces exactly one
+              experience record (idempotency via content_hash deduplication).
+  [MEM-001-B] No field of an existing experience record is modified after initial commit.
+              Validation: SELECT COUNT(*) FROM audit_events WHERE event_type = 'EXPERIENCE_UPDATED'
+              must return 0 (updates only allowed via versioned state transitions).
+  [MEM-001-C] The input_events record for a session is preserved even when the
+              experience worthiness filter decides NOT to create an experience record.
+
+PROVENANCE INTEGRITY (MEM-002 group):
+  [MEM-002-A] Every row in the claims table has non-null source_engine and provenance_hash.
+  [MEM-002-B] Every row in the evidence_references table has at least one of
+              source_memory_id or source_claim_id as non-null.
+  [MEM-002-C] Every memory_representation record has at least one derivation_links row
+              pointing to a valid source record.
+
+EPISTEMIC INTEGRITY (MEM-003 group):
+  [MEM-003-A] A claim submitted with epistemic_type=INTERPRETATION is stored as
+              INTERPRETATION. No downstream process may change it to OBSERVATION.
+  [MEM-003-B] A claim submitted with epistemic_type=REPORTED is stored as REPORTED.
+  [MEM-003-C] Gate 7 of consolidation verification rejects any consolidated representation
+              where EPISTEMIC_RANK(consolidated) > EPISTEMIC_RANK(source) for any claim.
+  [MEM-003-D] A REPORTED claim about another person never becomes an OBSERVATION
+              even after multiple corroborating REPORTED claims.
+
+DEVELOPMENT INTEGRITY (MEM-004, MEM-015, MEM-016 group):
+  [MEM-004-A] Every accepted DevelopmentResult has a corresponding development_reviews
+              record with reviewer = 'MEMORY_GOVERNANCE' or a specialized engine.
+  [MEM-004-B] No development operation sets evidence_status = CORROBORATED without
+              at least 2 independent evidence_references with relationship = SUPPORTS.
+  [MEM-015-A] No engine may write directly to memory_representations or claims tables.
+              Validation: all writes go through MemoryGovernanceService check_write_policy().
+  [MEM-015-B] A DevelopmentResult submitted by Emotion Engine cannot contain claims with
+              epistemic_type = OBSERVATION (Emotion Engine produces INTERPRETATION only).
+  [MEM-016-A] Every accepted development operation has ≥ 1 derivation_links row.
+  [MEM-016-B] Every new memory_representation version has parent_representation_id
+              pointing to its predecessor (except root version = 1).
+
+CONTRADICTION INTEGRITY (MEM-005 group):
+  [MEM-005-A] Two claims with identical subject_entity_id + predicate but different
+              object_value with overlapping world_time ranges produce a CONTRADICTS
+              claim_relationship record.
+  [MEM-005-B] Both claims in a contradiction remain lifecycle = ACTIVE until explicitly
+              resolved; neither is auto-deleted or auto-superseded.
+  [MEM-005-C] Contradiction detection handles circular contradiction chains (A CONTRADICTS B
+              CONTRADICTS A) without infinite loop or stack overflow.
+
+KNOWLEDGE EVOLUTION (MEM-006 group):
+  [MEM-006-A] Submitting a corrected claim creates: (1) new claim with lifecycle=ACTIVE,
+              (2) CORRECTS relationship from new to old, (3) old claim lifecycle=SUPERSEDED.
+  [MEM-006-B] The original experience record from which the old claim was derived remains
+              unchanged after the correction is applied.
+  [MEM-006-C] An emotional appraisal reappraisal (from Emotion Engine) creates a new
+              appraisal_history record; previous appraisal marked superseded=1.
+
+DOMAIN SEPARATION (MEM-007, MEM-014 group):
+  [MEM-007-A] Memory Engine does not store Emotion Engine's internal PAD vector state.
+              Memory stores Emotion's submitted appraisals in memory_appraisals table only.
+  [MEM-007-B] Memory Engine does not store Attention Engine's lease allocation state.
+              Memory stores Attention's submitted snapshot references in checkpoints only.
+  [MEM-014-A] A COGNITIVE-partition query returns zero rows from AUTONOMOUS-partition tables.
+  [MEM-014-B] An AUTONOMOUS engine calling retrieve_memories() with COGNITIVE records
+              receives empty result and an ACCESS_DENIED audit_event entry.
+  [MEM-014-C] COGNITIVE and AUTONOMOUS continuity_checkpoints have separate rows with
+              distinct domain_partition values; neither can be restored by the other domain.
+
+ACCESS CONTROL (MEM-008 group):
+  [MEM-008-A] An engine not listed in access_policies.permitted_engines for a resource
+              receives MemoryAccessDeniedError and an audit_events record.
+  [MEM-008-B] An expired access policy (expires_at < now) is treated as non-existent.
+  [MEM-008-C] Every successful write operation produces an audit_events record.
+  [MEM-008-D] Every denied write attempt produces an audit_events record.
+
+CONSOLIDATION INTEGRITY (MEM-009 group):
+  [MEM-009-A] Consolidation job for N source memories produces consolidation_coverage
+              rows with |covered + residual| == |source claims| (100% coverage).
+  [MEM-009-B] A consolidation job with Gate 2 failure (contradiction dropped) is REJECTED;
+              consolidation_jobs.all_gates_passed = 0 and failure_reason is non-null.
+  [MEM-009-C] Source memories remain in retention_status = 'ACTIVE' until ALL gates pass.
+
+RETENTION & ARCHIVAL (MEM-010 group):
+  [MEM-010-A] A memory with dependency_count > 0 cannot have retention_status = ARCHIVED.
+  [MEM-010-B] An archived memory's payload remains recoverable: archive record stores
+              checksum; restoration verifies checksum before returning payload.
+  [MEM-010-C] Archival of a memory with permanent_importance >= 0.8 is REJECTED.
+
+RETRIEVAL CORRECTNESS (MEM-011, MEM-012 group):
+  [MEM-011-A] Retrieval of an entity attribute returns HISTORICAL label when querying
+              a time window where a newer value has superseded the old one.
+  [MEM-011-B] Retrieval of a REFUTED claim includes refuted_status in the response
+              metadata; refuted claims are NEVER returned as current knowledge.
+  [MEM-012-A] retrieve_memories() completes successfully when embedding_provider is None
+              (using SQL + FTS5 layers only; no exception raised).
+  [MEM-012-B] retrieve_memories() completes successfully when FTS5 index is empty
+              (SQL layer returns results; no exception raised).
+
+BACKGROUND JOB INTEGRITY (MEM-013 group):
+  [MEM-013-A] Re-running a completed DEDUPLICATION job with identical input produces
+              no new duplicate records (idempotency via idempotency_key).
+  [MEM-013-B] A worker that crashes mid-job has its lease expire; job returns to PENDING
+              within lease_expiry_seconds (default: 30s).
+  [MEM-013-C] A job that exceeds max_attempts transitions to DEAD_LETTER status and
+              emits a governance alert event rather than silently failing.
+
+BOUNDED DEVELOPMENT (MEM-018 group):
+  [MEM-018-A] A DevelopmentRequest at max_processing_depth=5 does not schedule child
+              requests; instead schedules a low-priority deferred job.
+  [MEM-018-B] The same (target_memory_ids, operation_type) combination does not generate
+              more than N=5 jobs in a 24-hour window (circuit breaker active).
+  [MEM-018-C] Retrieval gap detection schedules a development job at priority=8 (background)
+              and does NOT block the retrieval response.
+
+
+9.2 VERIFICATION SCENARIOS (20 END-TO-END SCENARIOS)
+------------------------------------------------------
+
+SCENARIO 01 — BASIC EXPERIENCE INTAKE AND RETRIEVAL
+  Setup: Diva receives a text message: "Alex cancelled the meeting."
+  Steps:
+    1. Perception Engine submits: source="PERCEPTION", epistemic_type=OBSERVATION,
+       content="Alex cancelled the meeting.", session_id=S1.
+    2. Intake validates, creates input_event E1 and experience EXP-001.
+    3. Entity extractor finds "Alex" → creates provisional entity ENT-001.
+    4. Claim extracted: subject=ENT-001, predicate="cancelled", object="meeting".
+       epistemic_type=OBSERVATION (from Perception), evidence_status=UNVERIFIED.
+    5. FTS5 indexing job runs; experience indexed.
+    6. 10 minutes later: Thought Engine queries retrieve_memories(query_text="meeting cancellation").
+  Expected Outcomes:
+    - EXP-001 returned with S_unified > 0.4.
+    - Claim returned with epistemic_type=OBSERVATION (not upgraded or changed).
+    - retrieval_events log entry for Thought Engine's query.
+    - audit_events log entry for Thought Engine's read access.
+
+SCENARIO 02 — EPISTEMIC TYPE PRESERVATION ACROSS ENGINES
+  Setup: Perception submits an interpretation; Social Cognition submits a reappraisal.
+  Steps:
+    1. Perception submits: epistemic_type=INTERPRETATION, content="User seems disappointed."
+       confidence=0.65 in metadata.
+    2. Memory creates claim: epistemic_type=INTERPRETATION, evidence_status=UNVERIFIED.
+    3. Social Cognition Engine submits a DevelopmentResult with:
+       proposed_claims = [{canonical_statement: "User expressed disappointment",
+                           epistemic_type: INTERPRETATION}]
+    4. Governance accepts: new claim created with epistemic_type=INTERPRETATION.
+    5. Social Cognition attempts to submit claim with epistemic_type=OBSERVATION.
+  Expected Outcomes:
+    - Step 2 claim: epistemic_type=INTERPRETATION. MEM-003-A passes.
+    - Step 4 claim: epistemic_type=INTERPRETATION. Correctly preserved.
+    - Step 5 submission: REJECTED by Governance. MEM-015-B passes.
+    - Rejection recorded in development_reviews with reason = "EPISTEMIC_UPGRADE_FORBIDDEN".
+
+SCENARIO 03 — CONTRADICTION DETECTION AND DISPUTE MARKING
+  Steps:
+    1. Claim C1: Alex works at Company A. world_time_start=Jan 1. ACTIVE.
+    2. Claim C2: Alex works at Company B. world_time_start=Jan 1. (overlapping range).
+    3. KnowledgeStoreService inserts C2.
+  Expected Outcomes:
+    - Contradiction detected: claim_relationships row (C1 CONTRADICTS C2) created.
+    - Both C1 and C2: evidence_status = DISPUTED.
+    - outbox event "memory.claim_disputed" emitted.
+    - audit_events records for both status changes.
+
+SCENARIO 04 — CLAIM CORRECTION AND VERSION HISTORY
+  Steps:
+    1. Claim C1: Alex works at Company A (Jan–June). ACTIVE.
+    2. New information: Alex moved to Company B in July.
+    3. Claim C2 submitted: Alex works at Company B. world_time_start=July 1.
+    4. CORRECTS relationship established: C2 CORRECTS C1.
+    5. C1 lifecycle → SUPERSEDED. C2 lifecycle → ACTIVE.
+    6. Query: "Where did Alex work in June?"
+    7. Query: "Where does Alex work now?"
+  Expected Outcomes:
+    - Query 6: Returns C1 with HISTORICAL label (world_time filter: June is in C1 range).
+    - Query 7: Returns C2 with CURRENT label.
+    - Original experience EXP-001 that produced C1 remains UNCHANGED.
+    - MEM-006-B passes.
+
+SCENARIO 05 — COLLABORATIVE DEVELOPMENT CYCLE (Thought Engine investigation)
+  Steps:
+    1. Memory pattern detection finds: EXP-001, EXP-005, EXP-012 all involve Alex
+       cancelling commitments (CO_OCCURS_WITH pattern detected, freq=3).
+    2. Memory creates DevelopmentRequest: operation_type=CAUSAL_INVESTIGATION,
+       target_engine=THOUGHT, objective="Investigate co-occurrence of Alex and cancellations".
+    3. Outbox event "memory.development_requested" emitted.
+    4. Thought Engine processes; submits DevelopmentResult with proposed claims:
+       "Alex may be avoiding commitments" (epistemic_type=INTERPRETATION, confidence=0.6).
+    5. Governance validates: epistemic_type correct; source evidence valid.
+    6. Governance ACCEPTS: assigns new claim UUID, creates derivation_links.
+  Expected Outcomes:
+    - development_reviews record: decision=ACCEPT, assigned_ids=[new_claim_id].
+    - New claim: epistemic_type=INTERPRETATION, evidence_status=UNVERIFIED (not auto-elevated).
+    - derivation_links: new_claim derived from EXP-001, EXP-005, EXP-012.
+    - Thought Engine did NOT receive a database UUID from itself — Governance assigned it.
+
+SCENARIO 06 — BOUNDED DEVELOPMENT DEPTH ENFORCEMENT
+  Steps:
+    1. Memory creates DevelopmentRequest at depth=0 → Thought investigates.
+    2. Thought's result triggers Memory to detect another pattern (depth=1).
+    3. Memory creates depth=1 request → Social Cognition investigates.
+    4. Social Cognition's result triggers depth=2 investigation.
+    5. Chain continues to depth=5.
+    6. At depth=5: Memory attempts to create depth=6 request.
+  Expected Outcomes:
+    - Depth=6 request: status = "DEFERRED", scheduled_at = now + 24h.
+    - No depth=6 job executes in the current processing cycle.
+    - MEM-018-A passes.
+    - Circuit breaker: if same target combination triggered > 5 times in 24h,
+      subsequent requests → suppressed with cooldown audit entry.
+
+SCENARIO 07 — CONSOLIDATION WITH ALL SEVEN GATES
+  Setup: 5 related experiences about Diva learning Python debugging.
+  Steps:
+    1. ConsolidationEngineService identifies EXP-001 through EXP-005 as consolidation candidates.
+    2. Gate 1: Entity Preservation — all 3 entities (Python, Debugger, Error) accounted for. PASS.
+    3. Gate 2: Contradiction Preservation — 1 contradiction (EXP-002 CONTRADICTS EXP-004). PASS.
+    4. Gate 3: Claim Coverage — 12 source claims; 10 covered + 2 residual. PASS (100%).
+    5. Gate 4: Source Traceability — all 10 covered claims have derivation_links. PASS.
+    6. Gate 5: Residual Preservation — 2 residual_claims records created. PASS.
+    7. Gate 6: Temporal Preservation — temporal_scope: "November 2026". PASS.
+    8. Gate 7: Epistemic Preservation — no INTERPRETATION elevated to OBSERVATION. PASS.
+    9. Consolidated representation created: memory_representations row, version=1.
+  Expected Outcomes:
+    - consolidation_jobs.all_gates_passed = 1.
+    - 2 residual_claims records (the 2 claims that couldn't be generalized).
+    - Source experiences: retention_status = 'CONSOLIDATED'; archival_eligible = 1.
+    - MEM-009-A: |covered + residual| = 12 = |source_claims|. PASSES.
+
+SCENARIO 08 — CONSOLIDATION GATE FAILURE (Gate 7 violation)
+  Steps:
+    1. Generative development proposes consolidated representation where:
+       source claim epistemic_type=INTERPRETATION is presented as OBSERVATION in result.
+    2. Gate 7 runs EPISTEMIC_RANK check.
+  Expected Outcomes:
+    - Gate 7: FAIL. consolidation_jobs.all_gates_passed = 0.
+    - failure_reason: "Gate 7 violation: claim X upgraded from INTERPRETATION to OBSERVATION."
+    - outbox event "memory.consolidation_rejected" emitted.
+    - Source experiences NOT marked archival_eligible.
+    - RESIDUAL_ANALYSIS development job scheduled.
+
+SCENARIO 09 — ZERO-LLM OPERATION VERIFICATION
+  Setup: embedding_provider = None; reasoning_provider = None.
+  Steps:
+    1. Submit 10 experiences.
+    2. Run FTS5 keyword retrieval.
+    3. Run SQL temporal query.
+    4. Run spreading activation graph retrieval.
+    5. Run contradiction detection.
+    6. Run pattern detection (co-occurrence matrix).
+    7. Run consolidation cycle.
+    8. Create continuity checkpoint.
+    9. Restore from checkpoint.
+  Expected Outcomes:
+    - All 9 steps complete WITHOUT raising EmbeddingProviderUnavailableError.
+    - MEM-012-A and MEM-012-B pass.
+    - Consolidation completes using deterministic verification gates only.
+    - Retrieval returns results (SQL + FTS5 layers only; vector layer skipped gracefully).
+
+SCENARIO 10 — CROSS-DOMAIN ACCESS DENIAL
+  Steps:
+    1. AUTONOMOUS engine submits experience → stored in domain_partition='AUTONOMOUS'.
+    2. COGNITIVE engine calls retrieve_memories() requesting that experience.
+    3. COGNITIVE engine attempts to write a claim to AUTONOMOUS partition.
+  Expected Outcomes:
+    - Step 2: Empty result returned. audit_events: ACCESS_DENIED for COGNITIVE engine.
+    - Step 3: MemoryAccessDeniedError raised. audit_events: ACCESS_DENIED recorded.
+    - MEM-014-A and MEM-014-B pass.
+
+SCENARIO 11 — ENTITY RESOLUTION AND MERGE
+  Steps:
+    1. Experience EXP-001 mentions "Alex".
+    2. Experience EXP-005 mentions "Alexander Chen" (same person; different name).
+    3. Entity resolution: similarity check identifies likely same entity.
+    4. Provisional alias created with confidence=0.85.
+    5. Governance approves merge after human confirmation or sufficient evidence.
+    6. ENT-002 (Alexander Chen): status=MERGED, merged_into=ENT-001 (Alex).
+    7. EXP-005.participants updated to include ENT-001.
+  Expected Outcomes:
+    - SELECT * FROM entity_aliases WHERE entity_id = ENT-001: includes "Alexander Chen".
+    - ENT-002 record preserved (not deleted) with status=MERGED.
+    - MEM-005-C: No accidental entity merging from low-confidence matches.
+    - audit_events: ENTITY_MERGED event recorded.
+
+SCENARIO 12 — CONTINUITY CHECKPOINT AND RECOVERY
+  Steps:
+    1. Active session with 5 open goals, 2 unresolved commitments, attention leases.
+    2. Create checkpoint: checkpoint_id=CP-001.
+    3. Simulate process crash.
+    4. On restart: MemoryContinuityService.restore_checkpoint() called.
+    5. Each owning engine receives its snapshot_ref via restoration event.
+    6. Each engine independently restores its state.
+  Expected Outcomes:
+    - Attention Engine receives attention_snapshot_ref; restores its own leases.
+    - Memory does NOT parse attention snapshot content itself.
+    - 5 active_goal_refs present in checkpoint; Motivation Engine can recover them.
+    - restoration_succeeded = True in checkpoint record after all engines confirm.
+
+SCENARIO 13 — BACKGROUND JOB CRASH RECOVERY
+  Steps:
+    1. PATTERN_DETECTION job created; worker acquires lease (expires in 30s).
+    2. Worker crashes mid-execution (simulated by killing coroutine).
+    3. Lease monitor detects expired lease after 30 seconds.
+    4. Job status reset to PENDING; attempt_count incremented to 1.
+    5. New worker picks up job; completes successfully.
+  Expected Outcomes:
+    - Job ultimately completes with status=COMPLETED.
+    - Idempotency: job result is identical to what a non-crashed run would produce.
+    - MEM-013-B: recovery occurs within lease_expiry_seconds=30.
+
+SCENARIO 14 — OUTBOX EVENT TRANSACTIONAL CONSISTENCY
+  Steps:
+    1. submit_experience() begins transaction.
+    2. Experience record written.
+    3. Outbox event written in SAME transaction.
+    4. Transaction COMMIT.
+    5. Simulate delayed outbox worker (10 second pause).
+    6. Outbox worker resumes; publishes event.
+    7. Subscribed engine receives "memory.experience_persisted" event.
+  Expected Outcomes:
+    - If COMMIT fails: neither experience nor outbox event exists (atomic).
+    - If COMMIT succeeds: event is eventually published regardless of timing.
+    - Subscribed engine does not receive duplicate events (published=1 idempotency).
+
+SCENARIO 15 — REAPPRAISAL VERSIONING
+  Steps:
+    1. EXP-001: Diva had a difficult interaction.
+    2. Emotion Engine submits: "Diva felt frustrated." (INTERPRETATION, confidence=0.75).
+    3. Appraisal stored: appraisal_id=APR-001, version=1.
+    4. New context revealed: the interaction was caused by a miscommunication.
+    5. Emotion Engine submits reappraisal: "Diva felt confused, not frustrated." confidence=0.80.
+    6. Appraisal updated: APR-001 superseded=1; new APR-002 version=2 created.
+    7. appraisal_history: 2 rows for APR-001's lineage.
+  Expected Outcomes:
+    - APR-001.superseded = 1 (not deleted).
+    - APR-002.version = 2; APR-002.superseded = 0.
+    - appraisal_history has rows for both versions.
+    - EXP-001 experience record UNCHANGED (MEM-006-B).
+
+SCENARIO 16 — FTS5 INDEX REBUILD
+  Steps:
+    1. 1000 experiences indexed in FTS5.
+    2. FTS5 virtual table corrupted (simulated: DROP TABLE memories_fts).
+    3. Rebuild command issued: INSERT INTO memories_fts(memories_fts) VALUES ('rebuild');
+    4. OR: Full rebuild from experiences + claims tables via background job.
+  Expected Outcomes:
+    - FTS5 rebuild completes without data loss.
+    - Post-rebuild: same FTS5 query returns same results as pre-corruption.
+    - Source data in experiences + claims tables unaffected by FTS5 rebuild.
+    - MEM-012: SQL-only retrieval continued working during FTS5 downtime.
+
+SCENARIO 17 — DEVELOPMENT PRIORITY CALCULATION
+  Setup: 3 memories with different profile combinations.
+  Memory A: I_perm=0.9, recurrence=5, uncertainty=0.1, dependency=0.2
+  Memory B: I_perm=0.3, recurrence=8, uncertainty=0.9, dependency=0.1
+  Memory C: I_perm=0.5, recurrence=2, uncertainty=0.5, dependency=0.8
+  Steps:
+    1. Compute P_dev for each using weights w1=0.4, w2=0.2, w3=0.2, w4=0.2.
+  Expected Outcomes:
+    P_dev(A) = 0.4(0.9)+0.2(0.5)+0.2(0.1)+0.2(0.2) = 0.36+0.10+0.02+0.04 = 0.52
+    P_dev(B) = 0.4(0.3)+0.2(0.8)+0.2(0.9)+0.2(0.1) = 0.12+0.16+0.18+0.02 = 0.48
+    P_dev(C) = 0.4(0.5)+0.2(0.2)+0.2(0.5)+0.2(0.8) = 0.20+0.04+0.10+0.16 = 0.50
+    Development priority order: A (0.52) > C (0.50) > B (0.48)
+    (Recurrence values normalized to [0,1]; raw freq=5→0.5, freq=8→0.8, freq=2→0.2 at max=10)
+
+SCENARIO 18 — ARCHIVAL ELIGIBILITY ENFORCEMENT
+  Steps:
+    1. Memory M1: retention_status=CONSOLIDATED; dependency_count=2; importance=0.4.
+    2. RetentionEngineService evaluates M1 for archival eligibility.
+  Expected Outcomes:
+    - M1 NOT archival_eligible because dependency_count = 2 > 0.
+    - MEM-010-A passes.
+    3. Remove 2 dependencies; dependency_count → 0.
+    4. Re-evaluate. Now: consolidated=True, dep=0, importance=0.4, last_accessed > 90d.
+    5. archival_eligible → 1. Governance approval requested.
+    6. After approval: archive write executed; audit_event MEMORY_ARCHIVED.
+
+SCENARIO 19 — BITEMPORAL QUERY CORRECTNESS
+  Steps:
+    1. Jan 1 (world) / Jan 1 (diva): Diva records "Alex works at Acme Corp".
+    2. Aug 1 (world) / Sep 1 (diva): Diva records "Alex now works at Globex". Correction applied.
+    3. Query A: "Where did Alex work in world-time June?" (issued at any diva-time).
+    4. Query B: "What did Diva believe about Alex's employer in diva-time July?" (before correction).
+    5. Query C: "Where does Alex currently work?" (now).
+  Expected Outcomes:
+    - Query A: Returns "Acme Corp" claim (world_time covers January–July).
+    - Query B: Returns "Acme Corp" claim version valid at diva-time July (correction not yet recorded).
+    - Query C: Returns "Globex" claim (CURRENT, world_time_start=Aug 1).
+
+SCENARIO 20 — FULL HYBRID DEVELOPMENT CYCLE
+  Setup: 10 experiences spanning 2 weeks involving a recurring technical challenge.
+  Steps:
+    1. Pattern detection (Path A): detects co-occurrence of "debugging" + "async errors" (freq=7).
+    2. DevelopmentRequest created: CAUSAL_INVESTIGATION → Thought Engine.
+    3. Thought Engine investigates; produces hypothesis claim (INFERENCE, confidence=0.72).
+    4. Memory Governance accepts: assigns UUID; creates derivation_links.
+    5. Learning Engine subscribes to "memory.development_accepted"; receives event.
+    6. Learning Engine submits DevelopmentResult with procedural lesson (PROCEDURAL_EXTRACTION).
+    7. Governance validates learning submission; accepts.
+    8. Memory Development triggers consolidation for the 10 experiences.
+    9. Seven-gate verification: all gates pass.
+    10. Consolidated representation created with version history.
+    11. Source experiences: archival_eligible → 1 (after dependency check).
+  Expected Outcomes:
+    - Hypothesis claim: epistemic_type=INFERENCE; not auto-elevated.
+    - Procedural lesson: derivation_links → 10 source experience UUIDs.
+    - Consolidated representation: parent = None (root), version=1.
+    - consolidation_coverage: 100% claim coverage across 10 experiences.
+    - Processing depth never exceeded 5 at any node.
+    - Total elapsed time: < 60 seconds including all background jobs.
+
+
+================================================================================
+APPENDIX A — DEFERRED CAPABILITIES (POST-SHARED LLM INFRASTRUCTURE)
+================================================================================
+
+The following capabilities are explicitly deferred. They require the Shared LLM
+Infrastructure to be built first. Memory Engine functions fully without them.
+
+1. Automated continuous semantic memory consolidation with LLM-generated summaries.
+2. Free-form natural language retrieval queries beyond FTS5 keyword matching.
+3. Cross-modal memory synthesis (audio/visual with textual records).
+4. Deep self-supervised contradiction resolution across multi-year records.
+5. Advanced generalization proposals using LLM reasoning across distant episodes.
+6. Automated semantic deduplication at scale (beyond hash + FTS5 similarity).
+7. Zero-shot semantic entity linking against large external knowledge graphs.
+8. Automated narrative episodic memory generation from structured event logs.
+9. Dynamic weight tuning for retrieval scoring based on retrieval quality feedback.
+10. HyDE-enhanced retrieval with locally hosted generative models (currently ephemeral
+    templates only; requires reliable local reasoning provider first).
+
+
+================================================================================
+APPENDIX B — TECHNOLOGY STACK DECISION MATRIX (FINAL)
+================================================================================
+
+Layer                 | Technology                    | Why This / Why Not Alternative
+----------------------|-------------------------------|--------------------------------
+Core Language         | Python 3.12+ AsyncIO          | Diva's primary runtime; rich ecosystem
+Primary Database      | SQLite 3.45+ WAL Mode         | Embedded ACID; zero network; FTS5 built-in
+Vector Search         | sqlite-vec (C extension)      | Native KNN in SQLite; no external process
+  Fallback            | NumPy in-process cosine KNN   | No extension required; linear scale
+Full-Text Search      | SQLite FTS5 BM25              | Microsecond queries; porter stemmer
+Graph Processing      | Adjacency SQL + NetworkX      | SQL for persistence; NetworkX for analysis
+Embedding Model       | BAAI/bge-small-en-v1.5        | 384-dim; <10ms CPU; ONNX via FastEmbed
+  Alternative         | nomic-embed-text-v1.5         | 768-dim; better for domain-specific text
+Embedding Runtime     | FastEmbed (ONNX Runtime)      | No PyTorch; pure C++ ONNX; <65MB footprint
+Data Validation       | Pydantic v2 (frozen models)   | Compile-time + runtime type safety
+Background Jobs       | Asyncio + SQLite queue        | Crash-safe; no external broker required
+Event Bus             | In-process AsyncIO pub/sub    | Zero-latency; no network; suitable for
+                      | + transactional outbox        | single-process initial deployment
+Compression (archive) | ZSTD                          | Best compression/speed ratio for text
+Hashing               | SHA-256 (hashlib)             | Tamper detection; no crypto overhead
+UUID Generation       | UUIDv7 (monotonic ordered)    | Time-ordered; B-tree friendly; sorted by default
+Schema Migrations     | Custom versioned migration fw | Full control; no dependency on Alembic/etc.
+
+NOT USED:
+  - PostgreSQL: Overkill for single-process local deployment; network overhead.
+  - Redis: No external process; SQLite outbox covers persistence needs.
+  - Celery: Too heavy; SQLite + asyncio job queue is sufficient and simpler.
+  - LanceDB: sqlite-vec preferred; keeps everything in one file.
+  - ChromaDB / Qdrant: External process; defeats zero-dependency goal.
+  - PyTorch directly: FastEmbed ONNX runtime is lighter and faster for inference only.
+================================================================================
+END OF DOCUMENT — DIVA MEMORY ENGINE VERSION 3.0 PRODUCTION SPECIFICATION
+================================================================================

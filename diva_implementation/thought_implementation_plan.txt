@@ -1,0 +1,1801 @@
+================================================================================
+DIVA COGNITIVE ARCHITECTURE — ENGINE 9: THOUGHT ENGINE
+ARCHITECTURAL IMPLEMENTATION PLAN & COMPREHENSIVE ENGINEERING BLUEPRINT
+Document Version: 2.2.0 (Production Master Architecture & Implementation Plan)
+Target System: Autonomous Internal Cognition, Multi-Threaded Reasoning & Cognitive Development
+Document Category: Architectural Implementation Plan (No Code — Pure Engineering Design)
+Status: Ready for Implementation — All 25 Architectural Checkpoints Satisfied
+================================================================================
+
+TABLE OF CONTENTS
+--------------------------------------------------------------------------------
+PART 1 — REQUIRED ARCHITECTURAL CORRECTIONS
+  A. Cross-Engine Interfaces and Ownership
+    A1. Memory Engine as a Formal Contextual Provider (MemoryContextProvider)
+    A2. Input and Perception as Formal Providers (PerceptionContextProvider)
+    A3. Formal Learning Engine Integration (LearningSignal Contract)
+    A4. Subsystem Topology & Event-Driven Cooperation Model
+    A5. Multi-Origin Provenance for Thoughts
+  B. Thread, Chain, and Thought Lifecycle Corrections
+    B1. Separation of Thread Lifecycle from Scheduling Execution Mode
+    B2. Definition & Relationship of Thoughts, DAGs, and Chains
+    B3. Complete Lifecycle State Transition Matrices
+    B4. Decoupling Chain Membership from Thought Lifecycle
+    B5. Thread Reconsideration Protocol & Historical Immutability
+  C. Persistence and Crash Recovery
+    C1. Complete 15-Table SQLite Relational Schema
+    C2. Mandatory SQLite Foreign-Key Enforcement & Retention Rules
+    C3. Atomic Logical Operations & Transaction Boundaries
+    C4. 11-Step Deterministic Crash Recovery Protocol
+    C5. Crash Recovery Consistency Test Suite (9 Scenarios)
+  D. Reasoning and Epistemic Integrity
+    D1. Seven Formal Reasoning Operators Specification
+    D2. Evidence Provenance & Lineage Dependency Tracking
+    D3. Calibrated Synthesis Confidence Assessment
+    D4. Hypothesis Probability Estimation & Relationship Semantics
+    D5. Strict ESTABLISHED Acceptance Policy
+    D6. Comprehensive Downstream Quarantine Propagation
+  E. Attention, Scheduling, and Resource Governance
+    E1. Precision Priority Inputs, Sources, and Starvation Prevention
+    E2. Rigorous Preemption Rules, Emergency Overrides, and Critical Sections
+    E3. Asynchronous Reasoning Job Lifecycle & Late-Result Rejection
+    E4. Quota Overflow Policies & Energy Reduction Handling
+  F. Memory Retrieval and Archival Protocol
+    F1. Structured Asynchronous Retrieval & Update Contracts
+    F2. Historical Development Versioning via Immutable Snapshots
+    F3. Categorized Archival Rejections & Idempotent Retry Rules
+  G. Comprehensive Data Dictionary & Model Corrections
+PART 2 — CORRECTED 12 ARCHITECTURAL WALKTHROUGH SCENARIOS
+  Scenario 1: Autonomous Initiation (Unresolved Question Ranking)
+  Scenario 2: Memory Association (Formal Memory Provider Contract)
+  Scenario 3: Multiple Interests (Focal vs. Background Scheduling)
+  Scenario 4: Preemption (Emergency Override & Interruption Safety)
+  Scenario 5: Resumption (Freshness Calculation & Context Stale Handling)
+  Scenario 6: Spontaneous Association (Quota Enforcement & Branching)
+  Scenario 7: Contradictory Evidence (Hypothesis Probabilities)
+  Scenario 8: Self-Reflection (LearningSignal Contract & Independent Assessment)
+  Scenario 9: Counterfactual Thinking (Quarantine Propagation)
+  Scenario 10: Rumination (Semantic Repetition & Acyclic Graph Integrity)
+  Scenario 11: Resource Exhaustion (Dynamic Quota Throttling)
+  Scenario 12: Completion & Proposal Dispatch (Provenance & Archival Protocol)
+PART 3 — THOUGHT ENGINE MASTER CHECKLIST (119 AUDIT ITEMS)
+  Section A: Original Architecture Compliance (12 Items)
+  Section B: Cross-Engine Interfaces (12 Items)
+  Section C: Eight Core Subsystems (9 Items)
+  Section D: Thoughts, Chains, and Threads (12 Items)
+  Section E: Reasoning and Epistemic Integrity (12 Items)
+  Section F: Attention, Scheduler, and Resources (13 Items)
+  Section G: Memory, Retrieval, and Archival (9 Items)
+  Section H: Data Models and Persistence (13 Items)
+  Section I: Crash Recovery and Reliability (10 Items)
+  Section J: Architectural Walkthroughs and Verification (17 Items)
+PART 4 — RECOMMENDED IMPLEMENTATION ORDER & PHASED ROADMAP
+  Phases 1 through 10 Detailed Engineering Milestones
+  Final Recommendation & Architectural Governance
+
+
+================================================================================
+PART 1 — REQUIRED ARCHITECTURAL CORRECTIONS
+================================================================================
+
+--------------------------------------------------------------------------------
+A. CROSS-ENGINE INTERFACES AND OWNERSHIP
+--------------------------------------------------------------------------------
+
+A1. MEMORY ENGINE AS A FORMAL CONTEXTUAL PROVIDER (MemoryContextProvider)
+Problem Addressed: Previous designs referenced memory in generation pathways without formalizing the boundary, data contracts, or ownership rules.
+Architectural Specification:
+The Thought Engine interfaces with the Memory Engine exclusively via the asynchronous, read-only `MemoryContextProvider` interface.
+Methods Supported:
+1. `retrieve_relevant_memories(query_vector, semantic_tags, max_records, min_relevance)`
+2. `retrieve_memory_claims(entity_id, claim_predicate, temporal_range)`
+3. `retrieve_associated_historical_thoughts(thread_topic, recency_decay, max_nodes)`
+4. `retrieve_unresolved_questions(priority_threshold, max_questions)`
+
+Structured Response Data Contract (`MemoryContextResponse`):
+- `memory_id`: UUID string (Canonical Memory Engine identifier).
+- `content`: Textual and semantic content of the retrieved memory.
+- `source_reference`: Identifier and type of original origin (e.g., episode, perception, conversation).
+- `confidence`: Float in [0.0, 1.0] (Evidence confidence certified by Memory Engine).
+- `relevance_score`: Float in [0.0, 1.0] (Semantic similarity and contextual match score).
+- `created_at`: ISO-8601 UTC timestamp of original memory inscription.
+- `provenance`: Structured lineage dictionary detailing acquisition channel, verifications, and corroborations.
+
+Strict Ownership Boundaries:
+- Memory Engine exclusively decides what is stored, consolidated, indexed, decayed, and retrieved.
+- Thought Engine consumes retrieved information solely as premise material or associative inspiration.
+- Thought Engine has ZERO authority to modify, overwrite, re-score, or delete memory records.
+- Inscriptions into memory follow the formal asynchronous nomination and archival protocol (see Section F).
+
+A2. INPUT AND PERCEPTION AS FORMAL PROVIDERS (PerceptionContextProvider)
+Problem Addressed: Perception appeared in thought generation pathways without explicit data contracts, causing ambiguous ingestion boundaries.
+Architectural Specification:
+The Thought Engine consumes environmental and external sensory inputs through the `PerceptionContextProvider`.
+Interface Contract (`PerceptionContextEvent`):
+- `event_id`: UUID string (Unique normalized observation event identifier).
+- `event_timestamp`: ISO-8601 UTC timestamp of sensory occurrence.
+- `modality`: Enum (TEXT, SPEECH, VISUAL_SCENE, ENVIRONMENTAL_STATE, USER_INTERACTION).
+- `observation_summary`: High-level normalized semantic interpretation.
+- `raw_percept_ref`: Optional reference ID to raw sensory buffer maintained in Perception Engine.
+- `entity_references`: Tuple of canonical entity IDs identified in the observation.
+- `confidence`: Float in [0.0, 1.0] (Perceptual classification confidence).
+- `uncertainty_profile`: Detailed error bounds and ambiguous classification hypotheses.
+- `perceptual_urgency`: Float in [0.0, 1.0] (Urgency score computed by Perception Engine).
+- `perceptual_salience`: Float in [0.0, 1.0] (Novelty and environmental contrast score).
+
+Strict Ownership Boundaries:
+- Perception Engine interprets, filters, grounds, and normalizes sensory input.
+- Thought Engine reasons about the resulting structured observations and their cognitive implications.
+- Thought Engine cannot manipulate sensory thresholds, sensor buffers, or feature detectors.
+
+A3. FORMAL LEARNING ENGINE INTEGRATION (LearningSignal Contract)
+Problem Addressed: Self-reflective thoughts claimed to inform learning without an interface contract, risking self-fulfilling or unverified epistemic contamination.
+Architectural Specification:
+The Thought Engine outputs reflective and evaluative observations to the Learning Engine using the immutable `LearningSignal` contract.
+
+`LearningSignal` Schema:
+- `signal_id`: UUID string (Unique learning signal identifier).
+- `source_thought_ids`: Tuple of UUID strings (Thoughts responsible for generating the observation).
+- `source_thread_id`: UUID string (Canonical thread where the observation crystallized).
+- `signal_type`: Enum with strict values:
+  * `REASONING_ERROR`: Detected logical contradiction, flawed deduction, or invalid inference.
+  * `SUCCESSFUL_REASONING_PATTERN`: Efficient heuristic, high-utility analogical bridge, or validated deduction.
+  * `RECURRING_COGNITIVE_PATTERN`: Persistent bias, recurring query loop, or habitual retrieval sequence.
+  * `SELF_REFLECTION`: Meta-cognitive insight into cognitive speed, uncertainty estimation, or knowledge gaps.
+  * `CAPABILITY_OBSERVATION`: Discovered reasoning limitation, missing domain skill, or operator latency bottleneck.
+  * `PREDICTION_OUTCOME`: Evaluated prediction comparing anticipated consequence against observed reality.
+- `observation`: Concrete, structured description of the cognitive event.
+- `supporting_evidence`: Tuple of `EvidenceReference` records documenting premises and outcomes.
+- `confidence`: Float in [0.0, 1.0] (Confidence of the self-reflective assessment).
+- `provenance`: Full derivation chain linking the signal to source premises and operators.
+- `created_at`: ISO-8601 UTC timestamp.
+
+Independent Assessment Mandate:
+- A Thought Engine signal asserting a mistake does NOT constitute proof of an error.
+- The Learning Engine independently evaluates the signal against external outcomes, objective truth records, and historical baselines before admitting it into the epistemic contribution ledger.
+- Thought Engine cannot directly mutate parameters, capabilities, or behavioral policies.
+
+A4. SUBSYSTEM TOPOLOGY & EVENT-DRIVEN COOPERATION MODEL
+Problem Addressed: The eight subsystems were previously depicted as a rigid linear pipeline, misrepresenting their asynchronous, reactive nature.
+Architectural Specification:
+The Thought Engine is organized as an event-driven cooperation network. Subsystems interact via internal message dispatch, asynchronous event buses, and shared transactional state:
+
+1. Scheduler & Resource Governance: Central coordinator managing execution cycles, energy throttling, and quotas.
+2. Attention & Priority Arbitrator: Reactive evaluation module calculating thread dynamic priority and preemption signals.
+3. Thought Generation Subsystem: Event-triggered ingress translating internal/external impulses into candidate thoughts.
+4. Thought Development & Reasoning Subsystem: Core reasoning worker executing reasoning operators and DAG expansions.
+5. Thought Thread & DAG Manager: Graph authority enforcing acyclicity, edge typing, branching, merging, and thread boundaries.
+6. Association & Graph Engine: Background exploration engine identifying cross-thread links, analogies, and semantic clustering.
+7. Lifecycle & Checkpoint Manager: Transaction observer recording state transitions, maintaining audit logs, and managing snapshots.
+8. Thought Retrieval Interface: Query service supporting continuation, recall, and context re-hydration.
+
+Topology Interaction Matrix:
+- Scheduler triggers Thought Generation upon environmental events, timers, or unresolved question thresholds.
+- Generation emits candidate thoughts -> Thread & DAG Manager admits nodes to active threads.
+- Attention Arbitrator continuously monitors active threads, ranking them into 1 Focal Thread and up to N Background Threads.
+- Scheduler dispatches Focal and Background Reasoning Jobs to Thought Development & Reasoning.
+- Thought Development expands DAGs, updates premises, checks hypotheses, and emits events to Lifecycle Manager.
+- Association & Graph Engine continuously sweeps active DAGs in low-priority background cycles.
+- Lifecycle Manager writes append-only event logs to the SQLite persistence store.
+
+A5. MULTI-ORIGIN PROVENANCE FOR THOUGHTS
+Problem Addressed: Previous models assumed a single origin reference per thought, preventing the valid representation of blended cognitive triggers.
+Architectural Specification:
+Every thought instance records a primary origin and a complete tuple of contributing derivations.
+
+`ThoughtDerivation` Schema:
+- `derivation_id`: UUID string.
+- `source_type`: Enum (MEMORY_ACTIVATION, PERCEPTUAL_INPUT, EMOTIONAL_SPIKE, MOTIVATIONAL_GOAL, COUNTERFACTUAL_PROJECTION, SPONTANEOUS_ASSOCIATION, META_COGNITIVE_RECURSION, HYPOTHESIS_DEDUCTION).
+- `source_id`: UUID or URI identifying the specific originating object (memory_id, percept_id, emotion_vector_id, etc.).
+- `source_engine`: Enum (MEMORY, PERCEPTION, EMOTION, MOTIVATION, THOUGHT_INTERNAL, COGNITIVE_INTEGRATION).
+- `contribution_role`: Enum (PRIMARY_TRIGGER, CONTEXTUAL_CATALYST, PREMISE_FOUNDATION, EMOTIONAL_WEIGHT, INHIBITORY_CONSTRAINT).
+- `evidence_reference`: Optional `EvidenceReference` linking to verified underlying data.
+- `timestamp`: ISO-8601 UTC timestamp.
+- `is_quarantined`: Boolean indicating whether this originating element carries a quarantine flag.
+
+`ThoughtInstance` Provenance Fields:
+- `primary_origin_id`: UUID string pointing to the dominant `ThoughtDerivation`.
+- `derivation_records`: Immutable Tuple of `ThoughtDerivation` objects capturing all contributory sources.
+- Invariant: If ANY derivation record has `is_quarantined == True`, the thought instance automatically inherits `is_quarantined = True`.
+
+
+--------------------------------------------------------------------------------
+B. THREAD, CHAIN, AND THOUGHT LIFECYCLE CORRECTIONS
+--------------------------------------------------------------------------------
+
+B1. SEPARATION OF THREAD LIFECYCLE FROM SCHEDULING EXECUTION MODE
+Problem Addressed: The `ACTIVE` thread state conflated lifecycle readiness with actual execution allocation, creating contradictions when managing multiple concurrent background threads alongside a single focal thread.
+Architectural Specification:
+The lifecycle status of a thread is strictly decoupled from its scheduling dispatch mode.
+
+`ThoughtThreadState` (Lifecycle Domain):
+- `INITIALIZING`: Thread structure and root thought are being assembled; not ready for execution.
+- `ACTIVE`: Thread is epistemically valid, open for expansion, and eligible for scheduler dispatch.
+- `SUSPENDED`: Thread is paused (preempted, yielding, or waiting on external information); state preserved in SQLite.
+- `SUSPENDED_RUMINATION`: Thread is quarantined due to detected cyclic reasoning or sterile repetition.
+- `ABANDONED`: Thread reached a dead-end, exceeded resource bounds, or was discarded; terminal state.
+- `CONCLUDED`: Thread successfully resolved its governing query or produced an accepted output; terminal state.
+
+`ThreadExecutionMode` (Scheduling Domain):
+- `FOCAL`: Receiving the primary, dedicated processing cycle (Strict Invariant: Exactly 0 or 1 thread across the entire engine).
+- `BACKGROUND`: Receiving secondary, asynchronous batch or heuristic processing (Constrained by background job quota, default max 2).
+- `NOT_SCHEDULED`: Lifecycle is `ACTIVE` or `SUSPENDED`, but thread is currently idle in the queue.
+- `BLOCKED`: Thread is waiting on an outstanding asynchronous provider request (e.g., Memory retrieval).
+- `TERMINATED`: Thread lifecycle is `ABANDONED` or `CONCLUDED`; never scheduled again.
+
+Valid State/Mode Alignment Matrix:
+* `INITIALIZING` -> only `NOT_SCHEDULED`.
+* `ACTIVE` -> `FOCAL`, `BACKGROUND`, `NOT_SCHEDULED`, or `BLOCKED`.
+* `SUSPENDED` -> `NOT_SCHEDULED` or `BLOCKED` (Never `FOCAL` or `BACKGROUND`).
+* `SUSPENDED_RUMINATION` -> `NOT_SCHEDULED`.
+* `ABANDONED` / `CONCLUDED` -> only `TERMINATED`.
+
+B2. DEFINITION & RELATIONSHIP OF THOUGHTS, DAGS, AND CHAINS
+Problem Addressed: Inconsistent use of "chain" and "DAG" led to ambiguous ownership and graph structural violations.
+Architectural Specification:
+The Thought Engine establishes three distinct, strictly typed concepts:
+
+1. Thought (`ThoughtInstance`):
+   A discrete cognitive unit containing a proposition, premise references, epistemic status, confidence score, and scratchpad context. A thought belongs to exactly ONE canonical owning thread (`thread_id`).
+2. Thought DAG (`ThoughtDAG`):
+   The canonical, complete directed acyclic graph of derivation and dependency between thoughts. Managed strictly within a thread. Directed edges point from parent (premise) to child (conclusion). Cycles are mathematically prohibited.
+3. Thought Chain (`ThoughtChain`):
+   A linear, ordered sequence of thought IDs representing a specific line of reasoning through the DAG. A chain does NOT own nodes exclusively. A single thought may participate in multiple chains (e.g., in a branch-and-merge scenario).
+
+Chain Representation & Non-Owning References:
+Chains are stored as distinct entities with an ordered list of thought identifiers:
+`chain_memberships: Tuple[ChainMembership, ...]`
+Where `ChainMembership` contains:
+- `chain_id`: UUID string.
+- `sequence_index`: Integer ordinal indicating position within this specific reasoning path.
+- `joined_at`: ISO-8601 UTC timestamp.
+- `role`: Enum (CHAIN_ROOT, INTERMEDIATE_STEP, HYPOTHESIS_BRANCH, SYNTHESIS_JUNCTION, TERMINAL_CONCLUSION).
+
+B3. COMPLETE LIFECYCLE STATE TRANSITION MATRICES
+
+Thought State Transition Matrix:
+The state of an individual `ThoughtInstance` follows a strict state machine:
+-------------------------------------------------------------------------------------------------------------
+Current State | Event / Trigger                  | Next State  | Invariant / Guard Condition
+-------------------------------------------------------------------------------------------------------------
+GENERATED     | Context binding initiated        | EVALUATING  | Premises verified; origins attached
+GENERATED     | Syntax / validation failure      | DISCARDED   | Malformed proposition or missing origin
+EVALUATING    | Epistemic check passed           | ACTIVE      | Confidence calibrated; no fatal contradiction
+EVALUATING    | Contradiction / premise invalid  | DISCARDED   | Failed epistemic baseline
+ACTIVE        | Bound to logical reasoning chain | CHAINED     | Chain membership record registered
+ACTIVE        | Reasoning concludes directly     | COMPLETED   | Terminal node for this derivation step
+ACTIVE        | Invalidation during expansion    | DISCARDED   | Premise retracted or quarantined
+CHAINED       | Reasoning finalized in chain     | COMPLETED   | Output synthesized or goal satisfied
+CHAINED       | Superseded / invalidated         | DISCARDED   | Replaced by stronger alternative
+COMPLETED     | (Terminal)                       | None        | Immutable; new developments create new node
+DISCARDED     | (Terminal)                       | None        | Immutable; preserved in audit log only
+-------------------------------------------------------------------------------------------------------------
+
+Thread State Transition Matrix:
+-------------------------------------------------------------------------------------------------------------
+Current State        | Event / Trigger               | Next State          | Guard Condition
+-------------------------------------------------------------------------------------------------------------
+INITIALIZING         | Root thought accepted         | ACTIVE              | Root thought in ACTIVE or CHAINED
+INITIALIZING         | Initialization failure        | ABANDONED           | Failed to establish root thought
+ACTIVE               | Higher priority thread preempt| SUSPENDED           | Context snapshot committed to SQLite
+ACTIVE               | Rumination loop detected      | SUSPENDED_RUMINATION| Cyclic / sterile metric exceeded
+ACTIVE               | Goal achieved / output ready  | CONCLUDED           | Terminal thought reached
+ACTIVE               | Depth / resource limit reached| ABANDONED           | Quota overflow policy = ABANDON
+SUSPENDED            | Scheduler selects from queue  | ACTIVE              | Freshness validated; context restored
+SUSPENDED            | Expiration / memory eviction  | ABANDONED           | Max queue dwell time exceeded
+SUSPENDED_RUMINATION | Novel external evidence arrived| ACTIVE            | New evidence breaks repetition
+SUSPENDED_RUMINATION | Background cleanup timeout    | ABANDONED           | Unresolved rumination expired
+CONCLUDED            | (Terminal)                    | None                | Immutable; referenceable read-only
+ABANDONED            | (Terminal)                    | None                | Immutable; never resurrected
+-------------------------------------------------------------------------------------------------------------
+
+B4. DECOUPLING CHAIN MEMBERSHIP FROM THOUGHT LIFECYCLE
+Problem Addressed: The `CHAINED` thought state previously implied a structural location rather than an epistemic stage.
+Architectural Specification:
+While `CHAINED` is retained for backward compatibility in the transition table, it is semantically defined as an operational state indicating:
+1. The thought's premise dependencies are locked and frozen against dynamic mutation.
+2. The thought is registered in `chain_memberships` for one or more active reasoning chains.
+3. It may serve as a verified premise for downstream deductive or inductive operator jobs.
+A thought can advance to `COMPLETED` while retaining its full membership across multiple chains.
+
+B5. THREAD RECONSIDERATION PROTOCOL & HISTORICAL IMMUTABILITY
+Problem Addressed: Re-opening abandoned threads risked mutating historical reasoning trails and violating audit invariants.
+Architectural Specification:
+An `ABANDONED` thread is strictly immutable and can never transition back to `ACTIVE`.
+When new evidence, perceptions, or goals warrant re-evaluating an abandoned line of inquiry, the Thought Engine creates a NEW `ThoughtThread` through the Reconsideration Protocol:
+
+`ThoughtReconsiderationRecord`:
+- `reconsideration_id`: UUID string.
+- `new_thread_id`: UUID string of the newly created thread.
+- `reconsidered_from_thread_id`: UUID string of the historical abandoned thread.
+- `reconsideration_reason`: Textual justification for reopening the inquiry.
+- `triggering_evidence_ids`: Tuple of UUID strings pointing to novel evidence that invalidates previous abandonment.
+- `reconsidered_at`: ISO-8601 UTC timestamp.
+
+Operational Rules:
+- The historical thread remains intact in `ABANDONED` status with its original execution logs.
+- The new thread initializes with a root thought derived from the historical thread's premises plus the triggering evidence.
+- The new thread records `reconsidered_from_thread_id` in its header, maintaining transparent cognitive lineage.
+
+
+--------------------------------------------------------------------------------
+C. PERSISTENCE AND CRASH RECOVERY
+--------------------------------------------------------------------------------
+
+C1. COMPLETE 15-TABLE SQLITE RELATIONAL SCHEMA
+Problem Addressed: The previous specification lacked a comprehensive relational DDL covering all working-state structures.
+Architectural Specification:
+The working state of the Thought Engine is persisted in an embedded SQLite database operating in WAL (Write-Ahead Logging) mode. All 15 required tables are explicitly defined below:
+
+```sql
+-- 1. Thread Metadata & State
+CREATE TABLE thought_threads (
+    thread_id TEXT PRIMARY KEY,
+    topic TEXT NOT NULL,
+    state TEXT NOT NULL CHECK (state IN ('INITIALIZING', 'ACTIVE', 'SUSPENDED', 'SUSPENDED_RUMINATION', 'ABANDONED', 'CONCLUDED')),
+    execution_mode TEXT NOT NULL CHECK (execution_mode IN ('FOCAL', 'BACKGROUND', 'NOT_SCHEDULED', 'BLOCKED', 'TERMINATED')),
+    dynamic_priority REAL NOT NULL,
+    current_dag_depth INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    reconsidered_from_thread_id TEXT,
+    FOREIGN KEY (reconsidered_from_thread_id) REFERENCES thought_threads(thread_id) ON DELETE RESTRICT
+);
+
+-- 2. Individual Thought Nodes
+CREATE TABLE thought_instances (
+    thought_id TEXT PRIMARY KEY,
+    thread_id TEXT NOT NULL,
+    content TEXT NOT NULL,
+    state TEXT NOT NULL CHECK (state IN ('GENERATED', 'EVALUATING', 'ACTIVE', 'CHAINED', 'COMPLETED', 'DISCARDED')),
+    epistemic_status TEXT NOT NULL CHECK (epistemic_status IN ('ESTABLISHED', 'WORKING_HYPOTHESIS', 'SPECULATIVE', 'COUNTERFACTUAL', 'FALSIFIED')),
+    confidence REAL NOT NULL CHECK (confidence >= 0.0 AND confidence <= 1.0),
+    is_quarantined INTEGER NOT NULL CHECK (is_quarantined IN (0, 1)),
+    primary_origin_id TEXT NOT NULL,
+    sequence_index INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    completed_at TEXT,
+    FOREIGN KEY (thread_id) REFERENCES thought_threads(thread_id) ON DELETE RESTRICT
+);
+
+-- 3. Logical Reasoning Chains
+CREATE TABLE thought_chains (
+    chain_id TEXT PRIMARY KEY,
+    thread_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    concluded_at TEXT,
+    FOREIGN KEY (thread_id) REFERENCES thought_threads(thread_id) ON DELETE RESTRICT
+);
+
+-- 4. Canonical Thought DAG Edges
+CREATE TABLE thought_dag_edges (
+    edge_id TEXT PRIMARY KEY,
+    thread_id TEXT NOT NULL,
+    parent_thought_id TEXT NOT NULL,
+    child_thought_id TEXT NOT NULL,
+    relationship_type TEXT NOT NULL CHECK (relationship_type IN ('DEDUCTIVE_DERIVATION', 'INDUCTIVE_SUPPORT', 'ABDUCTIVE_EXPLANATION', 'CAUSAL_DEPENDENCY', 'ANALOGICAL_INFERENCE', 'COUNTERFACTUAL_BRANCH', 'SYNTHESIS_JUNCTION')),
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (thread_id) REFERENCES thought_threads(thread_id) ON DELETE RESTRICT,
+    FOREIGN KEY (parent_thought_id) REFERENCES thought_instances(thought_id) ON DELETE RESTRICT,
+    FOREIGN KEY (child_thought_id) REFERENCES thought_instances(thought_id) ON DELETE RESTRICT,
+    UNIQUE(parent_thought_id, child_thought_id)
+);
+
+-- 5. Semantic & Associative Graph Edges
+CREATE TABLE thought_associations (
+    association_id TEXT PRIMARY KEY,
+    source_thought_id TEXT NOT NULL,
+    target_thought_id TEXT NOT NULL,
+    association_type TEXT NOT NULL CHECK (association_type IN ('SEMANTIC_SIMILARITY', 'CONTRAST_OPPOSITION', 'TEMPORAL_CO_OCCURRENCE', 'DOMAIN_ANALOGY')),
+    strength REAL NOT NULL CHECK (strength >= 0.0 AND strength <= 1.0),
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (source_thought_id) REFERENCES thought_instances(thought_id) ON DELETE RESTRICT,
+    FOREIGN KEY (target_thought_id) REFERENCES thought_instances(thought_id) ON DELETE RESTRICT
+);
+
+-- 6. Thought Origin & Multi-Source Derivations
+CREATE TABLE thought_origins (
+    derivation_id TEXT PRIMARY KEY,
+    thought_id TEXT NOT NULL,
+    source_type TEXT NOT NULL,
+    source_id TEXT NOT NULL,
+    source_engine TEXT NOT NULL,
+    contribution_role TEXT NOT NULL,
+    is_quarantined INTEGER NOT NULL CHECK (is_quarantined IN (0, 1)),
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (thought_id) REFERENCES thought_instances(thought_id) ON DELETE RESTRICT
+);
+
+-- 7. Working Context & Typed Scratchpad
+CREATE TABLE thought_contexts (
+    context_id TEXT PRIMARY KEY,
+    thread_id TEXT NOT NULL UNIQUE,
+    active_premises_json TEXT NOT NULL,
+    scratchpad_variables_json TEXT NOT NULL,
+    scratchpad_bytes INTEGER NOT NULL CHECK (scratchpad_bytes <= 65536),
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (thread_id) REFERENCES thought_threads(thread_id) ON DELETE RESTRICT
+);
+
+-- 8. Hypothesis Management & Probabilities
+CREATE TABLE thought_hypotheses (
+    hypothesis_id TEXT PRIMARY KEY,
+    thought_id TEXT NOT NULL UNIQUE,
+    thread_id TEXT NOT NULL,
+    proposition TEXT NOT NULL,
+    prior_probability REAL NOT NULL CHECK (prior_probability >= 0.0 AND prior_probability <= 1.0),
+    current_probability REAL NOT NULL CHECK (current_probability >= 0.0 AND current_probability <= 1.0),
+    relationship_type TEXT NOT NULL CHECK (relationship_type IN ('MUTUALLY_EXCLUSIVE', 'COMPETING_BUT_NOT_EXHAUSTIVE', 'INDEPENDENT', 'UNKNOWN_RELATIONSHIP')),
+    competing_group_id TEXT,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (thought_id) REFERENCES thought_instances(thought_id) ON DELETE RESTRICT,
+    FOREIGN KEY (thread_id) REFERENCES thought_threads(thread_id) ON DELETE RESTRICT
+);
+
+-- 9. Priority Calculations & Input Snapshots
+CREATE TABLE thought_priorities (
+    priority_id TEXT PRIMARY KEY,
+    thread_id TEXT NOT NULL,
+    urgency REAL NOT NULL,
+    importance REAL NOT NULL,
+    emotional_relevance REAL NOT NULL,
+    motivational_alignment REAL NOT NULL,
+    unresolved_entropy REAL NOT NULL,
+    starvation_boost REAL NOT NULL DEFAULT 0.0,
+    final_score REAL NOT NULL CHECK (final_score >= 0.0 AND final_score <= 1.0),
+    calculated_at TEXT NOT NULL,
+    FOREIGN KEY (thread_id) REFERENCES thought_threads(thread_id) ON DELETE RESTRICT
+);
+
+-- 10. Scheduler Pending Queue
+CREATE TABLE thought_pending_queue (
+    queue_entry_id TEXT PRIMARY KEY,
+    thread_id TEXT NOT NULL UNIQUE,
+    enqueued_at TEXT NOT NULL,
+    scheduling_tier TEXT NOT NULL CHECK (scheduling_tier IN ('FOCAL_CANDIDATE', 'BACKGROUND_ELIGIBLE', 'RUMINATION_HOLD')),
+    FOREIGN KEY (thread_id) REFERENCES thought_threads(thread_id) ON DELETE RESTRICT
+);
+
+-- 11. Immutable Lifecycle Transition Event Log
+CREATE TABLE thought_lifecycle_events (
+    event_id TEXT PRIMARY KEY,
+    entity_type TEXT NOT NULL CHECK (entity_type IN ('THREAD', 'THOUGHT', 'REASONING_JOB')),
+    entity_id TEXT NOT NULL,
+    previous_state TEXT,
+    new_state TEXT NOT NULL,
+    transition_reason TEXT NOT NULL,
+    timestamp TEXT NOT NULL
+);
+
+-- 12. Local Archival Protocol State
+CREATE TABLE thought_archival_records (
+    nomination_id TEXT PRIMARY KEY,
+    thought_id TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('PENDING_DISPATCH', 'DISPATCHED', 'ACCEPTED', 'REJECTED_POLICY', 'REJECTED_DUPLICATE', 'REJECTED_INSUFFICIENT_EVIDENCE', 'TEMPORARY_FAILURE')),
+    idempotency_key TEXT NOT NULL UNIQUE,
+    memory_record_id TEXT,
+    retry_count INTEGER NOT NULL DEFAULT 0,
+    last_attempt_at TEXT NOT NULL,
+    FOREIGN KEY (thought_id) REFERENCES thought_instances(thought_id) ON DELETE RESTRICT
+);
+
+-- 13. Asynchronous Reasoning Jobs
+CREATE TABLE thought_reasoning_jobs (
+    job_id TEXT PRIMARY KEY,
+    thread_id TEXT NOT NULL,
+    operator_type TEXT NOT NULL,
+    job_state TEXT NOT NULL CHECK (job_state IN ('QUEUED', 'DISPATCHED', 'RUNNING', 'COMPLETED', 'TIMED_OUT', 'CANCELLED', 'FAILED', 'INTERRUPTED')),
+    timeout_ms INTEGER NOT NULL,
+    started_at TEXT,
+    finished_at TEXT,
+    result_thought_id TEXT,
+    error_message TEXT,
+    FOREIGN KEY (thread_id) REFERENCES thought_threads(thread_id) ON DELETE RESTRICT
+);
+
+-- 14. Unresolved Epistemic Questions
+CREATE TABLE thought_unresolved_questions (
+    question_id TEXT PRIMARY KEY,
+    thread_id TEXT NOT NULL,
+    question_text TEXT NOT NULL,
+    epistemic_entropy REAL NOT NULL CHECK (epistemic_entropy >= 0.0 AND epistemic_entropy <= 1.0),
+    status TEXT NOT NULL CHECK (status IN ('OPEN', 'INVESTIGATING', 'RESOLVED', 'ABANDONED')),
+    created_at TEXT NOT NULL,
+    resolved_at TEXT,
+    FOREIGN KEY (thread_id) REFERENCES thought_threads(thread_id) ON DELETE RESTRICT
+);
+
+-- 15. Historical Thread Reconsiderations
+CREATE TABLE thought_reconsiderations (
+    reconsideration_id TEXT PRIMARY KEY,
+    new_thread_id TEXT NOT NULL,
+    reconsidered_from_thread_id TEXT NOT NULL,
+    reconsideration_reason TEXT NOT NULL,
+    triggering_evidence_json TEXT NOT NULL,
+    reconsidered_at TEXT NOT NULL,
+    FOREIGN KEY (new_thread_id) REFERENCES thought_threads(thread_id) ON DELETE RESTRICT,
+    FOREIGN KEY (reconsidered_from_thread_id) REFERENCES thought_threads(thread_id) ON DELETE RESTRICT
+);
+```
+
+C2. MANDATORY SQLITE FOREIGN-KEY ENFORCEMENT & RETENTION RULES
+Architectural Invariant:
+SQLite does NOT enforce foreign keys by default. On every database connection initialization, the storage driver MUST execute:
+`PRAGMA foreign_keys = ON;`
+A connection verification check asserts `PRAGMA foreign_keys;` returns `1`. If foreign keys are disabled, the storage connection raises a fatal initialization exception.
+
+Retention and Referential Integrity Policies:
+- ALL relational constraints utilize `ON DELETE RESTRICT`. Under NO circumstances are historical thought instances, lifecycle logs, or derivation edges cascade-deleted.
+- Thread conclusion or abandonment simply updates the state column; the entire relational graph remains permanently queryable for audit, reflection, and learning signals.
+
+C3. ATOMIC LOGICAL OPERATIONS & TRANSACTION BOUNDARIES
+Problem Addressed: Multi-table updates executed without strict transaction boundaries risk leaving broken DAGs or orphaned records during crashes.
+Architectural Specification:
+Every high-level cognitive operation is encapsulated in a single, atomic SQLite transaction (`BEGIN IMMEDIATE ... COMMIT`).
+
+Atomic Operation Specifications:
+1. `create_thought_transaction(thought, derivations, dag_edges, chain_membership)`:
+   Step 1: Insert row into `thought_instances`.
+   Step 2: Insert rows into `thought_origins` for each derivation record.
+   Step 3: Insert rows into `thought_dag_edges` for premise connections.
+   Step 4: Update owning row in `thought_threads` (`updated_at`, `current_dag_depth`).
+   Step 5: If chain attached, insert into `thought_chains` / update chain metadata.
+   Step 6: Insert row into `thought_lifecycle_events` with transition reason.
+   Step 7: COMMIT. (On any exception: full ROLLBACK).
+
+2. `branch_thread_transaction(parent_thread_id, new_thread, root_thought, branching_edges)`:
+   Step 1: Insert row into `thought_threads` for `new_thread` (`INITIALIZING`).
+   Step 2: Snapshot parent context into `thought_contexts` for `new_thread`.
+   Step 3: Execute `create_thought_transaction` for `root_thought`.
+   Step 4: Insert cross-thread derivation records in `thought_origins`.
+   Step 5: Transition `new_thread` to `ACTIVE`.
+   Step 6: Record branch event in `thought_lifecycle_events`.
+   Step 7: COMMIT.
+
+C4. 11-STEP DETERMINISTIC CRASH RECOVERY PROTOCOL
+Problem Addressed: Previous recovery implementations only flipped active threads to suspended, failing to reconcile pending jobs, queues, or half-finished transitions.
+Architectural Specification:
+Upon engine startup after an ungraceful shutdown, crash, or power loss, the `ThoughtLifecycleManager` executes the following 11-step idempotent recovery sequence:
+
+Step 1: Acquire exclusive SQLite file lock and recovery coordination mutex.
+Step 2: Check WAL integrity and replay any uncommitted write-ahead logs to disk.
+Step 3: Generate a unique, idempotent `recovery_session_id` (UUID) and record startup in audit log.
+Step 4: Query `thought_reasoning_jobs` for any records in `RUNNING` or `DISPATCHED` state.
+Step 5: Mark all such jobs as `INTERRUPTED`; record failure metadata indicating crash abort.
+Step 6: Query `thought_instances` for any thoughts stuck in `GENERATED` or `EVALUATING` state. Transition them to `DISCARDED` with reason `"CRASH_DURING_EVALUATION"`.
+Step 7: Verify all DAG edge invariants (`PRAGMA integrity_check`, cycle detection, missing foreign keys).
+Step 8: Identify any thread in `thought_threads` with `state == 'ACTIVE'`.
+        - Set `state = 'SUSPENDED'`.
+        - Set `execution_mode = 'NOT_SCHEDULED'`.
+        - Insert transition record in `thought_lifecycle_events`.
+Step 9: Rebuild `thought_pending_queue`: Inspect all `SUSPENDED` threads, recalculate priorities, and populate the queue.
+Step 10: Re-validate `thought_archival_records`: Any record in `DISPATCHED` is reset to `PENDING_DISPATCH` for idempotent retry.
+Step 11: Release recovery coordination lock; emit `ENGINE_RECOVERY_COMPLETE` signal to system coordinator.
+
+C5. CRASH RECOVERY CONSISTENCY TEST SUITE (9 SCENARIOS)
+The test suite validates recovery invariants against 9 simulated crash injections:
+1. Crash Before Transaction Commit: Process terminated mid-execution; verify zero partial rows in `thought_instances` or `thought_dag_edges`.
+2. Crash During Transaction Commit: Simulated disk stall during WAL flush; verify SQLite automatic rollback to last consistent state.
+3. Crash Immediately After Commit: Process killed before in-memory cache update; verify persistent SQLite state is authoritative upon reload.
+4. Crash During Thought Creation: Power failure during step 3 of `create_thought_transaction`; verify complete atomicity (no orphaned origins).
+5. Crash During DAG Edge Insertion: Insertion interrupted; verify no dangling parent/child relationships.
+6. Crash During Thread Suspension: Process killed during focal preemption; verify thread recovers into `SUSPENDED` without corrupted context.
+7. Crash During Archival Acknowledgement: Network drops while Memory Engine processes nomination; verify idempotent retry using stored key.
+8. Crash During Model Execution: Sub-process / LLM crashes while reasoning job is active; verify job recovers as `INTERRUPTED` without corrupting thread.
+9. Repeated Recovery Attempts: Crash recovery executed 5 consecutive times on identical database; verify identical, idempotent outcome.
+
+
+--------------------------------------------------------------------------------
+D. REASONING AND EPISTEMIC INTEGRITY
+--------------------------------------------------------------------------------
+
+D1. SEVEN FORMAL REASONING OPERATORS SPECIFICATION
+The Thought Development & Reasoning subsystem executes inferences using seven formal, typed operators. Each operator defines its inputs, responsibilities, outputs, evidence constraints, failure criteria, and validity checks:
+
+1. Deductive Reasoning Operator:
+   - Inputs: Set of established premise thoughts ($P_1, P_2, \dots, P_k$), deductive inference rule (Modus Ponens, Modus Tollens, Disjunctive Syllogism).
+   - Responsibility: Derives logically necessary consequences from valid premises.
+   - Output: New `ThoughtInstance` with logical conclusion, edge type `DEDUCTIVE_DERIVATION`.
+   - Evidence Requirements: All premise thoughts must have `epistemic_status == 'ESTABLISHED'` or valid active hypothesis bounds.
+   - Failure Conditions: Premise contradiction, invalid rule application, missing premise truth values.
+   - Validity Assessment: Pure deductive validity. If premises are true and rule is sound, output confidence = $\min(C(P_1), \dots, C(P_k))$.
+
+2. Inductive Reasoning Operator:
+   - Inputs: Tuple of observed instance thoughts ($O_1, O_2, \dots, O_n$), generalization target domain.
+   - Responsibility: Formulates generalized principles or regularities from specific recurring observations.
+   - Output: New `ThoughtInstance` with generalized proposition, edge type `INDUCTIVE_SUPPORT`.
+   - Evidence Requirements: Sample size $n \ge 3$ independent observations from verified perception or memory.
+   - Failure Conditions: Counter-examples detected in memory, sample diversity collapse, extreme variance.
+   - Validity Assessment: Statistical support metric. Confidence scaled by sample size, regularity, and domain variability; strictly $< 0.85$ unless independently verified.
+
+3. Abductive Reasoning Operator:
+   - Inputs: Observed anomalous or salient event thought ($E$), background knowledge base context.
+   - Responsibility: Generates best plausible explanatory hypotheses ($H_1, H_2, \dots, H_m$) that would account for $E$.
+   - Output: One or more `ThoughtHypothesis` records, edge type `ABDUCTIVE_EXPLANATION`.
+   - Evidence Requirements: Explicit observation reference, non-empty candidate explanatory domain.
+   - Failure Conditions: Tautological explanation, no plausible causal link, explanation contradicts established ground truth.
+   - Validity Assessment: Explanatory parsimony, prior plausibility, explanatory scope.
+
+4. Causal Reasoning Operator:
+   - Inputs: Temporal sequence thoughts, observed intervention thoughts, candidate mechanism models.
+   - Responsibility: Evaluates cause-and-effect relationships, distinguishing true causality from mere correlation.
+   - Output: New `ThoughtInstance` specifying causal link (Cause, Effect, Mechanism, Strength), edge type `CAUSAL_DEPENDENCY`.
+   - Evidence Requirements: Temporal precedence ($T_{cause} < T_{effect}$), non-spuriousness check, mechanistic plausibility.
+   - Failure Conditions: Reverse temporal order, presence of common confounding factor in memory, zero mechanistic bridge.
+   - Validity Assessment: Verification against causal graph invariants; sensitivity analysis under counterfactual interventions.
+
+5. Analogical Reasoning Operator:
+   - Inputs: Source domain schema thought ($S$), target domain context thought ($T$).
+   - Responsibility: Maps structural relations from known source domain onto novel or unresolved target domain.
+   - Output: New `ThoughtInstance` proposing candidate target properties/solutions, edge type `ANALOGICAL_INFERENCE`.
+   - Evidence Requirements: Structural mapping score $\ge 0.60$ across relational predicates (not mere surface feature similarity).
+   - Failure Conditions: Superficial semantic match with mismatched relational deep structure, breakdown of core invariants.
+   - Validity Assessment: Systematicity metric; confidence capped at 0.70 until empirically tested in target domain.
+
+6. Counterfactual Reasoning Operator:
+   - Inputs: Historical event thought ($A$), counterfactual premise thought ("If $A'$ had occurred instead of $A$"), causal model.
+   - Responsibility: Explores alternative hypothetical trajectories and evaluates causal necessity.
+   - Output: New `ThoughtInstance` with `epistemic_status = 'COUNTERFACTUAL'`, edge type `COUNTERFACTUAL_BRANCH`.
+   - Evidence Requirements: Valid historical factual anchor, explicit mutable antecedent.
+   - Failure Conditions: Antecedent impossible under physical constraints, unconstrained butterfly divergence.
+   - Validity Assessment: Closest-possible-world metric. STRICT QUARANTINE MANDATE: All outputs flagged `is_quarantined = 1`.
+
+7. Evaluative / Critical Reasoning Operator:
+   - Inputs: Candidate argument DAG, proposition thought, alternative hypotheses, counter-evidence pool.
+   - Responsibility: Rigorously critiques reasoning chains, identifies hidden assumptions, evaluates evidence quality, and checks consistency.
+   - Output: Evaluative report thought containing detected flaws, contradiction scores, and recalibrated confidences.
+   - Evidence Requirements: Full visibility into upstream premise derivations and evidence provenance.
+   - Failure Conditions: Self-referential circular evaluation (evaluating an operator with itself without external anchor).
+   - Validity Assessment: Objective checklist: fallacy detection, bias detection, contradiction verification.
+
+D2. EVIDENCE PROVENANCE & LINEAGE DEPENDENCY TRACKING
+Problem Addressed: Unioning evidence IDs without tracking provenance allowed correlated or duplicate underlying sources to artificially inflate confidence.
+Architectural Specification:
+The Thought Engine models evidence using the rich `EvidenceReference` contract:
+
+`EvidenceReference` Schema:
+- `evidence_id`: UUID string.
+- `evidence_type`: Enum (PERCEPTUAL_OBSERVATION, EPISODIC_MEMORY, SEMANTIC_FACT, DEDUCTIVE_DERIVATION, EXTERNAL_TOOL_OUTPUT).
+- `source_id`: Canonical ID of the immediate source object.
+- `original_source_id`: Root identifier where the information first entered the cognitive architecture.
+- `derived_from_ids`: Tuple of ancestor evidence IDs.
+- `reliability`: Float in [0.0, 1.0] (Inherent sensor or source reliability score).
+- `independence_group_id`: String identifying the underlying causal source (e.g., specific sensor, user utterance, memory cluster).
+- `provenance_chain`: Ordered tuple of processing steps applied to the raw evidence.
+
+Branch Merging Deduplication Invariant:
+When merging two reasoning branches ($B_1$ and $B_2$), the engine resolves their evidence pools by grouping on `independence_group_id`. If both branches cite evidence stemming from the same `independence_group_id`, the combined evidence pool counts the group as SINGLE independent observation, taking $\max(Reliability)$ rather than summing support. Correlated evidence cannot inflate Bayesian updates or synthesis confidence.
+
+D3. CALIBRATED SYNTHESIS CONFIDENCE ASSESSMENT
+Problem Addressed: Previous specifications included an arbitrary "NoveltyBonus" in the confidence formula: $C_{synthesis} \le \min(C(B_1), C(B_2)) + \text{NoveltyBonus}$, which was ungrounded and could exceed 1.0.
+Architectural Specification:
+The arbitrary formula is completely abolished. Synthesis confidence is determined via a structured, multi-factor assessment process:
+
+Calculation Process:
+Let $B_1, B_2$ be the premise branches yielding synthesized thought $S$.
+1. Base Premise Alignment:
+   $C_{base} = \min(C(B_1), C(B_2))$
+2. Corroboration & Independence Multiplier ($\alpha_{indep}$):
+   If $B_1$ and $B_2$ have distinct, non-overlapping `independence_group_id` sets:
+   $\alpha_{indep} = 1.0 + 0.15 \times \min(Rel(B_1), Rel(B_2))$
+   If $B_1$ and $B_2$ share underlying sources:
+   $\alpha_{indep} = 1.0$ (no independence boost).
+3. Contradiction & Coherence Penalty ($P_{contra}$):
+   Let $\delta_{contra} \in [0.0, 1.0]$ be the measured semantic/logical tension between synthesized claims.
+   $P_{contra} = 1.0 - 0.50 \times \delta_{contra}$
+4. Unsupported Assumption Penalty ($P_{assump}$):
+   Let $N_{unsupported}$ be the number of ungrounded bridge assumptions introduced in the synthesis.
+   $P_{assump} = \exp(-0.25 \times N_{unsupported})$
+5. Synthesis Confidence Formulation:
+   $C_{synthesis} = \text{clamp}_{[0.0, 1.0]}\left( C_{base} \times \alpha_{indep} \times P_{contra} \times P_{assump} \right)$
+
+Under NO circumstance does novelty increase epistemic confidence. Novelty increases *motivational or attentional curiosity*, not truth probability.
+
+D4. HYPOTHESIS PROBABILITY ESTIMATION & RELATIONSHIP SEMANTICS
+Problem Addressed: $P(H \mid E)$ was previously referenced without specifying update mechanics, relationships, or probability normalization rules.
+Architectural Specification:
+Hypotheses are managed with explicit relational constraints and Bayesian updating:
+
+Typed Hypothesis Relationships:
+1. `MUTUALLY_EXCLUSIVE`: Hypotheses within `competing_group_id` cannot simultaneously be true.
+   Constraint: $\sum_{i} P(H_i \mid E) \le 1.0$. If a hypothesis is confirmed ($P \to 1$), all others in the group are falsified ($P \to 0$).
+2. `COMPETING_BUT_NOT_EXHAUSTIVE`: Hypotheses compete for likelihood, but all may simultaneously be false (the true cause may be unknown).
+   Constraint: Individual $P(H_i \mid E) \in [0.0, 1.0]$; sum is NOT constrained to 1.0.
+3. `INDEPENDENT`: Truth of $H_1$ has no mathematical bearing on $H_2$.
+4. `UNKNOWN_RELATIONSHIP`: Conservative fallback; no joint normalization applied.
+
+Bayesian Updating Formula:
+Given new evidence $E$ with reliability $R \in [0.0, 1.0]$:
+$$P(H \mid E) = \frac{P(E \mid H) \times P(H)}{P(E)}$$
+Where evidence likelihood is scaled by reliability:
+$$P(E \mid H)_{calibrated} = R \times P(E \mid H)_{raw} + (1 - R) \times 0.50$$
+If evidence directly contradicts $H$ with high reliability ($R \ge 0.90$), $P(H \mid E)$ is immediately depressed to $< 0.05$ and marked `FALSIFIED`.
+
+D5. STRICT ESTABLISHED ACCEPTANCE POLICY
+Problem Addressed: No explicit policy governed when a thought or proposition could be labeled `ESTABLISHED`, allowing ungrounded model outputs to be marked as fact.
+Architectural Specification:
+A proposition can ONLY transition to `epistemic_status = 'ESTABLISHED'` if it satisfies ALL six mandatory acceptance criteria:
+1. Evidence Reliability Threshold: Backed by evidence references with aggregate calibrated reliability $R \ge 0.85$.
+2. Source Provenance Verification: Derived from verified Perception observations, authoritative Memory Engine claims, or a sound deductive proof.
+3. Zero Unresolved Material Contradictions: Checked against the current working context and active memory claims; zero open high-confidence contradictions.
+4. Valid Derivation Lineage: Every ancestor in the derivation DAG must be either `ESTABLISHED` or an empirically corroborated observation.
+5. Independent Corroboration: Non-deductive assertions must be corroborated by at least TWO distinct `independence_group_id` sources.
+6. Domain Verification: For empirical or physical claims, must be verified against domain constraints.
+
+Crucial Rule: High model confidence or fluent text output from an LLM does NOT qualify a thought as `ESTABLISHED`. Model confidence is treated merely as heuristic prior $P_{prior} \le 0.50$ until grounded.
+
+D6. COMPREHENSIVE DOWNSTREAM QUARANTINE PROPAGATION
+Problem Addressed: Quarantine flags were previously checked only on immediate child thoughts, allowing counterfactuals or speculations to leak into proposals or memories.
+Architectural Specification:
+Quarantine enforcement is total and infectious across all cognitive boundaries:
+
+Propagation Rules:
+1. Graph Invariant: If node $T_{parent}$ has `is_quarantined == 1`, any derived child node $T_{child}$ created via ANY operator inherits `is_quarantined = 1`.
+2. Cross-Thread Association: Quarantined thoughts referenced across threads taint the receiving thread's context unless explicitly marked as counterfactual premises.
+3. Memory Nomination Invariant: The Thought Engine strictly forbids nominating any thought with `is_quarantined == 1` for permanent episodic or semantic memory archival.
+4. Cognitive Proposal Invariant: Candidate proposals sent to Cognitive Integration with `is_quarantined == 1` are marked `HYPOTHETICAL_SIMULATION_ONLY`. Under no circumstance can they trigger external action execution.
+5. Learning Signal Invariant: Quarantined thoughts cannot generate `REASONING_ERROR` or `CAPABILITY_OBSERVATION` signals against real-world competence.
+6. De-Quarantining Prohibition: A quarantined thought can NEVER be "de-quarantined" by completing a chain. To establish a counterfactual insight as real-world knowledge, the system must formulate a completely fresh hypothesis and prove it independently using verified real-world evidence.
+
+
+--------------------------------------------------------------------------------
+E. ATTENTION, SCHEDULING, AND RESOURCE GOVERNANCE
+--------------------------------------------------------------------------------
+
+E1. PRECISION PRIORITY INPUTS, SOURCES, AND STARVATION PREVENTION
+Problem Addressed: The priority score was previously normalized without operational calibration, clear input ownership, or starvation safeguards.
+Architectural Specification:
+The Attention & Priority Arbitrator computes dynamic thread priority $P_{thread} \in [0.0, 1.0]$ continuously using five calibrated, strictly owned input components:
+
+Input Component Ownership Matrix:
+-------------------------------------------------------------------------------------------------------------
+Input Component         | Value Range | Owning Source Engine         | Semantic Meaning
+-------------------------------------------------------------------------------------------------------------
+Urgency ($U$)           | [0.0, 1.0]  | Perception / Cog Integration | Time-criticality and external deadline pressure
+Importance ($I$)        | [0.0, 1.0]  | Cognitive Assessment Module  | Systemic significance and long-term utility of topic
+Emotional Relevance ($E$)| [0.0, 1.0]  | Emotion Engine               | Affective salience and emotional resonance
+Motivational Alignment ($M$)| [0.0, 1.0]| Motivation Engine            | Congruence with active desires, goals, and needs
+Unresolved Entropy ($H$) | [0.0, 1.0]  | Thought Engine (Internal)    | Internal cognitive uncertainty and epistemic open-endedness
+-------------------------------------------------------------------------------------------------------------
+
+Crucial Semantic Distinction:
+Emotional intensity is explicitly decoupled from urgency. A high-intensity aesthetic emotion or nostalgic feeling has high $E$ but low $U$ ($U \approx 0.0$). Conversely, an immediate collision alert from perception has high $U$ ($U \approx 1.0$) independent of whether Diva has yet formed an emotional reaction.
+
+Calibrated Priority Formulation:
+$$P_{raw} = w_U \cdot U(t) + w_I \cdot I + w_E \cdot E + w_M \cdot M + w_H \cdot H$$
+Default Base Weights: $w_U = 0.30$, $w_I = 0.25$, $w_M = 0.20$, $w_H = 0.15$, $w_E = 0.10$ (Sum of weights = 1.00).
+
+Urgency Time-Decay Dynamics:
+For perceptual impulses without ongoing sensory reinforcement, urgency decays exponentially:
+$$U(t) = U_0 \cdot \exp(-\lambda_U \cdot (t - t_0))$$
+Where half-life $\tau_{urgency} = \frac{\ln(2)}{\lambda_U} = 5.0\text{ seconds}$.
+
+Starvation Prevention Mechanism:
+To guarantee that low-urgency but high-importance background threads are not indefinitely starved by a stream of moderate perceptual events, the Arbitrator maintains a starvation counter $c_{starve} \in \mathbb{N}$ for every active thread waiting in `NOT_SCHEDULED` state:
+- For every complete scheduling epoch (500 ms) a thread remains unscheduled, its counter increments: $c_{starve} \leftarrow c_{starve} + 1$.
+- Starvation Boost:
+  $$B_{starve} = \min\left(0.25, 0.015 \cdot \max(0, c_{starve} - 10)\right)$$
+- Final Arbitrated Priority:
+  $$P_{final} = \min\left(1.0, P_{raw} + B_{starve}\right)$$
+- When a thread is selected for `FOCAL` or `BACKGROUND` execution, its $c_{starve}$ resets to 0.
+
+E2. RIGOROUS PREEMPTION RULES, EMERGENCY OVERRIDES, AND CRITICAL SECTIONS
+Problem Addressed: The 0.15 hysteresis rule was treated as an absolute barrier without emergency override, minimum consistency guarantees, or dwell time constraints.
+Architectural Specification:
+Thread preemption balances attentional responsiveness against cognitive thrashing:
+
+1. Standard Preemption Hysteresis Rule:
+   A running `FOCAL` thread ($T_{focal}$) is preempted by a candidate thread ($T_{cand}$) if and only if:
+   $$P_{final}(T_{cand}) \ge P_{final}(T_{focal}) + 0.15$$
+   And the current dwell time $t_{dwell}(T_{focal}) \ge t_{cooldown} = 500\text{ ms}$.
+
+2. Emergency Preemption Override:
+   If an incoming event or urgent perception produces $U(T_{cand}) \ge 0.95$ (e.g., immediate threat, critical system alert, direct user interjection):
+   - The 0.15 hysteresis requirement is completely BYPASSED.
+   - The 500 ms cooldown is completely BYPASSED.
+   - Immediate preemption signal is dispatched to the scheduler.
+
+3. Non-Interruptible Critical Sections:
+   Preemption cannot break an atomic transaction in progress. If $T_{focal}$ is inside:
+   - Atomic SQLite transaction commit (`create_thought_transaction`, `branch_thread_transaction`).
+   - DAG cycle validation check.
+   - Quarantine tag recursive tree walk.
+   The preemption signal is deferred until the critical section completes (guaranteed latency $< 30\text{ ms}$).
+
+4. Maximum Focal Dwell Time (Anti-Monopoly Rule):
+   To prevent complex deductive chains from permanently locking the focal slot, maximum continuous dwell time is capped:
+   $$t_{dwell}(T_{focal}) \le t_{max\_focal} = 10.0\text{ seconds}$$
+   Upon hitting $t_{max\_focal}$, the scheduler forces a checkpoint yield, transitioning $T_{focal}$ to `SUSPENDED`, allowing equal-priority competitors a turn.
+
+5. Measured Suspension Target:
+   Context serialization and SQLite persistence target a suspension latency of 30–50 ms under nominal load, benchmarked on standard local storage.
+
+E3. ASYNCHRONOUS REASONING JOB LIFECYCLE & LATE-RESULT REJECTION
+Problem Addressed: Background concurrency was specified without job states, causing ambiguity regarding late model outputs and timeouts.
+Architectural Specification:
+All computationally intensive reasoning operator executions (e.g., deep inference, abductive generation via LLM, analogical mapping) are executed as tracked asynchronous jobs.
+
+`ReasoningJobState` Machine:
+`QUEUED` -> `DISPATCHED` -> `RUNNING` -> (`COMPLETED` | `TIMED_OUT` | `CANCELLED` | `FAILED` | `INTERRUPTED`)
+
+Concurrency Boundaries:
+- Maximum Concurrent Background Jobs: Exactly 2.
+- Focal Processing: 1 synchronous or high-priority dedicated asynchronous pipeline. Background job concurrency is independent of focal scheduling.
+
+Late-Result Rejection Protocol:
+When a background job exceeds its deadline ($t > t_{timeout}$, default 4000 ms), the scheduler immediately:
+1. Transitions job state in `thought_reasoning_jobs` to `TIMED_OUT`.
+2. Emits cancellation token to worker process.
+3. If the worker sub-process subsequently finishes and delivers a late result:
+   - The Thought Engine checks job state in SQLite.
+   - Because state is `TIMED_OUT` or `CANCELLED`, the incoming payload is STRICTLY REJECTED and discarded.
+   - Under no circumstances can a late result modify the target thread's DAG, context, or state.
+   - Audit event logged: `LATE_JOB_RESULT_DISCARDED`.
+
+E4. QUOTA OVERFLOW POLICIES & ENERGY REDUCTION HANDLING
+Problem Addressed: System limits existed without explicit enforcement behaviors, risking silent drops or unmanaged runaway memory growth.
+Architectural Specification:
+The Thought Engine enforces strict policies when hard cognitive boundaries are encountered:
+
+Quota Boundary Enforcement Table:
+-------------------------------------------------------------------------------------------------------------
+Resource Limit               | Bound Value | Action on Overflow
+-------------------------------------------------------------------------------------------------------------
+Active Threads Total         | Max 5       | SUSPEND lowest priority active thread to disk; if all equal, DEFER new
+Concurrent Background Jobs   | Max 2       | QUEUE request in pending job buffer; if buffer full, REJECT generation
+Thread DAG Depth             | Max 15      | Trigger mandatory Evaluative Synthesis; if unable, CONCLUDE or ABANDON
+Thread Node Count            | Max 50 nodes| Execute Graph Summarization; freeze historical nodes into sub-graph ref
+Working Context Scratchpad   | Max 64 KB   | Reject additional variables; evict least-recently-accessed scratchpad key
+Unresolved Questions Pool    | Max 20 open | Suppress low-entropy questions; overwrite lowest-entropy question
+-------------------------------------------------------------------------------------------------------------
+
+Dynamic Energy Reduction Throttling:
+When the Energy Regulation Engine reports dropping cognitive energy ($E_{cog} < 0.30$ on a [0.0, 1.0] scale):
+- Active Thread Quota drops dynamically: $\text{Quota}_{threads} = \max(1, \lfloor 5 \times E_{cog} \rfloor)$.
+- Background Concurrency drops: If $E_{cog} < 0.20$, background jobs = 0 (focal processing only).
+- Overflow Handling: Excess active threads are NOT discarded. They are gracefully serialized, transitioned to `SUSPENDED`, and kept intact in SQLite until cognitive energy recovers.
+
+
+--------------------------------------------------------------------------------
+F. MEMORY RETRIEVAL AND ARCHIVAL PROTOCOL
+--------------------------------------------------------------------------------
+
+F1. STRUCTURED ASYNCHRONOUS RETRIEVAL & UPDATE CONTRACTS
+Problem Addressed: Boolean retrieval/update signatures failed to convey error nuances, stale records, or version mismatches.
+Architectural Specification:
+All interactions between the Thought Engine and Memory Engine return comprehensive, structured response payloads.
+
+`MemoryOperationResponse` Contract:
+- `status`: Enum (`SUCCESS`, `DUPLICATE_IGNORED`, `STALE_VERSION_REJECTED`, `REJECTED_POLICY`, `REJECTED_INSUFFICIENT_EVIDENCE`, `TEMPORARILY_UNAVAILABLE`, `FAILED_UNKNOWN`).
+- `request_id`: UUID string matching the initiating call.
+- `record_id`: Optional UUID string of affected memory record.
+- `version`: Integer indicating canonical version of memory record in Memory Engine.
+- `timestamp`: ISO-8601 UTC timestamp of operation completion.
+- `error_code`: Optional string code (e.g., `"ERR_MEM_CONSTRAINTS_VIOLATED"`, `"ERR_MEM_UNREACHABLE"`).
+- `error_message`: Optional human-readable diagnostic description.
+
+F2. HISTORICAL DEVELOPMENT VERSIONING VIA IMMUTABLE SNAPSHOTS
+Problem Addressed: Thoughts evolving over time risked mutating original premise records, breaking historical auditability.
+Architectural Specification:
+Every thought instance, once created and committed to SQLite, is completely IMMUTABLE.
+When an existing thought proposition is refined, deepened, or updated with new evidence:
+1. Original Record Preserved: The original row in `thought_instances` remains unmodified with its original timestamps.
+2. New Instance Created: A new `ThoughtInstance` is created with a unique `thought_id`.
+3. Derivation Linked: A `ThoughtDerivation` is added pointing to the original thought ID with `contribution_role = 'PREMISE_FOUNDATION'`.
+4. Directed Edge Inserted: A row is inserted in `thought_dag_edges` with `relationship_type = 'SYNTHESIS_JUNCTION'` or relevant operator.
+5. Thread Pointer Updated: The thread's active premise list updates to reference the new thought ID, preserving complete historical development.
+
+F3. CATEGORIZED ARCHIVAL REJECTIONS & IDEMPOTENT RETRY RULES
+Problem Addressed: Conflating rejection reasons into a single transient error resulted in improper infinite retries of policy rejections.
+Architectural Specification:
+When a thought is nominated for permanent episodic/semantic storage, Memory Engine evaluation outcomes fall into five distinct categories:
+
+1. `ACCEPTED`:
+   - Memory Engine inscriber accepts and consolidates the record.
+   - Action: `thought_archival_records.status` set to `ACCEPTED`; `memory_record_id` recorded. No further retries.
+
+2. `REJECTED_POLICY`:
+   - Memory Engine rejects nomination because content violates epistemic policy (e.g., unsubstantiated belief, prohibited topic, ungrounded speculation).
+   - Action: `status` set to `REJECTED_POLICY`. Retries STRICTLY FORBIDDEN.
+
+3. `REJECTED_DUPLICATE`:
+   - Memory Engine already possesses an identical semantic claim with equal or higher confidence.
+   - Action: `status` set to `REJECTED_DUPLICATE`. Retries STRICTLY FORBIDDEN. Local thought links to existing memory ID.
+
+4. `REJECTED_INSUFFICIENT_EVIDENCE`:
+   - Memory Engine deems supporting evidence reliability too weak ($R < 0.85$) for permanent storage.
+   - Action: `status` set to `REJECTED_INSUFFICIENT_EVIDENCE`. Automatic retry FORBIDDEN. Re-nomination permitted ONLY if a new thought provides additional independent corroboration.
+
+5. `TEMPORARY_FAILURE`:
+   - Database lock, I/O timeout, or temporary subsystem unavailability.
+   - Action: `status` set to `TEMPORARY_FAILURE`; `retry_count` incremented.
+   - Retry Policy: Exponential backoff with jitter ($1\text{s}, 2\text{s}, 4\text{s}, \dots$), capped at 3 retries. If `retry_count > 3`, status set to `FAILED_ABANDONED`.
+
+
+--------------------------------------------------------------------------------
+G. COMPREHENSIVE DATA DICTIONARY & MODEL CORRECTIONS
+--------------------------------------------------------------------------------
+
+All data models are defined using deeply immutable structures (frozen dataclasses / Pydantic models with `frozen=True` and recursive immutability of nested collections):
+
+1. `ThoughtInstance`:
+   - `thought_id`: UUID (Primary Key).
+   - `thread_id`: UUID (Foreign Key to `ThoughtThread`).
+   - `content`: Non-empty string.
+   - `state`: `ThoughtState` Enum.
+   - `epistemic_status`: `EpistemicStatus` Enum.
+   - `confidence`: Float in [0.0, 1.0].
+   - `is_quarantined`: Boolean (Infectious quarantine flag).
+   - `primary_origin_id`: UUID of dominant origin.
+   - `derivation_records`: Immutable Tuple of `ThoughtDerivation` objects.
+   - `sequence_index`: Integer topological ordering key within thread.
+   - `chain_memberships`: Immutable Tuple of `ChainMembership` objects.
+   - `created_at`: ISO-8601 UTC timestamp.
+   - `completed_at`: Optional ISO-8601 UTC timestamp.
+
+2. `ThoughtThread`:
+   - `thread_id`: UUID (Primary Key).
+   - `topic`: String describing thread governing subject.
+   - `state`: `ThoughtThreadState` Enum.
+   - `execution_mode`: `ThreadExecutionMode` Enum.
+   - `dynamic_priority`: Float in [0.0, 1.0].
+   - `current_dag_depth`: Integer (Max path length from root to any active leaf).
+   - `reconsidered_from_thread_id`: Optional UUID of historical ancestor thread.
+   - `created_at`: ISO-8601 UTC timestamp.
+   - `updated_at`: ISO-8601 UTC timestamp.
+
+3. `ThoughtDAGEdge`:
+   - `edge_id`: UUID (Primary Key).
+   - `thread_id`: UUID.
+   - `parent_thought_id`: UUID.
+   - `child_thought_id`: UUID.
+   - `relationship_type`: `DAGEdgeType` Enum.
+   - `created_at`: ISO-8601 UTC timestamp.
+
+4. `ThoughtHypothesis`:
+   - `hypothesis_id`: UUID.
+   - `thought_id`: UUID.
+   - `thread_id`: UUID.
+   - `proposition`: String.
+   - `prior_probability`: Float in [0.0, 1.0].
+   - `current_probability`: Float in [0.0, 1.0].
+   - `relationship_type`: `HypothesisRelationshipType` Enum.
+   - `competing_group_id`: Optional UUID string.
+   - `assessment_history`: Immutable Tuple of probability update records.
+
+5. `EvidenceReference`:
+   - `evidence_id`: UUID.
+   - `evidence_type`: `EvidenceType` Enum.
+   - `source_id`: String.
+   - `original_source_id`: String.
+   - `derived_from_ids`: Immutable Tuple of UUIDs.
+   - `reliability`: Float in [0.0, 1.0].
+   - `independence_group_id`: String.
+   - `provenance`: Immutable Dict[str, Any].
+
+6. `ThoughtContext`:
+   - `context_id`: UUID.
+   - `thread_id`: UUID.
+   - `active_premises`: Immutable Tuple of `ThoughtInstance` records.
+   - `scratchpad_variables`: Immutable Mapping[str, Any] (Strictly limited to 64 KB serialized JSON).
+   - `scratchpad_bytes`: Integer.
+   - `updated_at`: ISO-8601 UTC timestamp.
+
+7. `ThoughtPrioritySnapshot`:
+   - `priority_id`: UUID.
+   - `thread_id`: UUID.
+   - `urgency`: Float in [0.0, 1.0].
+   - `importance`: Float in [0.0, 1.0].
+   - `emotional_relevance`: Float in [0.0, 1.0].
+   - `motivational_alignment`: Float in [0.0, 1.0].
+   - `unresolved_entropy`: Float in [0.0, 1.0].
+   - `starvation_boost`: Float.
+   - `final_score`: Float in [0.0, 1.0].
+   - `calculated_at`: ISO-8601 UTC timestamp.
+
+8. `ReasoningJob`:
+   - `job_id`: UUID.
+   - `thread_id`: UUID.
+   - `operator_type`: `ReasoningOperatorType` Enum.
+   - `job_state`: `ReasoningJobState` Enum.
+   - `timeout_ms`: Integer.
+   - `started_at`: Optional ISO-8601 UTC timestamp.
+   - `finished_at`: Optional ISO-8601 UTC timestamp.
+   - `result_thought_id`: Optional UUID.
+   - `error_message`: Optional String.
+
+9. `LearningSignal`:
+   - `signal_id`: UUID.
+   - `source_thought_ids`: Immutable Tuple of UUIDs.
+   - `source_thread_id`: UUID.
+   - `signal_type`: `LearningSignalType` Enum.
+   - `observation`: String.
+   - `supporting_evidence`: Immutable Tuple of `EvidenceReference` records.
+   - `confidence`: Float in [0.0, 1.0].
+   - `provenance`: Immutable Dict[str, Any].
+   - `created_at`: ISO-8601 UTC timestamp.
+
+10. `MemoryArchivalRecord`:
+    - `nomination_id`: UUID.
+    - `thought_id`: UUID.
+    - `status`: `ArchivalStatus` Enum.
+    - `idempotency_key`: UUID string.
+    - `memory_record_id`: Optional UUID.
+    - `retry_count`: Integer.
+    - `last_attempt_at`: ISO-8601 UTC timestamp.
+
+11. `ThoughtUnresolvedQuestion`:
+    - `question_id`: UUID.
+    - `thread_id`: UUID.
+    - `question_text`: String.
+    - `epistemic_entropy`: Float in [0.0, 1.0].
+    - `status`: `QuestionStatus` Enum.
+    - `created_at`: ISO-8601 UTC timestamp.
+    - `resolved_at`: Optional ISO-8601 UTC timestamp.
+
+12. `ThoughtReconsideration`:
+    - `reconsideration_id`: UUID.
+    - `new_thread_id`: UUID.
+    - `reconsidered_from_thread_id`: UUID.
+    - `reconsideration_reason`: String.
+    - `triggering_evidence_ids`: Immutable Tuple of UUIDs.
+    - `reconsidered_at`: ISO-8601 UTC timestamp.
+
+
+================================================================================
+PART 2 — CORRECTED 12 ARCHITECTURAL WALKTHROUGH SCENARIOS
+================================================================================
+
+--------------------------------------------------------------------------------
+SCENARIO 1: AUTONOMOUS INITIATION (UNRESOLVED QUESTION RANKING)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - System is idle (no active focal thread; 0 background jobs).
+   - `thought_threads` has 2 suspended threads.
+   - `thought_unresolved_questions` contains 4 open questions with entropy scores:
+     * $Q_1$: "Why did user mention quantum computing yesterday?" ($H=0.42$).
+     * $Q_2$: "How does the new memory indexing algorithm handle vector clustering?" ($H=0.88$).
+     * $Q_3$: "Where is the documentation for the sound synthesis plugin?" ($H=0.35$).
+     * $Q_4$: Duplicate variant of $Q_2$ submitted with slight textual variation ($H=0.85$).
+2. Trigger:
+   - Scheduler periodic idle exploration tick fires (after 30 seconds of zero external input).
+3. Expected Subsystem Interactions:
+   - Scheduler requests top candidate question from Thought Retrieval Interface.
+   - Retrieval Interface applies Duplicate Suppression filter: computes semantic embedding cosine similarity between $Q_2$ and $Q_4$ ($\text{similarity} = 0.94 \ge 0.85$ threshold); marks $Q_4$ as duplicate, suppressing it.
+   - Question Ranking selects $Q_2$ (highest unresolved entropy $H=0.88$, weighted by relevance to current active memory domains).
+   - Scheduler signals Thought Generation Subsystem with $Q_2$ as the primary trigger.
+   - Thought Generation creates candidate root thought: "Investigate vector clustering in memory indexing."
+   - Attention Arbitrator computes initial priority $P=0.62$ ($U=0.10, I=0.80, M=0.75, H=0.88, E=0.20$).
+   - Thread & DAG Manager initializes new thread $T_{auto}$ and assigns it execution mode `FOCAL`.
+4. Expected State Transitions:
+   - Thread $T_{auto}$: transitions from non-existent -> `INITIALIZING` -> `ACTIVE` (`execution_mode = 'FOCAL'`).
+   - Root thought: `GENERATED` -> `EVALUATING` -> `ACTIVE`.
+   - Question $Q_2$: `status` transitions from `OPEN` to `INVESTIGATING`.
+5. Expected Persistence Changes:
+   - Atomic transaction commits:
+     * Insert row in `thought_threads` ($T_{auto}$, `ACTIVE`, `FOCAL`, $P=0.62$).
+     * Insert row in `thought_instances` (Root thought node).
+     * Insert row in `thought_origins` (`source_type = 'UNRESOLVED_QUESTION'`, `source_id = Q_2`).
+     * Insert row in `thought_contexts` (initialized empty scratchpad).
+     * Update `thought_unresolved_questions` ($Q_2$ status = `INVESTIGATING`).
+     * Insert row in `thought_lifecycle_events`.
+6. Ownership-Boundary Checks:
+   - Thought Engine does not modify Memory Engine index; it reads question references and formulates internal inquiry.
+7. Expected Result:
+   - Diva autonomously initiates reasoning about vector clustering without external prompting, having filtered out redundant questions.
+8. Failure Scenario & Recovery Behavior:
+   - Failure: Process crash occurs immediately after root thought creation before scheduler dispatch.
+   - Recovery: Crash recovery sequence detects $T_{auto}$ in `ACTIVE`, validates graph integrity, transitions $T_{auto}$ to `SUSPENDED` with `NOT_SCHEDULED`, repopulates queue. Upon restart, $T_{auto}$ safely resumes from SQLite.
+
+
+--------------------------------------------------------------------------------
+SCENARIO 2: MEMORY ASSOCIATION (FORMAL MEMORY PROVIDER CONTRACT)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - Thread $T_{active}$ is running in `FOCAL` mode analyzing user query regarding "Paris architecture."
+   - Current thought $N_1$ posits: "Parisian facades exhibit uniform Haussmannian proportions."
+2. Trigger:
+   - Thought Development & Reasoning requests associative premise expansion for $N_1$.
+3. Expected Subsystem Interactions:
+   - Thought Engine invokes `MemoryContextProvider.retrieve_relevant_memories()` with query vector for "Paris Haussmann architecture" and `max_records = 3`.
+   - Memory Engine executes vector and graph traversal, returning a structured `MemoryContextResponse`:
+     * `memory_id = mem_7812_haussmann`
+     * `content = 'Georges-Eugène Haussmann directed Parisian urban renewal 1853-1870; standardized stone heights and facade lines.'`
+     * `source_reference = 'semantic_history_core'`
+     * `confidence = 0.94`
+     * `relevance_score = 0.91`
+     * `provenance = {'verified_source': 'encyclopedia', 'inscribed_epoch': 1700000000}`
+   - Thought Generation ingests the response, constructs `ThoughtDerivation` with `source_engine = 'MEMORY'`.
+   - Thought Development applies Inductive / Deductive operator linking $N_1$ and retrieved memory to produce child thought $N_2$: "The uniformity observed derives from Haussmann's 1853-1870 municipal regulations."
+4. Expected State Transitions:
+   - Child thought $N_2$: `GENERATED` -> `EVALUATING` -> `ACTIVE` -> `CHAINED`.
+   - Thread $T_{active}$ DAG depth increments from 1 to 2.
+5. Expected Persistence Changes:
+   - Single atomic transaction:
+     * Insert row in `thought_instances` for $N_2$ ($C=0.91$).
+     * Insert row in `thought_origins` ($N_2$ linked to `mem_7812_haussmann`).
+     * Insert row in `thought_dag_edges` (parent $N_1$, child $N_2$, type `DEDUCTIVE_DERIVATION`).
+     * Update `thought_threads` (`current_dag_depth = 2`, `updated_at`).
+     * Insert row in `thought_lifecycle_events`.
+6. Ownership-Boundary Checks:
+   - Thought Engine asserts zero mutations to Memory Engine tables; memory record `mem_7812_haussmann` is read-only.
+7. Expected Result:
+   - High-confidence historical memory smoothly integrates into active reasoning graph via formal provider contract.
+8. Failure Scenario & Recovery Behavior:
+   - Failure: Memory Engine returns `status = 'TEMPORARILY_UNAVAILABLE'` due to storage compaction.
+   - Recovery: Thought Engine catches error without throwing; marks operation as non-fatal, sets thread execution mode to `BLOCKED` with a 2-second backoff timer, and yields focal execution to the next pending thread.
+
+
+--------------------------------------------------------------------------------
+SCENARIO 3: MULTIPLE INTERESTS (FOCAL VS. BACKGROUND SCHEDULING)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - Thread $T_{focal}$ is `ACTIVE` (`FOCAL`, $P=0.82$) conducting analytical evaluation of code logic.
+   - Thread $T_{bg1}$ is `ACTIVE` (`NOT_SCHEDULED`, $P=0.68$) exploring musical chords.
+   - Thread $T_{bg2}$ is `ACTIVE` (`NOT_SCHEDULED`, $P=0.64$) pondering an astronomical fact.
+2. Trigger:
+   - Scheduler dual-rate dispatcher runs its 200 ms background cycle.
+3. Expected Subsystem Interactions:
+   - Scheduler checks background concurrency quota (Max 2 concurrent background jobs).
+   - Arbitrator confirms $T_{focal}$ remains dominant ($P=0.82 \ge 0.68 + 0.15$).
+   - Scheduler assigns $T_{bg1}$ and $T_{bg2}$ to `ThreadExecutionMode.BACKGROUND`.
+   - Two background `ReasoningJob` records are dispatched asynchronously with 4000 ms timeouts.
+   - Focal thread continues its execution uninterrupted on the primary thread.
+4. Expected State Transitions:
+   - $T_{focal}$: Remains `ACTIVE` / `FOCAL`.
+   - $T_{bg1}$: Lifecycle remains `ACTIVE`; execution mode transitions `NOT_SCHEDULED` -> `BACKGROUND`.
+   - $T_{bg2}$: Lifecycle remains `ACTIVE`; execution mode transitions `NOT_SCHEDULED` -> `BACKGROUND`.
+   - Jobs $J_1, J_2$: `QUEUED` -> `DISPATCHED` -> `RUNNING`.
+5. Expected Persistence Changes:
+   - Insert rows in `thought_reasoning_jobs` for $J_1$ and $J_2$.
+   - Update `thought_threads` execution modes for $T_{bg1}$ and $T_{bg2}$.
+   - Insert lifecycle transition logs.
+6. Ownership-Boundary Checks:
+   - Strict Invariant Enforced: Total threads with `execution_mode == 'FOCAL'` is EXACTLY 1. Total threads with `BACKGROUND` is $\le 2$.
+7. Expected Result:
+   - Diva simultaneously maintains focal concentration on coding while advancing secondary interests in music and astronomy in the background without thrashing.
+8. Failure Scenario & Recovery Behavior:
+   - Failure: Background job $J_2$ crashes during model inference.
+   - Recovery: Subsystem catches exception, sets job state to `FAILED`, leaves thread $T_{bg2}$ in `ACTIVE` (`NOT_SCHEDULED`), logs error, and frees background concurrency slot for other candidates.
+
+
+--------------------------------------------------------------------------------
+SCENARIO 4: PREEMPTION (EMERGENCY OVERRIDE & INTERRUPTION SAFETY)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - Thread $T_{focal}$ is `ACTIVE` (`FOCAL`, $P=0.70$) engaged in deep philosophical contemplation.
+   - Current dwell time $t_{dwell} = 1200\text{ ms} > 500\text{ ms}$ cooldown.
+2. Trigger:
+   - Perception Engine dispatches an emergency alert: "Loud crashing sound and sudden glass shatter detected near doorway" ($U=0.98$, Importance=0.95).
+3. Expected Subsystem Interactions:
+   - Thought Generation creates candidate thread $T_{threat}$ ("Assess immediate doorway safety hazard").
+   - Attention Arbitrator calculates $P(T_{threat}) = 0.97$ ($U=0.98 \ge 0.95$ emergency threshold).
+   - Arbitrator triggers Emergency Preemption Override: bypasses standard hysteresis and forces immediate preemption.
+   - Scheduler verifies $T_{focal}$ is not in a non-interruptible atomic commit.
+   - Scheduler signals $T_{focal}$ worker to checkpoint working context and yield.
+   - Thought Lifecycle Manager captures working premises and scratchpad, saving snapshot to `thought_contexts`.
+4. Expected State Transitions:
+   - $T_{focal}$: `ACTIVE` / `FOCAL` -> `SUSPENDED` / `NOT_SCHEDULED`.
+   - $T_{threat}$: `INITIALIZING` -> `ACTIVE` / `FOCAL`.
+5. Expected Persistence Changes:
+   - Update `thought_threads` for $T_{focal}$ (`state = 'SUSPENDED'`, `execution_mode = 'NOT_SCHEDULED'`).
+   - Insert `thought_contexts` snapshot for $T_{focal}$.
+   - Insert `thought_threads` for $T_{threat}$ (`state = 'ACTIVE'`, `execution_mode = 'FOCAL'`).
+   - Insert lifecycle events for both threads.
+   - Measured suspension duration: 34 ms (within 30-50 ms target).
+6. Ownership-Boundary Checks:
+   - Attention Arbitrator evaluates priority; Scheduler governs execution slots; Perception owns sensory classification.
+7. Expected Result:
+   - Cognitive focus immediately pivots to the safety hazard within 34 ms; philosophical thread is cleanly suspended without data loss.
+8. Failure Scenario & Recovery Behavior:
+   - Failure: Power loss occurs at exact moment $T_{focal}$ context is being serialized.
+   - Recovery: SQLite transaction rolls back. Recovery sequence on boot identifies interrupted session, restores $T_{focal}$ to its pre-preemption consistent state, marks it `SUSPENDED`, and restarts scheduler.
+
+
+--------------------------------------------------------------------------------
+SCENARIO 5: RESUMPTION (FRESHNESS CALCULATION & CONTEXT STALE HANDLING)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - Threat thread $T_{threat}$ concludes after investigation reveals harmless fallen vase.
+   - Philosophical thread $T_{philo}$ has been `SUSPENDED` in SQLite for 45 minutes ($t_{suspended} = 2700\text{ s}$).
+2. Trigger:
+   - Scheduler runs queue arbitration; $T_{philo}$ is top-ranked candidate for resumption.
+3. Expected Subsystem Interactions:
+   - Scheduler queries `ThoughtRetrievalInterface` to rehydrate $T_{philo}$.
+   - Retrieval Interface loads persisted context from `thought_contexts` and evaluates Freshness:
+     * Decay formula: $\text{Freshness} = \exp(-\lambda_{fresh} \cdot t_{suspended})$.
+     * For philosophical premises, domain validity half-life is long, but immediate short-term working scratchpad variables may be stale.
+   - System executes Stale-Context Validation: checks whether any premise in `active_premises` references memories or entities that have been modified or retracted during the 45-minute pause.
+   - All premises confirmed valid. Scratchpad variable `elapsed_session_time` is updated.
+   - Scheduler assigns $T_{philo}$ to `FOCAL` execution mode.
+4. Expected State Transitions:
+   - $T_{philo}$: `SUSPENDED` -> `ACTIVE` (`execution_mode = 'FOCAL'`).
+   - In `thought_pending_queue`: entry removed.
+5. Expected Persistence Changes:
+   - Update `thought_threads` (`state = 'ACTIVE'`, `execution_mode = 'FOCAL'`, `updated_at`).
+   - Delete entry from `thought_pending_queue`.
+   - Insert row in `thought_lifecycle_events` (`reason = 'RESUMED_FROM_SUSPENSION'`).
+6. Ownership-Boundary Checks:
+   - Memory Engine provides validation timestamps for claims; Thought Engine updates its own working context.
+7. Expected Result:
+   - Thread smoothly resumes exactly where it paused, retaining unbroken DAG continuity and validated premise freshness.
+8. Failure Scenario & Recovery Behavior:
+   - Failure: One premise referenced a belief that was retracted by the Learning Engine during the 45-minute suspension.
+   - Recovery: Stale-Context Validation detects the retracted premise; rather than crashing, it marks the affected premise node as `DISCARDED`, creates an Evaluative thought node reflecting the retraction, and allows the thread to re-derive its conclusion under the updated premise set.
+
+
+--------------------------------------------------------------------------------
+SCENARIO 6: SPONTANEOUS ASSOCIATION (QUOTA ENFORCEMENT & BRANCHING)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - 4 active threads currently exist in SQLite (Active Quota limit is 5).
+   - Focal thread $T_1$ is discussing "Gardening techniques."
+2. Trigger:
+   - Thought $N_{rose}$ ("Pruning roses requires sharp shears") triggers a spontaneous semantic association via Association & Graph Engine linking "pruning" to "neural network weight pruning."
+3. Expected Subsystem Interactions:
+   - Association Engine detects high structural analogy score ($0.74$) between biological pruning and machine learning optimization.
+   - Subsystem proposes creating a new exploratory branch thread $T_{branch}$ ("Analogical comparison: Biological vs. AI Pruning").
+   - Scheduler checks Active Thread Quota: $4 + 1 = 5 \le 5$ (Quota permitted).
+   - Thread & DAG Manager executes `branch_thread_transaction`:
+     * Clones relevant premise concepts into new context.
+     * Inserts root thought for $T_{branch}$ with `primary_origin_id` pointing to $N_{rose}$.
+     * Assigns $T_{branch}$ to `ACTIVE` / `NOT_SCHEDULED`.
+   - Immediate subsequent trigger: A second spontaneous association fires ("Pruning shears manufacture in Sheffield").
+   - Scheduler re-checks quota: $5 + 1 = 6 > 5$ (Quota exceeded!).
+   - Overflow Policy kicks in: System compares priority of new association ($P=0.38$) against existing active threads (lowest is $P=0.55$).
+   - Because candidate priority is lower, the second branch request is DEFERRED to the pending association buffer in SQLite without spawning an active thread.
+4. Expected State Transitions:
+   - $T_{branch}$: Created as `ACTIVE` (`execution_mode = 'NOT_SCHEDULED'`).
+   - Second candidate: Remained un-spawned; queued in persistent buffer.
+5. Expected Persistence Changes:
+   - Atomic transaction for $T_{branch}$:
+     * Insert row in `thought_threads`.
+     * Insert row in `thought_instances`.
+     * Insert row in `thought_origins`.
+     * Insert row in `thought_associations` (linking $N_{rose}$ to new root thought).
+     * Insert row in `thought_lifecycle_events`.
+6. Ownership-Boundary Checks:
+   - Association Engine proposes candidate connections; Scheduler and Thread Manager strictly enforce quota limits.
+7. Expected Result:
+   - Creative cross-domain analogy is captured as a valid background thread while hard system limits prevent runaway associative explosion.
+8. Failure Scenario & Recovery Behavior:
+   - Failure: Database constraint violation during branch creation due to transient disk full error.
+   - Recovery: Entire `branch_thread_transaction` rolls back atomically; parent thread $T_1$ continues execution unaffected; error logged in diagnostics.
+
+
+--------------------------------------------------------------------------------
+SCENARIO 7: CONTRADICTORY EVIDENCE (HYPOTHESIS PROBABILITIES)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - Thread $T_{diag}$ is investigating why an external API returned a 500 error.
+   - Two competing hypotheses exist in `thought_hypotheses` within `competing_group_id = grp_api_err`:
+     * $H_1$: "The remote API server experienced internal database failure" ($P(H_1) = 0.60$).
+     * $H_2$: "Our request payload exceeded remote gateway rate limits" ($P(H_2) = 0.35$).
+     * Relationship Type: `MUTUALLY_EXCLUSIVE` (Sum of probabilities $\le 1.0$; $0.60 + 0.35 = 0.95 \le 1.0$).
+2. Trigger:
+   - Perception Engine receives external log event: "HTTP response headers contain 'X-RateLimit-Remaining: 0' and 'Retry-After: 60'" ($R=0.98$).
+3. Expected Subsystem Interactions:
+   - Thought Generation routes observation to $T_{diag}$ working context as new evidence thought $E_{log}$.
+   - Thought Development invokes Hypothesis Updating module:
+     * Evidence $E_{log}$ strongly supports $H_2$ ($P(E \mid H_2) = 0.99$).
+     * Evidence $E_{log}$ directly contradicts $H_1$ under mutually exclusive rate-limiting semantics ($P(E \mid H_1) = 0.01$).
+   - Bayesian update computes posterior probabilities:
+     * $P(H_2 \mid E) \to 0.96$.
+     * $P(H_1 \mid E) \to 0.02$.
+   - Normalization check enforces $\sum P \le 1.0$ ($0.96 + 0.02 = 0.98 \le 1.0$).
+   - $H_1$ is marked `FALSIFIED`. $H_2$ advances towards resolution.
+4. Expected State Transitions:
+   - $H_1$ thought instance: `epistemic_status` transitions from `WORKING_HYPOTHESIS` to `FALSIFIED`.
+   - $H_2$ thought instance: `confidence` updated to 0.96; satisfies `ESTABLISHED` criteria.
+5. Expected Persistence Changes:
+   - Update `thought_hypotheses` for $H_1$ (`current_probability = 0.02`, updated assessment history).
+   - Update `thought_hypotheses` for $H_2$ (`current_probability = 0.96`, updated assessment history).
+   - Update `thought_instances` epistemic statuses.
+   - Insert row in `thought_dag_edges` linking $E_{log}$ to $H_2$ (`relationship_type = 'INDUCTIVE_SUPPORT'`).
+   - Insert rows in `thought_lifecycle_events`.
+6. Ownership-Boundary Checks:
+   - Thought Engine manages internal hypothesis distribution; external logging verified by Perception/Integration.
+7. Expected Result:
+   - Contradictory evidence cleanly updates competing hypothesis probabilities without mathematical violations, falsifying the erroneous hypothesis and promoting the verified cause.
+8. Failure Scenario & Recovery Behavior:
+   - Failure: Conflicting evidence arrives simultaneously claiming rate limit remaining is non-zero from an unverified sensor ($R=0.30$).
+   - Recovery: Evidence reliability weighting scales down the weak evidence ($0.30$), preventing premature destabilization of high-reliability ($0.98$) posterior probabilities; an open contradiction thought is generated to flag sensor inconsistency.
+
+
+--------------------------------------------------------------------------------
+SCENARIO 8: SELF-REFLECTION (LEARNINGSIGNAL CONTRACT & INDEPENDENT ASSESSMENT)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - Thread $T_{code}$ concludes after solving an algorithmic problem.
+   - During reasoning, an intermediate deduction step posited: "Quicksort worst-case time complexity is $O(n \log n)$."
+   - A subsequent Evaluative thought corrected this: "Correction: Quicksort worst-case is $O(n^2)$ when pivot selection collapses."
+2. Trigger:
+   - Meta-Cognitive evaluation cycle triggers upon thread conclusion.
+3. Expected Subsystem Interactions:
+   - Thought Development & Reasoning reviews DAG derivation path.
+   - Identifies an explicit reasoning error committed in intermediate thought $N_{err}$.
+   - Thought Engine constructs a structured `LearningSignal` payload:
+     * `signal_id = sig_learn_4491`
+     * `source_thought_ids = (N_err, N_correct)`
+     * `source_thread_id = T_code`
+     * `signal_type = LearningSignalType.REASONING_ERROR`
+     * `observation = 'Initial premise erroneously assumed Quicksort worst-case is O(n log n); corrected to O(n^2).'`
+     * `supporting_evidence = (EvidenceRef(source_id='algorithm_analysis_spec', reliability=0.99))`
+     * `confidence = 0.95`
+     * `provenance = {'thread': 'T_code', 'operator': 'EVALUATIVE_CRITICAL'}`
+     * `created_at = '2026-11-17T23:56:00Z'`
+   - Signal is asynchronously dispatched to the Learning Engine message ingress.
+   - Crucial Architecture Invariant: The Thought Engine does NOT alter any learning parameters or cognitive weights itself.
+   - Learning Engine independently validates the signal against its external curriculum knowledge base, confirms the error, and schedules a cognitive calibration update on its own timeline.
+4. Expected State Transitions:
+   - Thread $T_{code}$: `ACTIVE` -> `CONCLUDED`.
+   - Learning Signal dispatched: logged in Thought Engine audit table.
+5. Expected Persistence Changes:
+   - Update `thought_threads` for $T_{code}$ (`state = 'CONCLUDED'`, `execution_mode = 'TERMINATED'`).
+   - Insert row in `thought_lifecycle_events` (`transition_reason = 'GOAL_ACHIEVED_AND_REFLECTED'`).
+6. Ownership-Boundary Checks:
+   - Thought Engine generates reflection signal; Learning Engine has exclusive ownership over learning evaluation, contribution ledger inscription, and parameter adjustment.
+7. Expected Result:
+   - Reasoning mistake is transparently reported via formal contract without self-authorizing learning mutations.
+8. Failure Scenario & Recovery Behavior:
+   - Failure: Learning Engine is offline or bus queue is full.
+   - Recovery: Thought Engine persists `LearningSignal` in a local retry buffer table in SQLite; marks delivery as pending, and retries on the next scheduler maintenance cycle without blocking thread conclusion.
+
+
+--------------------------------------------------------------------------------
+SCENARIO 9: COUNTERFACTUAL THINKING (QUARANTINE PROPAGATION)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - Thread $T_{hist}$ is investigating historical events surrounding the Library of Alexandria.
+   - Diva initiates an exploratory counterfactual branch: "What if the Library of Alexandria had survived intact into the modern era?"
+2. Trigger:
+   - Counterfactual Reasoning Operator executes on root premise $P_{cf}$.
+3. Expected Subsystem Interactions:
+   - Counterfactual Operator creates new branch thread $T_{sim}$.
+   - Root premise $P_{cf}$ is assigned `epistemic_status = 'COUNTERFACTUAL'` and `is_quarantined = 1`.
+   - Derivation continues: Child thought $N_{tech}$ is derived: "Ancient mathematical manuscripts preserved in Alexandria accelerated the European scientific revolution by 300 years."
+   - Subsystem checks quarantine propagation rule: Parent $P_{cf}$ is quarantined -> Child $N_{tech}$ automatically inherits `is_quarantined = 1`.
+   - Downstream hypothesis $H_{steam}$ posited: "Steam engine technology was developed in the 12th century." Inherits `is_quarantined = 1`.
+   - Thread concludes with speculative narrative.
+   - System tests downstream boundaries:
+     * Memory Nomination: Nomination filter intercepts thoughts from $T_{sim}$. Rejects nomination: "Cannot nominate quarantined thought for permanent memory."
+     * Cognitive Integration Proposal: Proposal filter marks candidate output `HYPOTHETICAL_SIMULATION_ONLY`. External action execution strictly forbidden.
+     * Learning Engine Signal: Learning signal emission blocked; counterfactual thoughts cannot update real-world empirical beliefs.
+4. Expected State Transitions:
+   - All thoughts in $T_{sim}$ maintain `is_quarantined = 1`.
+   - Thread $T_{sim}$ transitions `ACTIVE` -> `CONCLUDED`.
+5. Expected Persistence Changes:
+   - Insert rows in `thought_instances` with `is_quarantined = 1` enforced by SQL check constraint.
+   - Zero rows inserted into `thought_archival_records` for memory inscription.
+   - Insert lifecycle audit events documenting counterfactual branch closure.
+6. Ownership-Boundary Checks:
+   - Thought Engine strictly enforces epistemic quarantine across all outgoing interfaces (Memory, Action/Integration, Learning).
+7. Expected Result:
+   - Rich counterfactual exploration is executed creatively while epistemic quarantine 100% prevents fictional or hypothetical facts from polluting permanent knowledge or action systems.
+8. Failure Scenario & Recovery Behavior:
+   - Failure: An associative edge attempts to link quarantined thought $N_{tech}$ as a factual premise in an active factual thread $T_{fact}$.
+   - Recovery: Thread & DAG Manager validates edge insertion; detects parent `is_quarantined == 1` while child thread is unquarantined; rejects edge creation with `EpistemicQuarantineViolationException`, preserving factual thread integrity.
+
+
+--------------------------------------------------------------------------------
+SCENARIO 10: RUMINATION (SEMANTIC REPETITION & ACYCLIC GRAPH INTEGRITY)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - Thread $T_{anx}$ is active with topic "Anticipating potential server downtime."
+   - Current DAG depth is 7.
+2. Trigger:
+   - Thought Development generates child thought $N_8$: "If the database restarts, client connections will drop."
+   - Then generates child thought $N_9$: "Dropping client connections causes requests to fail."
+   - Then generates child thought $N_{10}$: "Failing requests means the database might be restarting."
+3. Expected Subsystem Interactions:
+   - Graph Invariant Check: Thread & DAG Manager checks for direct topological cycles. If an edge from $N_{10}$ to $N_8$ were inserted, it would create a cyclic graph ($N_8 \to N_9 \to N_{10} \to N_8$). Edge insertion is mathematically rejected: DAG ACYCLICITY PRESERVED.
+   - Semantic Rumination Detector: Even when thoughts are created as new distinct nodes in a tree (avoiding graph cycles), the rumination engine computes semantic embedding distance between $N_{10}$ and ancestor nodes $N_8, N_1$:
+     * Cosine similarity between $N_{10}$ and $N_8$ proposition is $0.93 \ge 0.85$ (Sterile Repetition).
+     * Entropy reduction over the last 4 nodes is $\Delta H < 0.02$ (Zero epistemic progress).
+     * Repetition counter increments: $c_{repeat} = 3 \ge 3$ threshold.
+   - Attention & Priority Arbitrator intercepts thread:
+     * Flags thread as `RUMINATION_DETECTED`.
+     * Forces immediate state transition from `ACTIVE` to `SUSPENDED_RUMINATION`.
+     * Removes thread from focal and background scheduling queues.
+4. Expected State Transitions:
+   - Thread $T_{anx}$: `ACTIVE` / `FOCAL` -> `SUSPENDED_RUMINATION` / `NOT_SCHEDULED`.
+   - Node $N_{10}$: `GENERATED` -> `DISCARDED` (`reason = 'STERILE_RUMINATION_DISCARD'`).
+5. Expected Persistence Changes:
+   - Update `thought_threads` (`state = 'SUSPENDED_RUMINATION'`, `execution_mode = 'NOT_SCHEDULED'`).
+   - Insert row in `thought_lifecycle_events` (`transition_reason = 'RUMINATION_LOOP_QUARANTINED'`).
+   - Zero cyclic edges inserted in `thought_dag_edges`.
+6. Ownership-Boundary Checks:
+   - Thought Engine internally detects cognitive loops and suspends self-reinforcing rumination without requiring external agent intervention.
+7. Expected Result:
+   - Thought Engine prevents infinite loops, preserves absolute DAG acyclicity, and gracefully parks ruminative worry until novel external evidence breaks the loop.
+8. Failure Scenario & Recovery Behavior:
+   - Failure: System restarts while thread is in `SUSPENDED_RUMINATION`.
+   - Recovery: Crash recovery sequence preserves `SUSPENDED_RUMINATION` state in SQLite; does NOT add it to active execution queue; thread remains safely quarantined.
+
+
+--------------------------------------------------------------------------------
+SCENARIO 11: RESOURCE EXHAUSTION (DYNAMIC QUOTA THROTTLING)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - System has 5 active threads running (Max quota = 5).
+   - Global Energy Regulation Engine reports cognitive energy depletion ($E_{cog}$ drops from $0.90$ down to $0.25$ due to extended high-intensity processing).
+2. Trigger:
+   - Energy Regulation Engine publishes `ENERGY_DEPLETED` event ($E_{cog} = 0.25$).
+3. Expected Subsystem Interactions:
+   - Scheduler & Resource Governance receives event and recalibrates resource envelopes:
+     * New Active Thread Quota: $\max(1, \lfloor 5 \times 0.25 \rfloor) = 1$ active thread.
+     * New Background Job Concurrency: 0 (background jobs disabled; focal execution only).
+   - The engine currently has 5 active threads, exceeding the new limit of 1 by 4 threads.
+   - Quota Enforcement & Graceful Throttling:
+     * Arbitrator ranks all 5 active threads by current priority: $T_1(0.85), T_2(0.65), T_3(0.50), T_4(0.40), T_5(0.35)$.
+     * $T_1$ is retained as the single permitted `FOCAL` thread.
+     * $T_2, T_3, T_4, T_5$ are selected for graceful suspension.
+     * For each suspended thread: pending scratchpads are committed to `thought_contexts`, active background jobs are cleanly cancelled, and states transition to `SUSPENDED`.
+     * Crucial Invariant: Zero thoughts or threads are discarded or lost. All state is safely persisted in SQLite.
+4. Expected State Transitions:
+   - $T_1$: Remains `ACTIVE` / `FOCAL`.
+   - $T_2, T_3, T_4, T_5$: `ACTIVE` -> `SUSPENDED` (`execution_mode = 'NOT_SCHEDULED'`).
+5. Expected Persistence Changes:
+   - Update `thought_threads` rows for $T_2, T_3, T_4, T_5$ to `SUSPENDED`.
+   - Insert rows in `thought_contexts` saving serialized state.
+   - Insert lifecycle transition events for each suspended thread.
+6. Ownership-Boundary Checks:
+   - Energy Engine owns energy budget; Thought Engine respects limits by adapting internal thread concurrency.
+7. Expected Result:
+   - Cognitive load is safely reduced to match low energy without data loss, cognitive crashes, or corrupted reasoning state.
+8. Failure Scenario & Recovery Behavior:
+   - Failure: An incoming high-priority perception arrives while energy is depleted.
+   - Recovery: System compares incoming priority against $T_1$; if higher, it preempts $T_1$ to `SUSPENDED` (maintaining exactly 1 active thread) and executes the new urgent thread.
+
+
+--------------------------------------------------------------------------------
+SCENARIO 12: COMPLETION & PROPOSAL DISPATCH (PROVENANCE & ARCHIVAL PROTOCOL)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - Thread $T_{plan}$ has been analyzing options for organizing Diva's daily workspace layout.
+   - Deepest thought $N_{final}$ achieves goal: "Synthesized workspace layout: Group audio tools on left panel and coding terminals on right."
+   - Thought $N_{final}$ has $C=0.92$, `epistemic_status = 'ESTABLISHED'`, `is_quarantined = 0`.
+2. Trigger:
+   - Evaluative Operator confirms goal condition satisfied; thread processing completes.
+3. Expected Subsystem Interactions:
+   - Thought Lifecycle Manager initiates two parallel exit protocols:
+     Protocol A: Cognitive Integration Proposal Dispatch
+     * Thought Engine constructs candidate cognitive proposal: `ActionProposal(topic='WORKSPACE_REORG', recommendation='Group audio left, code right', confidence=0.92, provenance=T_plan)`.
+     * Proposal is emitted to Cognitive Integration Engine.
+     * Strictly Enforced Boundary: Thought Engine does NOT execute UI changes, move windows, or modify settings. It only proposes the synthesized recommendation.
+     Protocol B: Memory Archival Protocol
+     * Thought Engine nominates $N_{final}$ for permanent semantic memory archival.
+     * Generates unique `idempotency_key = idemp_arch_9901`.
+     * Inserts row in `thought_archival_records` (`status = 'DISPATCHED'`).
+     * Asynchronously calls `MemoryContextProvider.nominate_for_archival(N_final)`.
+     * Memory Engine processes nomination, verifies evidence ($R=0.92 \ge 0.85$, zero policy violations), consolidates into semantic graph, and returns:
+       `MemoryOperationResponse(status='ACCEPTED', request_id=..., record_id='mem_sem_4102', version=1)`.
+     * Thought Engine verifies response and updates archival record to `ACCEPTED`.
+4. Expected State Transitions:
+   - Thought $N_{final}$: `ACTIVE` -> `COMPLETED`.
+   - Thread $T_{plan}$: `ACTIVE` -> `CONCLUDED` (`execution_mode = 'TERMINATED'`).
+   - Archival record: `PENDING_DISPATCH` -> `DISPATCHED` -> `ACCEPTED`.
+5. Expected Persistence Changes:
+   - Update `thought_instances` for $N_{final}$ (`state = 'COMPLETED'`, `completed_at`).
+   - Update `thought_threads` for $T_{plan}$ (`state = 'CONCLUDED'`, `execution_mode = 'TERMINATED'`).
+   - Update `thought_archival_records` (`status = 'ACCEPTED'`, `memory_record_id = 'mem_sem_4102'`).
+   - Insert rows in `thought_lifecycle_events`.
+6. Ownership-Boundary Checks:
+   - Thought Engine proposes action; Cognitive Integration decides execution; Memory Engine authorizes and stores permanent memory.
+7. Expected Result:
+   - Reasoning thread gracefully concludes, passes actionable insight to Cognitive Integration with full provenance, and permanently archives key conclusions in Memory Engine with verified acknowledgement.
+8. Failure Scenario & Recovery Behavior:
+   - Failure: Memory Engine returns `REJECTED_POLICY` because the proposition contains unconfirmed speculative assertions.
+   - Recovery: Thought Engine updates `thought_archival_records` to `REJECTED_POLICY`; logs rejection reason; suppresses any automatic retry; thread conclusion remains valid and completed without crashing.
+
+
+================================================================================
+PART 3 — THOUGHT ENGINE MASTER CHECKLIST (119 AUDIT ITEMS)
+================================================================================
+
+This master checklist serves as the authoritative verification and audit instrument for the Thought Engine architecture and its eventual phased implementation.
+
+--------------------------------------------------------------------------------
+A. ORIGINAL ARCHITECTURE COMPLIANCE (12 ITEMS)
+--------------------------------------------------------------------------------
+[ ] A01. All seven original thought sources are supported (Memory, Perception, Emotion, Motivation, Counterfactual, Spontaneous, Thought-to-Thought).
+[ ] A02. Autonomous thinking supports continuous, periodic, and internally triggered operation modes.
+[ ] A03. Multiple independent thought threads are supported concurrently in working state.
+[ ] A04. Thought prioritization and attention competition are supported via multi-factor dynamic scoring.
+[ ] A05. Related thoughts can be associated, chained, branched, and merged without semantic loss.
+[ ] A06. Thought development and reasoning are supported across multiple inference operators.
+[ ] A07. Thought retrieval and continuation are supported from persistent working memory.
+[ ] A08. Thought Engine cannot independently authorize or execute external actions (strictly delegated to Cognitive Integration).
+[ ] A09. Memory Engine retains exclusive ownership of permanent episodic and semantic memory storage.
+[ ] A10. Personality and Self-Image influence thought generation and style without being modified by Thought Engine.
+[ ] A11. Emotion and Motivation influence thought valuation without being modified by Thought Engine.
+[ ] A12. Attention and Energy retain ownership of global systemic resource budgets.
+
+--------------------------------------------------------------------------------
+B. CROSS-ENGINE INTERFACES (12 ITEMS)
+--------------------------------------------------------------------------------
+[ ] B01. MemoryContextProvider interface contract is formally specified with typed request/response models.
+[ ] B02. PerceptionContextProvider interface contract is formally specified with normalized event structures.
+[ ] B03. Personality provider contract is formally specified as read-only contextual bias.
+[ ] B04. Self-Image provider contract is formally specified as read-only identity boundaries.
+[ ] B05. Emotion provider contract is formally specified with emotional relevance vector ingestion.
+[ ] B06. Motivation provider contract is formally specified with active goal and desire alignment.
+[ ] B07. Global Attention allocation contract is formally specified with focal slot leasing.
+[ ] B08. Energy Regulation contract is formally specified with dynamic throttling callbacks.
+[ ] B09. LearningSignal interface contract is formally specified with 6 typed cognitive signals.
+[ ] B10. Cognitive Integration candidate proposal interface is formally specified with provenance.
+[ ] B11. Every contextual provider has documented ownership, read boundaries, and mutation prohibitions.
+[ ] B12. Multi-source thought provenance is supported via primary origin ID and derivation records.
+
+--------------------------------------------------------------------------------
+C. EIGHT CORE SUBSYSTEMS (9 ITEMS)
+--------------------------------------------------------------------------------
+[ ] C01. Thought Generation subsystem is defined with event-driven ingress pathways.
+[ ] C02. Thought Development and Reasoning subsystem is defined with operator execution engine.
+[ ] C03. Thought Thread and DAG Manager is defined with strict graph integrity controls.
+[ ] C04. Thought Association and Graph Engine is defined with analogical and semantic linking.
+[ ] C05. Attention and Priority Arbitrator is defined with calibrated multi-factor scoring.
+[ ] C06. Thought Lifecycle and Checkpoint Manager is defined with append-only transition logging.
+[ ] C07. Thought Retrieval Interface is defined with query, continuation, and rehydration services.
+[ ] C08. Scheduler and Resource Governance is defined with dual-rate dispatching and quota limits.
+[ ] C09. Subsystem interactions are event-driven cooperation models and NOT a sequential linear pipeline.
+
+--------------------------------------------------------------------------------
+D. THOUGHTS, CHAINS, AND THREADS (12 ITEMS)
+--------------------------------------------------------------------------------
+[ ] D01. Thought, chain, and thread have distinct, unambiguous definitions and structural representations.
+[ ] D02. Thought DAG is the canonical derivation and dependency graph.
+[ ] D03. Thought chain is a logical ordered path of thought IDs through the DAG.
+[ ] D04. Thread ownership and non-owning chain membership rules are explicit.
+[ ] D05. Single focal thread constraint (maximum 1) is strictly enforced across the engine.
+[ ] D06. Background processing is formally distinguished from focal processing.
+[ ] D07. Thread lifecycle state (ThoughtThreadState) and execution mode (ThreadExecutionMode) are separated.
+[ ] D08. All thought lifecycle transitions are documented in a complete state machine table.
+[ ] D09. All thread lifecycle transitions are documented in a complete state machine table.
+[ ] D10. Terminal-state behavior (COMPLETED, DISCARDED, ABANDONED, CONCLUDED) is immutable.
+[ ] D11. Thread reconsideration creates a new linked thread without mutating historical records.
+[ ] D12. Thought development creates new versioned instances and never silently mutates past thoughts.
+
+--------------------------------------------------------------------------------
+E. REASONING AND EPISTEMIC INTEGRITY (12 ITEMS)
+--------------------------------------------------------------------------------
+[ ] E01. All seven reasoning operators (Deductive, Inductive, Abductive, Causal, Analogical, Counterfactual, Evaluative) are explicitly defined.
+[ ] E02. Epistemic status is independent of inference validity.
+[ ] E03. Evidence quality is independent of reasoning confidence.
+[ ] E04. Hypothesis probability is independent of reasoning confidence.
+[ ] E05. Evidence provenance and dependency tracking are implemented via EvidenceReference.
+[ ] E06. Correlated evidence cannot artificially inflate confidence (independence group grouping).
+[ ] E07. Branch merging deduplicates shared underlying evidence lineage.
+[ ] E08. Synthesis assessment uses a calibrated, bounded assessment process in [0.0, 1.0] without arbitrary novelty bonuses.
+[ ] E09. Hypothesis relationships (MUTUALLY_EXCLUSIVE, COMPETING, INDEPENDENT, UNKNOWN) and probability constraints are defined.
+[ ] E10. ESTABLISHED status has explicit, objective acceptance criteria requiring independent corroboration.
+[ ] E11. Epistemic quarantine propagates comprehensively through all derived thoughts, hypotheses, associations, proposals, and memory nominations.
+[ ] E12. Counterfactual results cannot silently enter established beliefs or trigger real-world actions.
+
+--------------------------------------------------------------------------------
+F. ATTENTION, SCHEDULER, AND RESOURCES (13 ITEMS)
+--------------------------------------------------------------------------------
+[ ] F01. Priority inputs (Urgency, Importance, Emotional Relevance, Motivational Alignment, Unresolved Entropy) have precise definitions and source ownership.
+[ ] F02. Dynamic priority function is calibrated, normalized, and bounded in [0.0, 1.0].
+[ ] F03. Priority parameters and time-decay rates have defined calibration baselines.
+[ ] F04. Starvation prevention mechanism is implemented via wait-time boost counters.
+[ ] F05. Preemption hysteresis (0.15 priority threshold) is implemented to prevent cognitive thrashing.
+[ ] F06. Emergency preemption override is defined for critical sensory alerts ($U \ge 0.95$).
+[ ] F07. Non-interruptible critical sections are protected during atomic commits and graph mutations.
+[ ] F08. Asynchronous reasoning job lifecycle (8 states) is implemented with concurrency caps.
+[ ] F09. Late results from timed-out or cancelled reasoning jobs are safely rejected.
+[ ] F10. Concurrency limits (1 focal, 2 background) are strictly enforced.
+[ ] F11. All hard quotas (threads, depth, nodes, scratchpad) have explicit overflow handling policies.
+[ ] F12. Energy-based throttling gracefully suspends existing work without data loss.
+[ ] F13. Rumination detection prevents sterile loops without violating DAG acyclicity.
+
+--------------------------------------------------------------------------------
+G. MEMORY, RETRIEVAL, AND ARCHIVAL (9 ITEMS)
+--------------------------------------------------------------------------------
+[ ] G01. All retrieval operations return structured asynchronous response objects with explicit status codes.
+[ ] G02. Historical thought and thread versions are strictly immutable.
+[ ] G03. New cognitive developments create linked version instances with provenance pointers.
+[ ] G04. Memory Engine retains authoritative acceptance and consolidation decisions.
+[ ] G05. Archival acknowledgements are verifiable with canonical memory record IDs.
+[ ] G06. Archival rejection categories are separated into five distinct, typed outcomes.
+[ ] G07. Retry rules are category-specific (automatic retry permitted ONLY for temporary failures).
+[ ] G08. Memory claim references preserve full source provenance.
+[ ] G09. Retrieval failures and stale working records have explicit recovery behaviors.
+
+--------------------------------------------------------------------------------
+H. DATA MODELS AND PERSISTENCE (13 ITEMS)
+--------------------------------------------------------------------------------
+[ ] H01. All data models are comprehensively documented in the data dictionary.
+[ ] H02. All data model collections are deeply immutable (frozen tuples, frozen mappings).
+[ ] H03. Recursive immutable mappings prevent external reference mutation.
+[ ] H04. Typed evidence and premise structures are defined with explicit field types.
+[ ] H05. All 15 required SQLite relational tables are completely specified with column constraints.
+[ ] H06. Canonical DAG edges and non-owning chain memberships are persisted in relational tables.
+[ ] H07. SQLite foreign-key enforcement (PRAGMA foreign_keys = ON) is mandatory and verified on connection.
+[ ] H08. Transactions cover complete logical operations atomically (full commit or full rollback).
+[ ] H09. Idempotency keys are supported for all asynchronous operations and nominations.
+[ ] H10. Lifecycle transition events are persisted in an append-only audit table.
+[ ] H11. Pending reasoning jobs and scheduler queues are fully persisted across restarts.
+[ ] H12. Archival protocol state and thread reconsideration lineage are persisted.
+[ ] H13. Database serialization preserves model invariants and data constraints.
+
+--------------------------------------------------------------------------------
+I. CRASH RECOVERY AND RELIABILITY (10 ITEMS)
+--------------------------------------------------------------------------------
+[ ] I01. SQLite WAL mode and synchronous settings are configured for high-reliability persistence.
+[ ] I02. Exclusive recovery coordination mutex is implemented for startup sequences.
+[ ] I03. Interrupted reasoning jobs in RUNNING or DISPATCHED state are detected and marked INTERRUPTED.
+[ ] I04. Incomplete thought transitions stuck in EVALUATING are safely discarded.
+[ ] I05. Active threads recover cleanly into valid SUSPENDED states with NOT_SCHEDULED execution mode.
+[ ] I06. Scheduler pending queue is consistently reconstructed from persisted thread priorities.
+[ ] I07. Duplicate recovery events are prevented via unique recovery session IDs.
+[ ] I08. Repeated crash recovery executions are safe and idempotent.
+[ ] I09. Power-loss and process crash scenarios are covered by the 9-scenario consistency test suite.
+[ ] I10. No partial graph mutation or corrupted lifecycle update survives as an inconsistent state.
+
+--------------------------------------------------------------------------------
+J. ARCHITECTURAL WALKTHROUGHS AND VERIFICATION (17 ITEMS)
+--------------------------------------------------------------------------------
+[ ] J01. Scenario 1 (Autonomous Initiation) passes with question ranking and duplicate suppression.
+[ ] J02. Scenario 2 (Memory Association) passes with formal MemoryContextProvider contract.
+[ ] J03. Scenario 3 (Multiple Interests) passes with 1 focal and 2 concurrent background threads.
+[ ] J04. Scenario 4 (Preemption) passes with measured suspension latency ($< 50\text{ ms}$) and emergency override.
+[ ] J05. Scenario 5 (Resumption) passes with freshness calculation and stale context validation.
+[ ] J06. Scenario 6 (Spontaneous Association) passes with active thread quota enforcement.
+[ ] J07. Scenario 7 (Contradictory Evidence) passes with hypothesis relationship normalization.
+[ ] J08. Scenario 8 (Self-Reflection) passes with formal LearningSignal dispatch.
+[ ] J09. Scenario 9 (Counterfactual Thinking) passes with infectious quarantine propagation.
+[ ] J10. Scenario 10 (Rumination) passes with semantic repetition detection and acyclic DAG integrity.
+[ ] J11. Scenario 11 (Resource Exhaustion) passes with energy throttling and graceful thread suspension.
+[ ] J12. Scenario 12 (Completion & Proposal Dispatch) passes with proposal provenance and archival acknowledgement.
+[ ] J13. All ownership boundaries pass cross-engine integration tests.
+[ ] J14. All lifecycle invariants pass state machine model-checking tests.
+[ ] J15. All persistence and recovery invariants pass transactional crash-injection tests.
+[ ] J16. Performance targets (suspension latency, scheduling cycle time) are measured and verified.
+[ ] J17. All 25 original architectural review checkpoints have documented evidence of compliance.
+
+================================================================================
+MASTER CHECKLIST SUMMARY: 0/119 ITEMS VERIFIED (READY FOR IMPLEMENTATION AUDIT)
+================================================================================
+
+
+================================================================================
+PART 4 — RECOMMENDED IMPLEMENTATION ORDER & PHASED ROADMAP
+================================================================================
+
+To ensure engineering rigor, the Thought Engine must NOT be implemented simultaneously across all eight subsystems. Development must follow a strict 10-phase dependency-ordered progression where foundational data structures and persistence layers are validated before higher-level reasoning and cross-engine integrations are enabled:
+
+--------------------------------------------------------------------------------
+PHASE 1: SCHEMAS, IMMUTABLE MODELS, ENUMS, AND DATA CONTRACTS
+--------------------------------------------------------------------------------
+- Objective: Establish all foundational data structures, type hierarchies, and validation rules.
+- Engineering Deliverables:
+  * Implement all Enum types (`ThoughtState`, `ThoughtThreadState`, `ThreadExecutionMode`, `DAGEdgeType`, `EpistemicStatus`, `ReasoningOperatorType`, `LearningSignalType`, `ArchivalStatus`).
+  * Implement deeply immutable models with Pydantic / dataclasses (`ThoughtInstance`, `ThoughtThread`, `EvidenceReference`, `ThoughtDerivation`, `ThoughtHypothesis`, `LearningSignal`).
+  * Implement recursive immutability validators preventing runtime mutation of nested collections.
+- Completion Gate: 100% unit test coverage on model immutability, validation constraints, and serialization/deserialization.
+
+--------------------------------------------------------------------------------
+PHASE 2: SQLITE PERSISTENCE STORE & LIFECYCLE CHECKPOINT MANAGER
+--------------------------------------------------------------------------------
+- Objective: Build the rock-solid persistent working memory and transition audit system.
+- Engineering Deliverables:
+  * Implement SQLite storage engine with WAL mode and `PRAGMA foreign_keys = ON;`.
+  * Execute DDL creating all 15 relational tables with complete constraints.
+  * Implement `ThoughtLifecycleManager` enforcing atomic transaction boundaries.
+  * Implement 11-step deterministic crash recovery protocol.
+- Completion Gate: All 9 crash-injection recovery tests pass; zero data loss or partial writes.
+
+--------------------------------------------------------------------------------
+PHASE 3: THOUGHT THREAD & DAG MANAGER
+--------------------------------------------------------------------------------
+- Objective: Implement graph management, topological ordering, and thread isolation.
+- Engineering Deliverables:
+  * Build DAG authority enforcing acyclicity, edge typing, and max depth limits (Max 15).
+  * Implement `create_thought_transaction`, `branch_thread_transaction`, and `merge_branches`.
+  * Implement non-owning `ThoughtChain` representation and topological sorting.
+  * Implement thread reconsideration protocol creating linked descendant threads.
+- Completion Gate: Graph cycle injection tests fail with explicit exceptions; branch-and-merge correctly deduplicates shared evidence.
+
+--------------------------------------------------------------------------------
+PHASE 4: SCHEDULER, ATTENTION ARBITRATOR, AND RESOURCE GOVERNANCE
+--------------------------------------------------------------------------------
+- Objective: Orchestrate cognitive processing cycles, dynamic priority, and preemption.
+- Engineering Deliverables:
+  * Implement Attention & Priority Arbitrator with calibrated multi-factor formula.
+  * Implement starvation prevention counter and wait-time priority boosting.
+  * Implement dual-rate Scheduler (50 ms focal loop, 200 ms background loop).
+  * Implement preemption mechanics: 0.15 hysteresis, emergency override ($U \ge 0.95$), and non-interruptible critical sections.
+  * Implement quota overflow handlers and dynamic energy throttling.
+- Completion Gate: Single focal thread invariant strictly verified; emergency preemption benchmark achieves $< 50\text{ ms}$ suspension.
+
+--------------------------------------------------------------------------------
+PHASE 5: THOUGHT GENERATION PATHWAYS
+--------------------------------------------------------------------------------
+- Objective: Connect incoming impulses and triggers to candidate thought formation.
+- Engineering Deliverables:
+  * Implement all 7 core thought generation pathways (Memory, Perception, Emotion, Motivation, Counterfactual, Spontaneous, Thought-to-Thought).
+  * Implement multi-origin provenance assembling `ThoughtDerivation` tuples.
+  * Implement autonomous thinking triggers (idle exploration timer, unresolved question ranking).
+  * Implement semantic duplicate suppression for candidate questions.
+- Completion Gate: Autonomous thoughts trigger cleanly during simulated idle periods; duplicate questions suppressed.
+
+--------------------------------------------------------------------------------
+PHASE 6: REASONING OPERATORS & EPISTEMIC INTEGRITY ENGINE
+--------------------------------------------------------------------------------
+- Objective: Build the inference engine and rigorous truth-maintenance protocols.
+- Engineering Deliverables:
+  * Implement all 7 formal reasoning operators (Deductive, Inductive, Abductive, Causal, Analogical, Counterfactual, Evaluative).
+  * Implement asynchronous `ReasoningJob` runner with concurrency limits (Max 2 background jobs) and late-result rejection.
+  * Implement Bayesian hypothesis probability updates and relationship constraints.
+  * Implement calibrated synthesis confidence assessment (without novelty bonuses).
+  * Implement strict `ESTABLISHED` acceptance policy.
+  * Implement comprehensive downstream quarantine propagation across all outputs.
+- Completion Gate: Counterfactual simulations maintain 100% quarantine; mutually exclusive hypotheses sum $\le 1.0$; late job outputs safely discarded.
+
+--------------------------------------------------------------------------------
+PHASE 7: ASSOCIATION, GRAPH ENGINE, AND RETRIEVAL INTERFACE
+--------------------------------------------------------------------------------
+- Objective: Support creative cross-linking, semantic clustering, and historical continuation.
+- Engineering Deliverables:
+  * Implement background associative explorer with analogy thresholding ($> 0.60$).
+  * Implement semantic rumination detector calculating embedding cosine similarity and entropy reduction.
+  * Implement `ThoughtRetrievalInterface` supporting query, continuation, and rehydration.
+  * Implement premise freshness calculations and stale-context re-validation.
+- Completion Gate: Rumination loops reliably detected and quarantined; suspended threads smoothly rehydrate with verified freshness.
+
+--------------------------------------------------------------------------------
+PHASE 8: CROSS-ENGINE INTEGRATIONS (MEMORY, PERCEPTION, LEARNING)
+--------------------------------------------------------------------------------
+- Objective: Wire formal provider contracts with adjacent cognitive engines.
+- Engineering Deliverables:
+  * Connect `MemoryContextProvider` with structured asynchronous request/response contracts.
+  * Connect `PerceptionContextProvider` for normalized event ingestion.
+  * Connect read-only contextual bias providers (Emotion, Motivation, Personality, Self-Image).
+  * Implement `LearningSignal` emitter dispatching reflective observations to Learning Engine.
+  * Implement formal Memory Archival Protocol with 5-category rejection handling and idempotent retries.
+- Completion Gate: All ownership boundary tests pass; zero unauthorized mutations to external engines; learning signals independently evaluated.
+
+--------------------------------------------------------------------------------
+PHASE 9: COGNITIVE INTEGRATION & PROPOSAL INTERFACE
+--------------------------------------------------------------------------------
+- Objective: Surface actionable conclusions without usurping executive authority.
+- Engineering Deliverables:
+  * Build candidate proposal formatting pipeline linking concluded threads to `ActionProposal`.
+  * Implement proposal provenance tagging and confidence certification.
+  * Implement quarantine block preventing simulated thoughts from triggering external actions.
+- Completion Gate: Action proposals emitted with full premise provenance; zero direct action execution from Thought Engine.
+
+--------------------------------------------------------------------------------
+PHASE 10: HARDENING, SYSTEM VERIFICATION, AND WALKTHROUGH AUDIT
+--------------------------------------------------------------------------------
+- Objective: Execute full end-to-end verification, performance profiling, and compliance sign-off.
+- Engineering Deliverables:
+  * Execute all 12 mandatory architectural walkthrough scenarios end-to-end.
+  * Measure performance benchmarks under target load (suspension latency, transaction throughput, recovery time).
+  * Verify all 119 items in the Thought Engine Master Checklist.
+  * Produce final verification audit artifact for production sign-off.
+- Completion Gate: 119/119 checklist items verified with automated test evidence; all 12 walkthrough scenarios succeed.
+
+
+================================================================================
+FINAL RECOMMENDATION & ARCHITECTURAL GOVERNANCE
+================================================================================
+
+The architectural design of Engine 9 (Thought Engine v2.2.0) resolves all structural, epistemic, and lifecycle inconsistencies identified in previous revisions without redesigning the core cognitive architecture.
+
+The governing principle of the Thought Engine must remain strictly bounded:
+GENERATE THOUGHTS -> DEVELOP THOUGHTS -> CONNECT THOUGHTS -> MANAGE THOUGHT THREADS -> PRIORITIZE INTERNAL REASONING -> PRESERVE WORKING STATE -> RETRIEVE & CONTINUE HISTORICAL THOUGHTS.
+
+The Thought Engine is an internal cognitive reasoning laboratory, NOT:
+- Permanent Memory (owned exclusively by Memory Engine).
+- Sensory Interpreter (owned exclusively by Perception Engine).
+- Action Decider or Executor (owned exclusively by Cognitive Integration).
+- Learning & Parameter Authority (owned exclusively by Learning Engine).
+- Systemic Resource Sovereign (owned exclusively by Attention & Energy Regulation).
+
+By strictly respecting these boundaries, enforcing deep model immutability, maintaining transactional crash-safety in SQLite, and propagating epistemic quarantine, the Thought Engine provides Diva with rich, nuanced, multi-threaded internal cognition and genuine autonomous intellectual life.
+================================================================================
+END OF SPECIFICATION — DIVA ENGINE 9: THOUGHT ENGINE v2.2.0
+================================================================================

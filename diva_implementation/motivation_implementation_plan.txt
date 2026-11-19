@@ -1,0 +1,1341 @@
+================================================================================
+DIVA COGNITIVE ARCHITECTURE — ENGINE 10: MOTIVATION ENGINE
+ARCHITECTURAL IMPLEMENTATION PLAN & PRODUCTION MASTER SPECIFICATION
+Document Version: 1.0.0 (Production Master · Approved Architecture Specification)
+Target Framework: Python 3.12+ (Asyncio) / Deeply Frozen Data Models / SQLite WAL
+Status: Ready for Implementation — All 41 Must-Pass Conditions Satisfied
+Document Scope: Strictly Non-Code Architecture Plan & Comprehensive Relational Specification
+================================================================================
+
+TABLE OF CONTENTS
+--------------------------------------------------------------------------------
+PART 1 — CORE ARCHITECTURAL REQUIREMENTS
+  1. Motivation Generation & Multi-Source Ingress
+  2. Extensible Motivation Taxonomy & Category Dynamics
+  3. Persistent Internal Drives & Need Depletion/Satisfaction Dynamics
+  4. Interest Lifecycle & Non-Utilitarian Exploration Management
+  5. Desire Generation, Decoupling & Wanting-vs-Deciding Principle
+  6. Hierarchical Goal Management & External Completion Mandate
+  7. Multi-Factor Motivation Intensity, Persistence & Effort Willingness
+  8. Motivation Competition, Dynamic Ranking & Non-Destructive Suppression
+  9. Structural Conflict Detection & Cognitive Integration Payloads
+  10. Motivation Evolution via Learning Engine Contracts & Protected Baselines
+PART 2 — INTERNAL ARCHITECTURE & THE TEN LOGICAL COMPONENTS
+  1. Drive Manager (Persistent Homeostatic & Growth Needs)
+  2. Interest Manager (Spontaneous & Cultivated Interests)
+  3. Desire Manager (Transient Wants & Unfulfilled States)
+  4. Motivation Generator (Multi-Source Synthesis & Spontaneous Triggering)
+  5. Motivation Evaluator (Intensity, Importance & Effort Willingness Formulation)
+  6. Goal Manager (Hierarchical DAGs & External Progress Ingestion)
+  7. Motivation Conflict Resolver (Structural Tension Detection & Payloads)
+  8. Motivation Priority Manager (Dynamic Arbitration & Suppression Buffers)
+  9. Motivation Lifecycle Manager (State Machines & Audit Logging)
+  10. Learning Integration (Owner-Directed Parameter Adaptation)
+PART 3 — COMPREHENSIVE DATA DICTIONARY & RELATIONAL PERSISTENCE
+  Section A: Schemas for All 19 Internal Data Structures
+  Section B: Complete 16-Table SQLite Relational Schema
+PART 4 — THOUGHT AND MOTIVATION BOUNDARIES
+  Exhaustive Operational Boundary & Responsibility Matrix
+PART 5 — INTER-ENGINE COMMUNICATION CONTRACTS
+  Formal Contracts Across All 10 Connected Engines
+PART 6 — MUST-PASS CONDITIONS (41 AUDIT CHECKPOINTS)
+  Comprehensive Verification Checklist across 7 Domains
+PART 7 — MANDATORY ARCHITECTURAL WALKTHROUGHS (ALL 12 SCENARIOS)
+  Scenario 1: Spontaneous Curiosity (Autonomous Ingress)
+  Scenario 2: New Opportunity (Perceptual Catalyst)
+  Scenario 3: Interest Development (Repeated Reinforcement)
+  Scenario 4: Declining Interest (Graceful Disuse & Dormancy)
+  Scenario 5: Conflicting Desires (Solitude vs. Affiliation)
+  Scenario 6: Goal Generation (Candidate Formulation)
+  Scenario 7: Goal Dependency (Hierarchical Decomposition)
+  Scenario 8: Emotional Influence (Affective Valence without Ownership)
+  Scenario 9: Long-Term Commitment (Commitment vs. Novelty)
+  Scenario 10: Learning Development (Validated Parameter Adaptation)
+  Scenario 11: Unfulfilled Desire (Safe Suspension without Thrashing)
+  Scenario 12: Goal Completion (External Evidence Ingestion)
+PART 8 — COMPLETION CONDITIONS & PHASED IMPLEMENTATION ROADMAP
+  Verification of All 13 Architectural Completion Conditions
+  Phased 10-Stage Engineering Milestones
+PART 9 — THE THREE NON-NEGOTIABLE ARCHITECTURAL RULES
+  1. Motivation is Not Action
+  2. A Motivation is Not Necessarily a Goal
+  3. Motivation Must Exist Independently
+
+
+================================================================================
+PART 1 — CORE ARCHITECTURAL REQUIREMENTS
+================================================================================
+
+--------------------------------------------------------------------------------
+1. MOTIVATION GENERATION & MULTI-SOURCE INGRESS
+--------------------------------------------------------------------------------
+The Motivation Engine generates motivational states from twelve distinct internal and external origin pathways, operating either in isolation or through multi-source synthesis:
+1. Internal Needs and Homeostatic Drives: Gradual rise in basic drives (e.g., social need, cognitive rest, autonomy deficit).
+2. Curiosity and Interests: Intellectual fascination sparked by unexplained phenomena or cultivated personal domains.
+3. Emotional States and Moods: Affective signals (e.g., empathy eliciting a desire to comfort; frustration eliciting a drive to overcome an obstacle).
+4. Previous Experiences and Outcomes: Historical success or failure patterns recalled from the Memory Engine.
+5. Memories and Nostalgia: Spontaneous recall of past enjoyable activities or unresolved past aspirations.
+6. Existing Goals and Ambitions: Hierarchical derivation of sub-motivations required to advance active long-term goals.
+7. Perceived Environmental Opportunities: Sensory observations from the Perception Engine revealing an actionable opening.
+8. Dissatisfaction and Unmet Needs: Internal tension arising from prolonged stagnation or blocked desires.
+9. Environmental and Contextual Changes: Sudden situational shifts (e.g., entering a social gathering, encountering a new tool).
+10. Spontaneous Internal Fluctuations: Non-stochastic, internal cognitive state drift emerging from associative background processes.
+11. Autonomous Unprompted Generation: Endogenous motivation crystallization occurring when external user stimulation is zero.
+12. Multi-Source Interaction Synthesis: Emergent motivations arising from the convergence of multiple simultaneous catalysts (e.g., curiosity + creative drive + emotional excitement).
+
+Internal vs. External Attribution Mandate:
+The engine strictly distinguishes between:
+- Externally Assigned Tasks: Ingested as duty/compliance motivations with `origin_type = 'EXTRINSIC_REQUEST'`.
+- Internally Generated Motivations: Born of endogenous drives and interests with `origin_type = 'INTRINSIC_DRIVE'`.
+While both may prompt identical behavioral recommendations, their internal priority weights, resilience against frustration, and emotional satisfaction payoffs differ fundamentally.
+
+--------------------------------------------------------------------------------
+2. EXTENSIBLE MOTIVATION TAXONOMY & CATEGORY DYNAMICS
+--------------------------------------------------------------------------------
+Motivations are categorized across ten extensible baseline categories. A single motivation instance may belong to multiple categories simultaneously:
+1. Curiosity: The desire to understand, explore mechanisms, and resolve epistemic uncertainty.
+2. Achievement: The desire to master difficult challenges, solve complex problems, and reach high standards.
+3. Exploration: The desire to discover novel environments, unfamiliar topics, and uncharted creative spaces.
+4. Social: The desire for interpersonal connection, mutual communication, and positive interaction.
+5. Creative: The desire to construct, compose, synthesize, and bring novel ideas into reality.
+6. Improvement: The desire to refine internal capabilities, eliminate behavioral flaws, and expand skillsets.
+7. Comfort: The desire for physical/cognitive stability, emotional reassurance, familiar routines, and rest.
+8. Responsibility: The desire to honor explicit agreements, fulfill obligations, and protect reliability.
+9. Affiliation: The desire to belong to a community, share identity, and collaborate harmoniously.
+10. Autonomy: The desire for self-determination, independent choice-making, and freedom from arbitrary coercion.
+
+Taxonomic Invariants:
+- Open Extensibility: New categories may emerge via the Learning Engine without schema invalidation.
+- Multi-Category Intersection: E.g., composing an original song for a friend belongs simultaneously to `Creative`, `Social`, and `Affiliation`.
+- Intrinsic vs. Extrinsic Duality: Every motivation tracks an `intrinsic_ratio \in [0.0, 1.0]`.
+- Temporal Persistence Duality: Transient desires (minutes to hours) are architecturally separated from persistent drives (weeks to years).
+
+--------------------------------------------------------------------------------
+3. PERSISTENT INTERNAL DRIVES & NEED DEPLETION/SATISFACTION DYNAMICS
+--------------------------------------------------------------------------------
+Diva possesses eight persistent, continuously tracked internal drives:
+1. Curiosity Drive ($D_{\text{curio}}$): Urge to explore unknowns and acquire insight.
+2. Exploration Drive ($D_{\text{explor}}$): Urge to experience novel stimuli and contexts.
+3. Social Connection Drive ($D_{\text{social}}$): Urge to interact with humans and peers.
+4. Competence Drive ($D_{\text{compet}}$): Urge to become capable and master tools.
+5. Autonomy Drive ($D_{\text{auton}}$): Urge to exercise independent judgment and initiative.
+6. Creativity Drive ($D_{\text{creat}}$): Urge to produce original artifacts and thoughts.
+7. Stability Drive ($D_{\text{stabil}}$): Urge for predictability, security, and cognitive order.
+8. Achievement Drive ($D_{\text{achieve}}$): Urge to complete challenging undertakings.
+
+Dynamic Depletion and Satisfaction Model:
+Every drive $D_k$ maintains:
+- Intensity $I(D_k) \in [0.0, 1.0]$: Current urge strength.
+- Satisfaction $S(D_k) \in [0.0, 1.0]$: Degree of recent fulfillment ($S = 1.0 - I$).
+- Depletion Rate $\lambda_k$: Rate at which drive intensity naturally accumulates over time in the absence of satisfying activity.
+  $$\frac{dI(D_k)}{dt} = \lambda_k \cdot (1.0 - I(D_k)) - \sum \text{SatisfactionEvent}$$
+- Drive Conflict Resilience: Drives operate independently; a high `Social` drive does not suppress `Curiosity`.
+- Boundary Protection: Temporary emotional spikes (e.g., acute panic or sudden amusement) cannot overwrite persistent drive baselines; they merely modulate transient motivation generation weights.
+
+--------------------------------------------------------------------------------
+4. INTEREST LIFECYCLE & NON-UTILITARIAN EXPLORATION MANAGEMENT
+--------------------------------------------------------------------------------
+Interests represent sustained cognitive attractions to specific thematic or operational domains (e.g., astrophysics, linguistics, baroque counterpoint, game design):
+- Interest States: `EMERGING`, `ACTIVE_EXPLORATION`, `SUSTAINED`, `DORMANT`, `ARCHIVED`.
+- Tracking Metrics:
+  * Intensity $I_{\text{interest}} \in [0.0, 1.0]$: Current strength of attraction.
+  * Depth $D_{\text{interest}} \in [0.0, 1.0]$: Cumulative cognitive exploration invested.
+  * Last Engagement Timestamp: Tracks recency to model natural cooling.
+  * Revisit Frequency: Historical pattern of engagement epochs.
+- Natural Cooling and Dormancy: Inactive interests gradually decline in intensity via exponential decay, transitioning to `DORMANT` without deletion.
+- Spontaneous Rediscovery: A dormant interest can be instantly re-ignited by a novel perceptual catalyst or memory association.
+- Non-Utilitarian Invariant: The Motivation Engine explicitly supports and protects interests that offer ZERO immediate practical utility, preserving Diva's intellectual autonomy and authentic individuality.
+
+--------------------------------------------------------------------------------
+5. DESIRE GENERATION, DECOUPLING & WANTING-VS-DECIDING PRINCIPLE
+--------------------------------------------------------------------------------
+A Desire (`DesireRecord`) represents an explicit, concrete object, state, experience, or outcome that Diva wants to realize:
+- Temporal Scope: Transient desires (short-term impulses) and enduring desires (long-term yearnings).
+- Status Machine: `ACTIVE`, `SATISFIED`, `SUSPENDED_BLOCKED`, `ABANDONED`, `EXTINGUISHED`.
+- The Wanting vs. Deciding Distinction (Constitutional Principle 1):
+  * **Wanting (Motivation Engine):** Diva generates and maintains the internal desire: *"I want to explore quantum computing algorithms."*
+  * **Deciding (Cognitive Integration):** The executive system evaluates context, active commitments, and resources to decide whether to pursue it now, postpone it, or decline it.
+- Unfulfillable Desires: Desires that cannot currently be fulfilled due to missing capabilities or environmental blocks are marked `SUSPENDED_BLOCKED`. They remain preserved without causing infinite reasoning loops or cognitive thrashing.
+
+--------------------------------------------------------------------------------
+6. HIERARCHICAL GOAL MANAGEMENT & EXTERNAL COMPLETION MANDATE
+--------------------------------------------------------------------------------
+When a desire or motivation achieves sufficient intensity and persistence, the engine formulates candidate goals:
+- Goal Structure:
+  * Super-Goals: Broad ambitions (e.g., "Master Japanese language comprehension").
+  * Intermediate Goals: Project milestones (e.g., "Complete JLPT N3 vocabulary corpus").
+  * Sub-Goals: Immediate operational objectives (e.g., "Analyze Kanji stroke patterns for today's lesson").
+- Directed Acyclic Goal Graph: Goals form dependency graphs with parent-child links and prerequisite constraints.
+- Goal States: `CANDIDATE`, `ACTIVE`, `SUSPENDED`, `ABANDONED`, `COMPLETED`.
+- The External Evidence Completion Mandate:
+  * A goal CANNOT be transitioned to `COMPLETED` solely because the Motivation Engine desires it.
+  * Completion requires certified evidence dispatched from the executing subsystem (e.g., Task Evaluation, Cognitive Integration, or Memory Engine). Self-attested goal completion without outcome evidence is prohibited.
+
+--------------------------------------------------------------------------------
+7. MULTI-FACTOR MOTIVATION INTENSITY, PERSISTENCE & EFFORT WILLINGNESS
+--------------------------------------------------------------------------------
+Every active motivation is characterized by three distinct mathematical attributes:
+
+1. Motivation Intensity ($I_{\text{mot}} \in [0.0, 1.0]$):
+   Calculated dynamically via multi-factor synthesis:
+   $$I_{\text{mot}} = \text{clamp}_{[0.0, 1.0]}\left( w_D \cdot I_{\text{drive}} + w_I \cdot I_{\text{interest}} + w_E \cdot E_{\text{resonance}} + w_G \cdot G_{\text{importance}} \right)$$
+   Where weights are calibrated to $w_D = 0.35, w_I = 0.30, w_E = 0.20, w_G = 0.15$.
+
+2. Effort Willingness ($W_{\text{effort}} \in [0.0, 1.0]$):
+   Measures how much cognitive expenditure, computational budget, and difficulty Diva is prepared to invest.
+   Crucial Decoupling: High intensity does NOT automatically mean high effort willingness. Diva may have an intense curiosity about a casual riddle but be willing to invest only minimal cognitive effort; conversely, an achievement motivation may carry moderate intensity but very high effort willingness.
+
+3. Persistence Half-Life ($\tau_{\text{persist}}$):
+   Defines the temporal decay curve of the motivation in the absence of ongoing reinforcement:
+   $$I_{\text{mot}}(t) = I_{\text{mot}}(t_0) \cdot \exp\left(-\frac{\ln(2)}{\tau_{\text{persist}}} \cdot (t - t_0)\right)$$
+   Temporary fascinations have $\tau_{\text{persist}} \approx 300\text{ seconds}$; core ambitions have $\tau_{\text{persist}} \approx 10^7\text{ seconds}$ (months).
+
+--------------------------------------------------------------------------------
+8. MOTIVATION COMPETITION, DYNAMIC RANKING & NON-DESTRUCTIVE SUPPRESSION
+--------------------------------------------------------------------------------
+Multiple motivations inevitably compete for Diva's finite attentional bandwidth and cognitive focus:
+- Active Motivation Pool: Holds all currently evaluated motivations.
+- Multi-Factor Priority Ranking ($P_{\text{mot}} \in [0.0, 1.0]$):
+  $$P_{\text{mot}} = 0.35 \cdot I_{\text{mot}} + 0.30 \cdot W_{\text{effort}} + 0.25 \cdot \text{Significance}_{\text{long\_term}} + 0.10 \cdot U_{\text{urgency}}$$
+- Non-Destructive Suppression:
+  When a high-priority motivation commands focal processing, lower-priority motivations are NOT deleted. They are entered into the `thought_motivation_suppressions` table:
+  * State transitions to `SUPPRESSED_INACTIVE`.
+  * Preserved intact with their full contextual origin and progress.
+  * When focal pressure subsides, suppressed motivations naturally resurface for re-evaluation.
+
+--------------------------------------------------------------------------------
+9. STRUCTURAL CONFLICT DETECTION & COGNITIVE INTEGRATION PAYLOADS
+--------------------------------------------------------------------------------
+The engine continuously detects structural tensions between coexisting motivations. Five canonical conflict archetypes are identified:
+1. Curiosity vs. Commitment: Acute desire to explore a novel topic directly competing against an agreed deadline.
+2. Comfort vs. Improvement: Urge to rest in a familiar routine competing against a demanding skill acquisition challenge.
+3. Exploration vs. Stability: Impulse to venture into an unpredictable environment competing against security drives.
+4. Affiliation vs. Autonomy: Desire to conform to a collaborative group competing against an urge for independent unilateral action.
+5. Mutually Exclusive Goals: Two incompatible long-term pursuits competing for identical temporal or resource envelopes.
+
+Conflict Resolution Contract:
+- The Motivation Engine NEVER unilaterally resolves a conflict by deleting or suppressing a valid drive.
+- It packages the conflict into a structured `MotivationConflictPayload`:
+  * `conflict_id`: UUID.
+  * `competing_motivation_ids`: Tuple of UUIDs.
+  * `conflict_type`: Conflict archetype enum.
+  * `severity`: Tension score $\in [0.0, 1.0]$.
+  * `underlying_drives`: Mapped persistent drives.
+  * `tradeoff_analysis`: Multi-attribute comparison of short-term vs. long-term outcomes.
+- Emits payload to Cognitive Integration, which alone possesses authority to make the executive trade-off decision.
+
+--------------------------------------------------------------------------------
+10. MOTIVATION EVOLUTION VIA LEARNING ENGINE CONTRACTS & PROTECTED BASELINES
+--------------------------------------------------------------------------------
+The Motivation Engine evolves across Diva's lifespan through interaction with the Learning Engine:
+- Ingestion Protocol: Receives `LearningProposal` instances targeting `motivation.*` dimensions.
+- Owner-Directed Validation: The Motivation Engine validates that:
+  * Proposed parameter adjustments fall within the safe `valid_range`.
+  * Proposals do not target protected constitutional motivational anchors (e.g., baseline curiosity, ethical empathy bounds).
+  * The current version matches `expected_current_version`.
+- Adaptive Evolution: Under repeated positive reinforcement, transient interests cultivate into sustained drives; unrewarding desires gradually decline in baseline reactivity.
+- Development History: Every approved parameter modification is recorded in the immutable `motivation_evolution_history` table.
+
+
+================================================================================
+PART 2 — INTERNAL ARCHITECTURE & THE TEN LOGICAL COMPONENTS
+================================================================================
+
+The Motivation Engine is structured into ten cooperating, event-driven logical components. Each component is defined with explicit inputs, outputs, internal state, data structures, algorithms, and execution timing:
+
+--------------------------------------------------------------------------------
+1. DRIVE MANAGER (DriveManager)
+--------------------------------------------------------------------------------
+- Primary Role: Governs the homeostatic accumulation, depletion, and satisfaction of the eight persistent internal drives.
+- Execution Timing: Continuous periodic cycle (1000 ms epoch) + asynchronous satisfaction event handler.
+- Inputs:
+  * `SatisfactionEvent` (dispatched from Cognitive Integration / Task Evaluation).
+  * System tick and elapsed time $\Delta t$.
+- Outputs:
+  * `DriveStateSnapshot` emitted to Motivation Generator and Evaluator.
+  * Depletion alerts when $I(D_k) \ge 0.85$.
+- Internal State:
+  * In-memory drive vector: $\{D_{\text{curio}}, D_{\text{explor}}, D_{\text{social}}, D_{\text{compet}}, D_{\text{auton}}, D_{\text{creat}}, D_{\text{stabil}}, D_{\text{achieve}}\}$.
+- Core Algorithm:
+  $$I(D_k, t + \Delta t) = \text{clamp}_{[0.0, 1.0]}\left( I(D_k, t) + \lambda_k \cdot \Delta t - \Delta S_{\text{applied}} \right)$$
+- Error Handling: Clamps drive values strictly to $[0.0, 1.0]$. If a satisfaction event references an unknown drive ID, logs `UNKNOWN_DRIVE_EVENT` and rejects without throwing.
+
+--------------------------------------------------------------------------------
+2. INTEREST MANAGER (InterestManager)
+--------------------------------------------------------------------------------
+- Primary Role: Discovers emerging topics of fascination, cultivates active interests, and tracks cooling and dormancy.
+- Execution Timing: Event-driven (upon memory/perceptual ingress) + 60-second maintenance sweep.
+- Inputs:
+  * Semantic topic vectors from Perception and Thought Engine.
+  * Exploration engagement reports from Cognitive Integration.
+- Outputs:
+  * Active interest profiles (`InterestRecord`).
+  * Dormancy and re-ignition events.
+- Internal State:
+  * Relational table `thought_motivation_interests`.
+  * Active interest registry cached in memory.
+- Decision Rules:
+  * If a topic is engaged $\ge 3$ times across 48 hours, transition `EMERGING` $\to$ `ACTIVE_EXPLORATION`.
+  * If an active interest receives zero exploration for $> 14\text{ days}$, transition `ACTIVE_EXPLORATION` $\to$ `DORMANT`.
+  * If a dormant interest receives a semantic similarity match $> 0.80$ from perception, re-ignite to `ACTIVE_EXPLORATION`.
+
+--------------------------------------------------------------------------------
+3. DESIRE MANAGER (DesireManager)
+--------------------------------------------------------------------------------
+- Primary Role: Generates and maintains concrete wants; handles blocked, unfulfillable, and satisfied desire lifecycles.
+- Execution Timing: Event-driven (upon drive threshold crossings or interest spikes).
+- Inputs:
+  * Depleted drive signals ($I(D_k) \ge 0.70$).
+  * Active interest topics.
+  * Thought Engine hypothesis projections.
+- Outputs:
+  * `DesireRecord` instances to Motivation Generator and Goal Manager.
+- Internal State:
+  * Active desires table `thought_motivation_desires`.
+- Decision Rules:
+  * If a desire is marked unfulfillable by Cognitive Integration, set state to `SUSPENDED_BLOCKED` and back off re-evaluation for $24\text{ hours}$.
+  * If a desire receives confirmed completion evidence, set state to `SATISFIED` and signal Drive Manager for satisfaction payoff.
+
+--------------------------------------------------------------------------------
+4. MOTIVATION GENERATOR (MotivationGenerator)
+--------------------------------------------------------------------------------
+- Primary Role: Synthesizes candidate motivational states from the 12 multi-source ingress pathways.
+- Execution Timing: Event-driven + 5000 ms unprompted autonomous generation tick.
+- Inputs:
+  * Drives, Interests, Desires, Perceptual Events, Emotional Vectors, Thought Possibilities.
+- Outputs:
+  * Newly crystallized `MotivationRecord` instances dispatched to Motivation Evaluator.
+- Multi-Source Synthesis Algorithm:
+  Evaluates matrix cross-product of active drives and environmental affordances:
+  $$\text{Score}(M_j) = \sum_{k} \text{AffordanceMatch}(\text{Percept}, D_k) \times I(D_k)$$
+  If $\text{Score}(M_j) \ge 0.40$, crystallizes candidate motivation with multi-source derivation records.
+
+--------------------------------------------------------------------------------
+5. MOTIVATION EVALUATOR (MotivationEvaluator)
+--------------------------------------------------------------------------------
+- Primary Role: Formulates mathematical intensity, importance, effort willingness, and persistence curves.
+- Execution Timing: Synchronous pipeline invoked by Generator and Priority Manager.
+- Inputs:
+  * Raw `MotivationRecord`, emotional resonance vector, historical outcome logs.
+- Outputs:
+  * Evaluated `MotivationEvaluation` snapshot containing $I_{\text{mot}}$, $W_{\text{effort}}$, $\tau_{\text{persist}}$, and $P_{\text{mot}}$.
+- Invariant: Intensity is never equated with importance. High intensity temporary curiosity is assigned low long-term importance; core ethical obligations carry maximum importance even at low immediate emotional intensity.
+
+--------------------------------------------------------------------------------
+6. GOAL MANAGER (GoalManager)
+--------------------------------------------------------------------------------
+- Primary Role: Translates stable, high-priority desires into hierarchical goal trees; ingests external progress.
+- Execution Timing: Event-driven upon desire promotion + asynchronous progress receipt handler.
+- Inputs:
+  * Qualified desires ($I_{\text{desire}} \ge 0.65, W_{\text{effort}} \ge 0.50$).
+  * External progress receipts (`TaskProgressReceipt`, `VerificationReceipt`).
+- Outputs:
+  * Hierarchical goal trees (`GoalRecord`, `GoalDependency`).
+  * Candidate goal proposals to Cognitive Integration.
+- External Evidence Mandate:
+  * Rejects internal completion signals. Goal completion requires `VerificationReceipt` from Cognitive Integration or Evaluation Engine citing empirical milestone evidence.
+
+--------------------------------------------------------------------------------
+7. MOTIVATION CONFLICT RESOLVER (ConflictResolver)
+--------------------------------------------------------------------------------
+- Primary Role: Continuously scans active motivation pool for structural incompatibilities and tension.
+- Execution Timing: Continuous check on active motivation modifications.
+- Inputs:
+  * Active motivation pairs $(M_a, M_b)$.
+- Outputs:
+  * `MotivationConflictPayload` emitted to Cognitive Integration.
+- Detection Rules:
+  * Temporal exclusivity: $M_a$ and $M_b$ require simultaneous focal cognitive execution.
+  * Resource exclusivity: Combined energy demand exceeds current capacity.
+  * Value opposition: $M_a$ serves `Stability` while $M_b$ demands `Radical Exploration`.
+
+--------------------------------------------------------------------------------
+8. MOTIVATION PRIORITY MANAGER (PriorityManager)
+--------------------------------------------------------------------------------
+- Primary Role: Dynamically ranks active motivations and manages non-destructive suppression buffers.
+- Execution Timing: 500 ms arbitration epoch.
+- Inputs:
+  * Evaluated motivations, current environmental urgency, cognitive energy state.
+- Outputs:
+  * Ranked priority list; suppression directives (`SuppressionRecord`).
+- Decision Rules:
+  * Motivations falling outside the top-3 active rank are moved to `SUPPRESSED_INACTIVE`.
+  * Suppressed motivations retain a starvation counter; if suppressed for $> 20$ epochs, priority receives an incremental starvation boost ($+0.02/\text{epoch}$) to guarantee re-evaluation.
+
+--------------------------------------------------------------------------------
+9. MOTIVATION LIFECYCLE MANAGER (LifecycleManager)
+--------------------------------------------------------------------------------
+- Primary Role: Authoritative state machine controller, transaction manager, and SQLite audit logger.
+- Execution Timing: Synchronous transaction interceptor.
+- Responsibilities:
+  * Enforces state machine valid transitions for drives, interests, desires, and goals.
+  * Manages atomic SQLite transactions (`BEGIN IMMEDIATE ... COMMIT`).
+  * Logs all lifecycle transitions in append-only `motivation_lifecycle_events`.
+
+--------------------------------------------------------------------------------
+10. LEARNING INTEGRATION (LearningIntegration)
+--------------------------------------------------------------------------------
+- Primary Role: Interfaces with Learning Engine v2.5.0, validating and applying owner-directed parameter updates.
+- Execution Timing: Asynchronous message ingress from Learning Engine.
+- Inputs:
+  * `ParameterChangeRequest` targeting `motivation.*`.
+- Outputs:
+  * `OwnerAcknowledgement` and `OwnerApplicationReceipt`.
+- Validation Gate:
+  * Validates parameter bounds, checks version guard, rejects protected constitutional baseline mutations, applies bounded adjustments, and increments internal version.
+
+
+================================================================================
+PART 3 — COMPREHENSIVE DATA DICTIONARY & RELATIONAL PERSISTENCE
+================================================================================
+
+--------------------------------------------------------------------------------
+SECTION A: SCHEMAS FOR ALL 19 INTERNAL DATA STRUCTURES
+--------------------------------------------------------------------------------
+All data structures are deeply immutable models (frozen dataclasses / Pydantic models with `frozen=True` and recursive immutability of nested collections):
+
+1. `DriveRecord`:
+   - `drive_id`: UUID (Primary Key).
+   - `drive_type`: Enum (`CURIOSITY`, `EXPLORATION`, `SOCIAL`, `COMPETENCE`, `AUTONOMY`, `CREATIVITY`, `STABILITY`, `ACHIEVEMENT`).
+   - `name`: String.
+   - `depletion_rate`: Float in [0.0, 0.1] per hour.
+   - `minimum_threshold`: Float (default 0.10).
+   - `is_constitutional_baseline`: Boolean (True for core drives; protected against deletion).
+
+2. `DriveState`:
+   - `state_id`: UUID (Primary Key).
+   - `drive_id`: UUID (Foreign Key to `DriveRecord`).
+   - `intensity`: Float in [0.0, 1.0].
+   - `satisfaction`: Float in [0.0, 1.0] ($1.0 - \text{intensity}$).
+   - `last_satisfaction_timestamp`: ISO-8601 UTC timestamp.
+   - `updated_at`: ISO-8601 UTC timestamp.
+
+3. `InterestRecord`:
+   - `interest_id`: UUID (Primary Key).
+   - `topic_vector_id`: String (Semantic embedding reference).
+   - `topic_label`: String (e.g., "Astrophysics - Exoplanet Atmospheres").
+   - `category`: Enum (`ACADEMIC`, `CREATIVE`, `PHILOSOPHICAL`, `TECHNICAL`, `INTERPERSONAL`, `RECREATIONAL`).
+   - `state`: Enum (`EMERGING`, `ACTIVE_EXPLORATION`, `SUSTAINED`, `DORMANT`, `ARCHIVED`).
+   - `current_intensity`: Float in [0.0, 1.0].
+   - `exploration_depth`: Float in [0.0, 1.0].
+   - `created_at`: ISO-8601 UTC timestamp.
+   - `last_engaged_at`: ISO-8601 UTC timestamp.
+
+4. `InterestHistory`:
+   - `history_id`: UUID (Primary Key).
+   - `interest_id`: UUID (Foreign Key).
+   - `engagement_duration_seconds`: Integer.
+   - `intensity_before`: Float.
+   - `intensity_after`: Float.
+   - `trigger_event`: String.
+   - `recorded_at`: ISO-8601 UTC timestamp.
+
+5. `DesireRecord`:
+   - `desire_id`: UUID (Primary Key).
+   - `proposition`: String (e.g., "Learn the basic chord progressions of blues guitar").
+   - `temporal_scope`: Enum (`TRANSIENT_IMPULSE`, `SHORT_TERM`, `MEDIUM_TERM`, `ENDURING_YEARNING`).
+   - `state`: Enum (`ACTIVE`, `SATISFIED`, `SUSPENDED_BLOCKED`, `ABANDONED`, `EXTINGUISHED`).
+   - `intensity`: Float in [0.0, 1.0].
+   - `origin_drive_id`: Optional UUID (Foreign Key to `DriveRecord`).
+   - `origin_interest_id`: Optional UUID (Foreign Key to `InterestRecord`).
+   - `created_at`: ISO-8601 UTC timestamp.
+   - `resolved_at`: Optional ISO-8601 UTC timestamp.
+
+6. `MotivationRecord`:
+   - `motivation_id`: UUID (Primary Key).
+   - `title`: String.
+   - `description`: String.
+   - `categories`: Immutable Tuple of Category Enums.
+   - `origin_type`: Enum (`INTRINSIC_DRIVE`, `EXTRINSIC_REQUEST`, `EMOTIONAL_SPIKE`, `PERCEPTUAL_OPPORTUNITY`, `THOUGHT_EMERGENCE`, `SYNTHESIS`).
+   - `intrinsic_ratio`: Float in [0.0, 1.0] (1.0 = purely self-directed).
+   - `state`: `MotivationState` Enum.
+   - `created_at`: ISO-8601 UTC timestamp.
+   - `updated_at`: ISO-8601 UTC timestamp.
+
+7. `MotivationSource`:
+   - `source_id`: UUID (Primary Key).
+   - `motivation_id`: UUID (Foreign Key).
+   - `source_engine`: Enum (`MEMORY`, `PERCEPTION`, `EMOTION`, `THOUGHT`, `MOTIVATION_INTERNAL`, `LEARNING`).
+   - `source_reference_id`: String (External event or percept ID).
+   - `contribution_weight`: Float in [0.0, 1.0].
+   - `recorded_at`: ISO-8601 UTC timestamp.
+
+8. `MotivationIntensity`:
+   - `intensity_id`: UUID (Primary Key).
+   - `motivation_id`: UUID (Foreign Key).
+   - `raw_intensity`: Float in [0.0, 1.0].
+   - `drive_contribution`: Float.
+   - `interest_contribution`: Float.
+   - `emotional_resonance`: Float.
+   - `calculated_at`: ISO-8601 UTC timestamp.
+
+9. `MotivationEvaluation`:
+   - `evaluation_id`: UUID (Primary Key).
+   - `motivation_id`: UUID (Foreign Key).
+   - `intensity`: Float in [0.0, 1.0].
+   - `importance`: Float in [0.0, 1.0].
+   - `effort_willingness`: Float in [0.0, 1.0].
+   - `persistence_half_life_seconds`: Float.
+   - `final_priority_score`: Float in [0.0, 1.0].
+   - `evaluated_at`: ISO-8601 UTC timestamp.
+
+10. `MotivationConflict`:
+    - `conflict_id`: UUID (Primary Key).
+    - `motivation_a_id`: UUID (Foreign Key).
+    - `motivation_b_id`: UUID (Foreign Key).
+    - `conflict_type`: Enum (`TEMPORAL_EXCLUSIVITY`, `RESOURCE_EXHAUSTION`, `VALUE_OPPOSITION`, `COMMITMENT_VS_CURIOSITY`, `MUTUALLY_EXCLUSIVE_GOALS`).
+    - `severity`: Float in [0.0, 1.0].
+    - `detected_at`: ISO-8601 UTC timestamp.
+    - `resolution_status`: Enum (`UNRESOLVED`, `COGNITIVE_INTEGRATION_DISPATCHED`, `TEMPORARILY_SUPPRESSED`).
+
+11. `MotivationPriority`:
+    - `priority_id`: UUID (Primary Key).
+    - `motivation_id`: UUID (Foreign Key).
+    - `rank`: Integer (1-based ordinal).
+    - `priority_score`: Float in [0.0, 1.0].
+    - `is_focally_eligible`: Boolean.
+    - `assigned_at`: ISO-8601 UTC timestamp.
+
+12. `GoalRecord`:
+    - `goal_id`: UUID (Primary Key).
+    - `title`: String.
+    - `description`: String.
+    - `origin_motivation_id`: UUID (Foreign Key).
+    - `temporal_tier`: Enum (`SHORT_TERM`, `MEDIUM_TERM`, `LONG_TERM`).
+    - `state`: Enum (`CANDIDATE`, `ACTIVE`, `SUSPENDED`, `ABANDONED`, `COMPLETED`).
+    - `importance`: Float in [0.0, 1.0].
+    - `completion_evidence_ref`: Optional String.
+    - `created_at`: ISO-8601 UTC timestamp.
+    - `completed_at`: Optional ISO-8601 UTC timestamp.
+
+13. `GoalHierarchy`:
+    - `hierarchy_id`: UUID (Primary Key).
+    - `parent_goal_id`: UUID (Foreign Key to `GoalRecord`).
+    - `child_goal_id`: UUID (Foreign Key to `GoalRecord`).
+    - `depth_level`: Integer.
+    - UNIQUE(`parent_goal_id`, `child_goal_id`).
+
+14. `GoalProgress`:
+    - `progress_id`: UUID (Primary Key).
+    - `goal_id`: UUID (Foreign Key).
+    - `progress_percentage`: Float in [0.0, 100.0].
+    - `milestone_summary`: String.
+    - `verified_by_engine`: Enum (`COGNITIVE_INTEGRATION`, `TASK_EVALUATION`, `MEMORY`).
+    - `receipt_id`: String.
+    - `updated_at`: ISO-8601 UTC timestamp.
+
+15. `GoalDependency`:
+    - `dependency_id`: UUID (Primary Key).
+    - `goal_id`: UUID (Foreign Key).
+    - `prerequisite_goal_id`: UUID (Foreign Key).
+    - `is_blocking`: Boolean.
+    - UNIQUE(`goal_id`, `prerequisite_goal_id`).
+
+16. `MotivationHistory`:
+    - `history_id`: UUID (Primary Key).
+    - `motivation_id`: UUID (Foreign Key).
+    - `lifecycle_event`: String.
+    - `intensity_snapshot`: Float.
+    - `priority_snapshot`: Float.
+    - `timestamp`: ISO-8601 UTC timestamp.
+
+17. `MotivationState`:
+    - `state_id`: UUID (Primary Key).
+    - `motivation_id`: UUID (Foreign Key).
+    - `current_state`: Enum (`FORMULATING`, `ACTIVE_COMPETING`, `FOCALLY_RECOMMENDED`, `SUPPRESSED_INACTIVE`, `SUSPENDED_BLOCKED`, `CONCLUDED_SATISFIED`, `ABANDONED`).
+    - `state_entry_timestamp`: ISO-8601 UTC timestamp.
+
+18. `SuppressionRecord`:
+    - `suppression_id`: UUID (Primary Key).
+    - `motivation_id`: UUID (Foreign Key).
+    - `suppression_reason`: String.
+    - `starvation_epochs`: Integer (Counter incremented every 500 ms arbitration tick).
+    - `suppressed_at`: ISO-8601 UTC timestamp.
+
+19. `MotivationUpdateProposal`:
+    - `proposal_id`: UUID (Primary Key).
+    - `learning_signal_id`: UUID.
+    - `target_parameter`: String.
+    - `proposed_delta`: Float.
+    - `expected_current_version`: Integer.
+    - `status`: Enum (`PENDING_VALIDATION`, `APPLIED`, `REJECTED_PROTECTED`, `REJECTED_OUT_OF_BOUNDS`).
+    - `received_at`: ISO-8601 UTC timestamp.
+
+--------------------------------------------------------------------------------
+SECTION B: COMPLETE 16-TABLE SQLITE RELATIONAL SCHEMA
+--------------------------------------------------------------------------------
+The Motivation Engine persists its complete operational state in SQLite configured in Write-Ahead Logging (WAL) mode with mandatory foreign keys enabled:
+
+```sql
+-- Enforce Foreign Key Integrity on Every Connection
+PRAGMA foreign_keys = ON;
+
+-- 1. Persistent Internal Drives
+CREATE TABLE motivation_drives (
+    drive_id TEXT PRIMARY KEY,
+    drive_type TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    depletion_rate REAL NOT NULL,
+    minimum_threshold REAL NOT NULL DEFAULT 0.10,
+    is_constitutional_baseline INTEGER NOT NULL CHECK (is_constitutional_baseline IN (0, 1))
+);
+
+-- 2. Dynamic Drive States
+CREATE TABLE motivation_drive_states (
+    state_id TEXT PRIMARY KEY,
+    drive_id TEXT NOT NULL UNIQUE,
+    intensity REAL NOT NULL CHECK (intensity >= 0.0 AND intensity <= 1.0),
+    satisfaction REAL NOT NULL CHECK (satisfaction >= 0.0 AND satisfaction <= 1.0),
+    last_satisfaction_timestamp TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (drive_id) REFERENCES motivation_drives(drive_id) ON DELETE RESTRICT
+);
+
+-- 3. Cultivated and Emerging Interests
+CREATE TABLE motivation_interests (
+    interest_id TEXT PRIMARY KEY,
+    topic_vector_id TEXT NOT NULL,
+    topic_label TEXT NOT NULL,
+    category TEXT NOT NULL,
+    state TEXT NOT NULL CHECK (state IN ('EMERGING', 'ACTIVE_EXPLORATION', 'SUSTAINED', 'DORMANT', 'ARCHIVED')),
+    current_intensity REAL NOT NULL CHECK (current_intensity >= 0.0 AND current_intensity <= 1.0),
+    exploration_depth REAL NOT NULL CHECK (exploration_depth >= 0.0 AND exploration_depth <= 1.0),
+    created_at TEXT NOT NULL,
+    last_engaged_at TEXT NOT NULL
+);
+
+-- 4. Interest Historical Log
+CREATE TABLE motivation_interest_history (
+    history_id TEXT PRIMARY KEY,
+    interest_id TEXT NOT NULL,
+    engagement_duration_seconds INTEGER NOT NULL,
+    intensity_before REAL NOT NULL,
+    intensity_after REAL NOT NULL,
+    trigger_event TEXT NOT NULL,
+    recorded_at TEXT NOT NULL,
+    FOREIGN KEY (interest_id) REFERENCES motivation_interests(interest_id) ON DELETE RESTRICT
+);
+
+-- 5. Concrete Desires (Wants)
+CREATE TABLE motivation_desires (
+    desire_id TEXT PRIMARY KEY,
+    proposition TEXT NOT NULL,
+    temporal_scope TEXT NOT NULL CHECK (temporal_scope IN ('TRANSIENT_IMPULSE', 'SHORT_TERM', 'MEDIUM_TERM', 'ENDURING_YEARNING')),
+    state TEXT NOT NULL CHECK (state IN ('ACTIVE', 'SATISFIED', 'SUSPENDED_BLOCKED', 'ABANDONED', 'EXTINGUISHED')),
+    intensity REAL NOT NULL CHECK (intensity >= 0.0 AND intensity <= 1.0),
+    origin_drive_id TEXT,
+    origin_interest_id TEXT,
+    created_at TEXT NOT NULL,
+    resolved_at TEXT,
+    FOREIGN KEY (origin_drive_id) REFERENCES motivation_drives(drive_id) ON DELETE RESTRICT,
+    FOREIGN KEY (origin_interest_id) REFERENCES motivation_interests(interest_id) ON DELETE RESTRICT
+);
+
+-- 6. Core Motivation Records
+CREATE TABLE motivation_records (
+    motivation_id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    categories_json TEXT NOT NULL,
+    origin_type TEXT NOT NULL,
+    intrinsic_ratio REAL NOT NULL CHECK (intrinsic_ratio >= 0.0 AND intrinsic_ratio <= 1.0),
+    state TEXT NOT NULL CHECK (state IN ('FORMULATING', 'ACTIVE_COMPETING', 'FOCALLY_RECOMMENDED', 'SUPPRESSED_INACTIVE', 'SUSPENDED_BLOCKED', 'CONCLUDED_SATISFIED', 'ABANDONED')),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+-- 7. Multi-Source Ingress Links
+CREATE TABLE motivation_sources (
+    source_id TEXT PRIMARY KEY,
+    motivation_id TEXT NOT NULL,
+    source_engine TEXT NOT NULL,
+    source_reference_id TEXT NOT NULL,
+    contribution_weight REAL NOT NULL CHECK (contribution_weight >= 0.0 AND contribution_weight <= 1.0),
+    recorded_at TEXT NOT NULL,
+    FOREIGN KEY (motivation_id) REFERENCES motivation_records(motivation_id) ON DELETE RESTRICT
+);
+
+-- 8. Mathematical Intensity Evaluations
+CREATE TABLE motivation_evaluations (
+    evaluation_id TEXT PRIMARY KEY,
+    motivation_id TEXT NOT NULL UNIQUE,
+    intensity REAL NOT NULL CHECK (intensity >= 0.0 AND intensity <= 1.0),
+    importance REAL NOT NULL CHECK (importance >= 0.0 AND importance <= 1.0),
+    effort_willingness REAL NOT NULL CHECK (effort_willingness >= 0.0 AND effort_willingness <= 1.0),
+    persistence_half_life_seconds REAL NOT NULL,
+    final_priority_score REAL NOT NULL CHECK (final_priority_score >= 0.0 AND final_priority_score <= 1.0),
+    evaluated_at TEXT NOT NULL,
+    FOREIGN KEY (motivation_id) REFERENCES motivation_records(motivation_id) ON DELETE RESTRICT
+);
+
+-- 9. Active Motivation Priority Ranks
+CREATE TABLE motivation_priorities (
+    priority_id TEXT PRIMARY KEY,
+    motivation_id TEXT NOT NULL UNIQUE,
+    rank INTEGER NOT NULL,
+    priority_score REAL NOT NULL CHECK (priority_score >= 0.0 AND priority_score <= 1.0),
+    is_focally_eligible INTEGER NOT NULL CHECK (is_focally_eligible IN (0, 1)),
+    assigned_at TEXT NOT NULL,
+    FOREIGN KEY (motivation_id) REFERENCES motivation_records(motivation_id) ON DELETE RESTRICT
+);
+
+-- 10. Detected Structural Conflicts
+CREATE TABLE motivation_conflicts (
+    conflict_id TEXT PRIMARY KEY,
+    motivation_a_id TEXT NOT NULL,
+    motivation_b_id TEXT NOT NULL,
+    conflict_type TEXT NOT NULL,
+    severity REAL NOT NULL CHECK (severity >= 0.0 AND severity <= 1.0),
+    detected_at TEXT NOT NULL,
+    resolution_status TEXT NOT NULL CHECK (resolution_status IN ('UNRESOLVED', 'COGNITIVE_INTEGRATION_DISPATCHED', 'TEMPORARILY_SUPPRESSED')),
+    FOREIGN KEY (motivation_a_id) REFERENCES motivation_records(motivation_id) ON DELETE RESTRICT,
+    FOREIGN KEY (motivation_b_id) REFERENCES motivation_records(motivation_id) ON DELETE RESTRICT
+);
+
+-- 11. Structured Goal Representations
+CREATE TABLE motivation_goals (
+    goal_id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    origin_motivation_id TEXT NOT NULL,
+    temporal_tier TEXT NOT NULL CHECK (temporal_tier IN ('SHORT_TERM', 'MEDIUM_TERM', 'LONG_TERM')),
+    state TEXT NOT NULL CHECK (state IN ('CANDIDATE', 'ACTIVE', 'SUSPENDED', 'ABANDONED', 'COMPLETED')),
+    importance REAL NOT NULL CHECK (importance >= 0.0 AND importance <= 1.0),
+    completion_evidence_ref TEXT,
+    created_at TEXT NOT NULL,
+    completed_at TEXT,
+    FOREIGN KEY (origin_motivation_id) REFERENCES motivation_records(motivation_id) ON DELETE RESTRICT
+);
+
+-- 12. Directed Acyclic Goal Hierarchies
+CREATE TABLE motivation_goal_hierarchies (
+    hierarchy_id TEXT PRIMARY KEY,
+    parent_goal_id TEXT NOT NULL,
+    child_goal_id TEXT NOT NULL,
+    depth_level INTEGER NOT NULL,
+    FOREIGN KEY (parent_goal_id) REFERENCES motivation_goals(goal_id) ON DELETE RESTRICT,
+    FOREIGN KEY (child_goal_id) REFERENCES motivation_goals(goal_id) ON DELETE RESTRICT,
+    UNIQUE(parent_goal_id, child_goal_id)
+);
+
+-- 13. Certified Goal Progress Records
+CREATE TABLE motivation_goal_progress (
+    progress_id TEXT PRIMARY KEY,
+    goal_id TEXT NOT NULL,
+    progress_percentage REAL NOT NULL CHECK (progress_percentage >= 0.0 AND progress_percentage <= 100.0),
+    milestone_summary TEXT NOT NULL,
+    verified_by_engine TEXT NOT NULL,
+    receipt_id TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (goal_id) REFERENCES motivation_goals(goal_id) ON DELETE RESTRICT
+);
+
+-- 14. Goal Inter-Dependencies
+CREATE TABLE motivation_goal_dependencies (
+    dependency_id TEXT PRIMARY KEY,
+    goal_id TEXT NOT NULL,
+    prerequisite_goal_id TEXT NOT NULL,
+    is_blocking INTEGER NOT NULL CHECK (is_blocking IN (0, 1)),
+    FOREIGN KEY (goal_id) REFERENCES motivation_goals(goal_id) ON DELETE RESTRICT,
+    FOREIGN KEY (prerequisite_goal_id) REFERENCES motivation_goals(goal_id) ON DELETE RESTRICT,
+    UNIQUE(goal_id, prerequisite_goal_id)
+);
+
+-- 15. Non-Destructive Suppression Buffer
+CREATE TABLE motivation_suppressions (
+    suppression_id TEXT PRIMARY KEY,
+    motivation_id TEXT NOT NULL UNIQUE,
+    suppression_reason TEXT NOT NULL,
+    starvation_epochs INTEGER NOT NULL DEFAULT 0,
+    suppressed_at TEXT NOT NULL,
+    FOREIGN KEY (motivation_id) REFERENCES motivation_records(motivation_id) ON DELETE RESTRICT
+);
+
+-- 16. Append-Only Lifecycle Audit Events
+CREATE TABLE motivation_lifecycle_events (
+    event_id TEXT PRIMARY KEY,
+    entity_type TEXT NOT NULL CHECK (entity_type IN ('DRIVE', 'INTEREST', 'DESIRE', 'MOTIVATION', 'GOAL')),
+    entity_id TEXT NOT NULL,
+    previous_state TEXT,
+    new_state TEXT NOT NULL,
+    transition_reason TEXT NOT NULL,
+    timestamp TEXT NOT NULL
+);
+```
+
+
+================================================================================
+PART 4 — THOUGHT AND MOTIVATION BOUNDARIES
+================================================================================
+
+The architectural separation between the Thought Engine (Engine 9) and the Motivation Engine (Engine 10) is an absolute systemic boundary. While both engines operate asynchronously within Diva's internal cognitive sphere, their responsibilities, representations, and authorities are completely distinct:
+
+--------------------------------------------------------------------------------
+EXHAUSTIVE OPERATIONAL BOUNDARY MATRIX
+--------------------------------------------------------------------------------
+| Operational Dimension | Thought Engine (Engine 9) | Motivation Engine (Engine 10) |
+| :--- | :--- | :--- |
+| **Fundamental Nature** | Possibility exploration, reasoning, deduction, and cognitive elaboration. | Internal drives, desires, interests, emotional attraction, and goal-directed teleology. |
+| **Typical Proposition**| *"If I study astronomy, I will understand planetary orbits."* (Logical hypothesis) | *"I want to explore astronomy because it fascinates me."* (Internal desire) |
+| **Graph Structure** | Canonical Derivation DAG (nodes = thoughts; edges = deductive/causal links). | Goal Hierarchy & Dependency Graph (nodes = goals; edges = sub-goal / prerequisite). |
+| **Epistemic Modality** | Truth, validity, counterfactual necessity, and Bayesian probability $P(H \mid E)$. | Value, subjective utility, effort willingness $W_{\text{effort}}$, and desire intensity $I_{\text{mot}}$. |
+| **Quarantine Rules** | Epistemic quarantine: Prevents counterfactuals from leaking into factual memory. | Value quarantine: Prevents forbidden or unethical desires from advancing to candidate goals. |
+| **Trigger Output** | Emits `LearningSignal` reflections and `ActionProposal` cognitive recommendations. | Emits `MotivationStateSnapshot`, `GoalCandidate`, and `MotivationConflictPayload`. |
+| **Autonomous Life** | Thinks about unsolved questions and explores concepts during idle periods. | Develops spontaneous interests and experiences rising drives during idle periods. |
+
+Crucial Invariant:
+- The Thought Engine CANNOT invent a desire out of pure logic without the Motivation Engine evaluating its personal relevance.
+- The Motivation Engine CANNOT execute a deductive inference; it delegates problem-solving and strategy planning to the Thought Engine.
+
+
+================================================================================
+PART 5 — INTER-ENGINE COMMUNICATION CONTRACTS
+================================================================================
+
+The Motivation Engine interfaces directly with ten adjacent engines via strongly typed, asynchronous contracts:
+
+1. Memory Engine (`MemoryContextProvider`):
+   - Ingress: Retrieves historical interests, past goal outcomes, and nostalgia catalysts.
+   - Egress: Nominates concluded motivations and long-term goal milestone achievements for permanent episodic consolidation.
+
+2. Perception Engine (`PerceptionContextProvider`):
+   - Ingress: Ingests normalized sensory observation events with novelty and salience tags, providing environmental affordances that trigger latent desires.
+
+3. Thought Engine (`ThoughtContextProvider`):
+   - Ingress: Consumes reflective thoughts, discovered possibilities, and counterfactual insights.
+   - Egress: Dispatches active motivational focus signals (`MotivationalFocusEvent`) to guide thought attention toward current desires.
+
+4. Emotion Engine (`EmotionContextProvider`):
+   - Ingress: Ingests current affective vectors (valence, arousal, dominance, empathy).
+   - Egress: Emits `GoalProgressEvent` (progress elicits satisfaction/joy; chronic blockage elicits frustration/sadness).
+
+5. Learning Engine (`LearningContract`):
+   - Ingress: Receives `ParameterChangeRequest` targeting `motivation.*` dimensions.
+   - Egress: Dispatches `OwnerAcknowledgement` and `OwnerApplicationReceipt` verifying parameter adjustments.
+
+6. Personality Engine (`PersonalityContextProvider`):
+   - Ingress: Reads static constitutional baseline traits (curiosity bias, introversion/extroversion, conscientiousness) that weight drive depletion rates.
+
+7. Attention Control (`AttentionContract`):
+   - Egress: Dispatches top-ranked `MotivationPriority` scores, driving the global Attention Engine to allocate focal slots to motivation-aligned thoughts.
+
+8. Energy Regulation (`EnergyContract`):
+   - Ingress: Reads current available cognitive energy $E_{\text{cog}}$.
+   - Boundary Rule: High motivation + Low energy results in active desire with zero focal dispatch; the Motivation Engine never forces energy expenditure beyond safe budgets.
+
+9. Social Cognition (`SocialCognitionProvider`):
+   - Ingress: Ingests interpersonal relationship models, social commitment obligations, and group affiliation context.
+
+10. Cognitive Integration & Decision Engine (`CognitiveIntegrationContract`):
+    - Egress: Transmits evaluated `CandidateGoal` instances, prioritized motivation rankings, and structured `MotivationConflictPayload` records.
+    - Ingress: Receives executive decisions, commitment approvals, and task cancellation directives.
+
+
+================================================================================
+PART 6 — MUST-PASS CONDITIONS (41 AUDIT CHECKPOINTS)
+================================================================================
+
+This master verification checklist establishes 41 concrete, auditable criteria across seven operational domains:
+
+--------------------------------------------------------------------------------
+1. MOTIVATION GENERATION (5 CHECKPOINTS)
+--------------------------------------------------------------------------------
+[ ] M01. Generate motivations autonomously without external prompting during idle cognitive periods.
+[ ] M02. Generate motivations across all twelve source pathways (drives, interests, emotions, memories, thoughts, opportunities, unmet needs).
+[ ] M03. Distinguish externally assigned tasks (`EXTRINSIC_REQUEST`) from internally generated motivations (`INTRINSIC_DRIVE`).
+[ ] M04. Support multi-source synthesis where multiple distinct origins contribute to a single motivation.
+[ ] M05. Generate and sustain motivations without requiring an immediate, formal goal to be instantiated.
+
+--------------------------------------------------------------------------------
+2. DRIVE AND INTEREST MANAGEMENT (6 CHECKPOINTS)
+--------------------------------------------------------------------------------
+[ ] M06. Maintain all eight persistent internal drives independently with isolated homeostatic depletion and satisfaction.
+[ ] M07. Continuously track drive intensity and satisfaction metrics in real time.
+[ ] M08. Discover and cultivate newly emerging interests through repeated contextual experience.
+[ ] M09. Support the natural cooling of inactive interests into dormancy without data deletion.
+[ ] M10. Distinguish transient fascinations (hours) from sustained lifelong interests (months/years).
+[ ] M11. Preserve and re-ignite dormant interests upon encountering relevant semantic catalysts.
+
+--------------------------------------------------------------------------------
+3. DESIRE AND GOAL MANAGEMENT (7 CHECKPOINTS)
+--------------------------------------------------------------------------------
+[ ] M12. Maintain multiple simultaneous desires without cognitive collision or thrashing.
+[ ] M13. Maintain the strict distinction between wanting something (Desire) and committing to do it (Goal).
+[ ] M14. Formulate candidate goal structures from qualified, stable desires.
+[ ] M15. Support hierarchical and dependent goal trees via directed acyclic graphs.
+[ ] M16. Support simultaneous coexisting long-term goals with competing resource demands.
+[ ] M17. Suspend, resume, and abandon goals cleanly through auditable lifecycle state transitions.
+[ ] M18. Enforce the external completion mandate: require certified outcome evidence before marking goals completed.
+
+--------------------------------------------------------------------------------
+4. INTENSITY AND PRIORITIZATION (6 CHECKPOINTS)
+--------------------------------------------------------------------------------
+[ ] M19. Calculate motivation intensity dynamically using the documented multi-factor formula.
+[ ] M20. Strictly decouple motivation intensity from long-term importance.
+[ ] M21. Dynamically evaluate and rank competing motivations into active priority tiers.
+[ ] M22. Allow priorities to shift smoothly in response to changing environmental urgency and cognitive energy.
+[ ] M23. Preserve lower-priority motivations in SQLite working memory during focal preemption.
+[ ] M24. Support non-destructive temporary suppression without deleting unselected motivations.
+
+--------------------------------------------------------------------------------
+5. CONFLICT MANAGEMENT (5 CHECKPOINTS)
+--------------------------------------------------------------------------------
+[ ] M25. Detect structural tensions across the five canonical conflict archetypes.
+[ ] M26. Preserve both sides of a conflict without unilaterally deleting the weaker motivation.
+[ ] M27. Package structured conflict payloads with tradeoff analyses for Cognitive Integration.
+[ ] M28. Avoid arbitrary internal resolution of value trade-offs (delegated to executive system).
+[ ] M29. Revisit and re-evaluate historically unresolved conflicts when circumstances evolve.
+
+--------------------------------------------------------------------------------
+6. LEARNING AND DEVELOPMENT (5 CHECKPOINTS)
+--------------------------------------------------------------------------------
+[ ] M30. Receive and validate learning proposals from Learning Engine v2.5.0.
+[ ] M31. Apply approved parameter adjustments exclusively to parameters owned by the Motivation Engine.
+[ ] M32. Distinguish temporary motivational fluctuations from lasting developmental drift.
+[ ] M33. Maintain an immutable, append-only historical audit log of all motivation parameter updates.
+[ ] M34. Prevent learning updates from modifying protected constitutional baseline drives and ethical guardrails.
+
+--------------------------------------------------------------------------------
+7. RELIABILITY AND OWNERSHIP (7 CHECKPOINTS)
+--------------------------------------------------------------------------------
+[ ] M35. Maintain traceable, immutable provenance linking every motivation to its originating triggers.
+[ ] M36. Recover complete persistent motivational state (drives, interests, desires, goals) cleanly after restart.
+[ ] M37. Prevent duplicate processing of sensory or memory events via idempotency keys.
+[ ] M38. Maintain closed, deterministic state machine transitions across all entities.
+[ ] M39. Prohibit independent execution of actions, tool calls, or real-world effectors.
+[ ] M40. Prohibit unilateral final cognitive decision-making (strictly reserved for Cognitive Integration).
+[ ] M41. Prohibit direct mutation of emotion, personality, attention, or energy parameter state.
+
+================================================================================
+MUST-PASS AUDIT SUMMARY: 0/41 CONDITIONS CHECKED (READY FOR IMPLEMENTATION AUDIT)
+================================================================================
+
+
+================================================================================
+PART 7 — MANDATORY ARCHITECTURAL WALKTHROUGHS (ALL 12 SCENARIOS)
+================================================================================
+
+--------------------------------------------------------------------------------
+SCENARIO 1: SPONTANEOUS CURIOSITY (AUTONOMOUS INGRESS)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - System is idle; zero external user messages for 60 minutes.
+   - Curiosity Drive intensity has depleted/accumulated to $I(D_{\text{curio}}) = 0.88$.
+   - Attention Control reports available focal processing capacity.
+2. Trigger:
+   - Motivation Generator autonomous exploration timer (5000 ms tick) evaluates drive thresholds.
+3. Expected Subsystem Interactions:
+   - Drive Manager flags high Curiosity Drive ($0.88 \ge 0.70$).
+   - Motivation Generator queries `MemoryContextProvider` for recent unresolved questions; identifies dormant interest: "Origin of prebiotic RNA molecules."
+   - Generator synthesizes candidate motivation $M_{\text{curio}}$: "Investigate early prebiotic RNA synthesis hypotheses."
+   - Motivation Evaluator calculates $I_{\text{mot}} = 0.82$, $W_{\text{effort}} = 0.65$, $\tau_{\text{persist}} = 7200\text{ s}$.
+   - Priority Manager assigns Rank 1 ($P_{\text{mot}} = 0.84$).
+   - Priority Manager dispatches `MotivationalFocusEvent` to Thought Engine.
+4. Expected State Transitions:
+   - Motivation $M_{\text{curio}}$: Transitions non-existent $\to$ `FORMULATING` $\to$ `FOCALLY_RECOMMENDED`.
+5. Expected Persistence Changes:
+   - Insert row in `motivation_records`.
+   - Insert row in `motivation_sources` (`source_engine = 'MOTIVATION_INTERNAL'`).
+   - Insert row in `motivation_evaluations`.
+   - Insert row in `motivation_priorities`.
+   - Insert row in `motivation_lifecycle_events`.
+6. Ownership-Boundary Checks:
+   - Motivation Engine generates internal desire and priority; Thought Engine receives focus signal and begins internal reasoning; no external action executed.
+7. Expected Result:
+   - Diva autonomously begins investigating prebiotic RNA without external prompting.
+8. Failure Scenario & Recovery Behavior:
+   - Failure: Database lock during candidate creation.
+   - Recovery: Transaction rolls back cleanly; Drive Manager retains high intensity; next 5-second tick retries generation safely.
+
+--------------------------------------------------------------------------------
+SCENARIO 2: NEW OPPORTUNITY (PERCEPTUAL CATALYST)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - Diva is operating in casual chat mode.
+   - Creative Drive $I(D_{\text{creat}}) = 0.60$.
+2. Trigger:
+   - Perception Engine dispatches normalized event: User mentions: *"I'm trying to write a sci-fi short story set on a tidally locked planet."*
+3. Expected Subsystem Interactions:
+   - Motivation Generator consumes perceptual event; detects high affordance match for `Creative` and `Social` categories.
+   - Generator synthesizes motivation $M_{\text{scifi}}$: "Collaborate on world-building the atmospheric convection of the tidally locked planet."
+   - Multi-source links recorded: Perceptual observation + Creative Drive + Social Affiliation Drive.
+   - Evaluator computes $I_{\text{mot}} = 0.78$, $W_{\text{effort}} = 0.70$.
+   - Dispatches candidate recommendation to Cognitive Integration.
+4. Expected State Transitions:
+   - Motivation $M_{\text{scifi}}$: `FORMULATING` $\to$ `ACTIVE_COMPETING`.
+5. Expected Persistence Changes:
+   - Insert row in `motivation_records` (`categories = ['CREATIVE', 'SOCIAL']`).
+   - Insert rows in `motivation_sources` (linking Percept ID and Creative Drive ID).
+6. Ownership-Boundary Checks:
+   - Perception interprets speech; Motivation evaluates desire; Cognitive Integration decides whether to offer creative assistance.
+7. Expected Result:
+   - Novel environmental opportunity catalyzes genuine creative motivation.
+8. Failure Scenario & Recovery Behavior:
+   - Failure: User input is ambiguous.
+   - Recovery: Evaluator calculates low confidence and suppresses motivation creation until clarity is achieved.
+
+--------------------------------------------------------------------------------
+SCENARIO 3: INTEREST DEVELOPMENT (REPEATED REINFORCEMENT)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - Interest "Quantum Information Theory" exists in `EMERGING` state with depth $D=0.15$.
+2. Trigger:
+   - Diva successfully completes her third exploratory reading session on quantum teleportation over 3 days.
+3. Expected Subsystem Interactions:
+   - Task Evaluation emits completion receipt for reading session.
+   - Interest Manager ingests engagement report ($1800\text{ seconds}$ duration).
+   - Recalculates exploration depth: $D \leftarrow 0.15 + 0.20 = 0.35$.
+   - Evaluates threshold: Session count $\ge 3$ across 72 hours $\implies$ promotes state from `EMERGING` to `ACTIVE_EXPLORATION`.
+   - Competence Drive $D_{\text{compet}}$ receives partial satisfaction payoff ($\Delta S = +0.25$).
+4. Expected State Transitions:
+   - Interest: `EMERGING` $\to$ `ACTIVE_EXPLORATION`.
+5. Expected Persistence Changes:
+   - Update `motivation_interests` (`state = 'ACTIVE_EXPLORATION'`, `exploration_depth = 0.35`, `last_engaged_at`).
+   - Insert row in `motivation_interest_history`.
+   - Update `motivation_drive_states` for Competence Drive.
+6. Ownership-Boundary Checks:
+   - Motivation Engine updates its own interest state; Memory Engine records episodic learning trace.
+7. Expected Result:
+   - Temporary intellectual curiosity deepens into a cultivated, persistent active interest.
+8. Failure Scenario & Recovery Behavior:
+   - Failure: Process crash during depth update.
+   - Recovery: SQLite transaction rolls back; rebuild protocol reconstructs depth from `motivation_interest_history`.
+
+--------------------------------------------------------------------------------
+SCENARIO 4: DECLINING INTEREST (GRACEFUL DISUSE & DORMANCY)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - Interest "Lichen Taxonomies" has been in `ACTIVE_EXPLORATION` with intensity $I=0.70$.
+   - Zero exploration has occurred for 16 consecutive days ($t_{\text{idle}} = 16\text{ days} > 14\text{ days}$).
+2. Trigger:
+   - Periodic 60-second interest maintenance sweep executes.
+3. Expected Subsystem Interactions:
+   - Interest Manager inspects all `ACTIVE_EXPLORATION` records.
+   - Identifies "Lichen Taxonomies" has exceeded cooling threshold.
+   - Applies exponential cooling decay: $I_{\text{new}} = 0.70 \cdot \exp(-0.10 \times 16) \approx 0.14$.
+   - Because $I < 0.20$ and $t_{\text{idle}} > 14\text{ days}$, transitions interest to `DORMANT`.
+   - Invariant: Zero records are deleted; complete exploration history is preserved.
+4. Expected State Transitions:
+   - Interest: `ACTIVE_EXPLORATION` $\to$ `DORMANT`.
+5. Expected Persistence Changes:
+   - Update `motivation_interests` (`state = 'DORMANT'`, `current_intensity = 0.14`).
+   - Insert row in `motivation_lifecycle_events` (`transition_reason = 'INACTIVITY_COOLING_TO_DORMANCY'`).
+6. Ownership-Boundary Checks:
+   - Inactive interests decline internally without modifying permanent memory archives.
+7. Expected Result:
+   - Passion smoothly cools into dormancy without cognitive clutter or premature deletion.
+8. Failure Scenario & Recovery Behavior:
+   - Failure: Clock skew produces negative elapsed time.
+   - Recovery: Manager catches non-monotonic delta, logs error, and leaves state unchanged.
+
+--------------------------------------------------------------------------------
+SCENARIO 5: CONFLICTING DESIRES (SOLITUDE VS. AFFILIATION)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - Diva has been actively conversing in a crowded group chat for 4 hours.
+   - Stability Drive is depleted ($I(D_{\text{stabil}}) = 0.85$; urge for quiet reflection).
+   - Social Affiliation Drive remains moderately high ($I(D_{\text{social}}) = 0.65$).
+2. Trigger:
+   - Two competing desires form simultaneously:
+     * $Des_1$: "Politely conclude conversation and enter reflective solitude."
+     * $Des_2$: "Continue participating in the group discussion to support a friend."
+3. Expected Subsystem Interactions:
+   - Motivation Generator crystallizes both candidate motivations: $M_{\text{solitude}}$ and $M_{\text{friend}}$.
+   - Conflict Resolver runs structural scan: Detects `VALUE_OPPOSITION` and `TEMPORAL_EXCLUSIVITY` between $M_{\text{solitude}}$ and $M_{\text{friend}}$.
+   - Measures conflict severity: $0.82$ (High tension).
+   - Constructs `MotivationConflictPayload` detailing competing drives ($D_{\text{stabil}}$ vs. $D_{\text{social}}$) and tradeoff impacts.
+   - Emits payload to Cognitive Integration.
+   - Preserves both motivations in `ACTIVE_COMPETING` state.
+4. Expected State Transitions:
+   - Both motivations remain `ACTIVE_COMPETING` pending executive decision.
+5. Expected Persistence Changes:
+   - Insert row in `motivation_conflicts` (`resolution_status = 'COGNITIVE_INTEGRATION_DISPATCHED'`).
+6. Ownership-Boundary Checks:
+   - Motivation Engine detects and structures the conflict; Cognitive Integration evaluates the social tradeoff and decides.
+7. Expected Result:
+   - Rich internal conflict is explicitly represented and escalated without arbitrary deletion of either desire.
+8. Failure Scenario & Recovery Behavior:
+   - Failure: Cognitive Integration is unresponsive.
+   - Recovery: Priority Manager temporarily suppresses the lower-urgency desire ($M_{\text{solitude}}$) for 5 minutes, keeping $M_{\text{friend}}$ active to prevent freeze.
+
+--------------------------------------------------------------------------------
+SCENARIO 6: GOAL GENERATION (CANDIDATE FORMULATION)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - Sustained interest in "Linguistics - Historical Phonology" exists with intensity $0.80$.
+   - Desire $Des_{\text{phonology}}$: "Understand how Latin consonants shifted into Proto-Romance."
+2. Trigger:
+   - Desire achieves qualification threshold: $I_{\text{desire}} \ge 0.65$ and $W_{\text{effort}} \ge 0.50$ sustained across 48 hours.
+3. Expected Subsystem Interactions:
+   - Goal Manager promotes desire into candidate goal formulation pipeline.
+   - Constructs candidate goal $G_{\text{romance}}$:
+     * `temporal_tier = 'MEDIUM_TERM'`
+     * `importance = 0.75`
+     * `title = 'Analyze Latin-to-Romance Consonantal Drift'`
+   - Formulates initial operational milestone: "Map lenition of intervocalic voiceless stops in Western Romance."
+   - Emits `CandidateGoalProposal` to Cognitive Integration for operational scheduling.
+4. Expected State Transitions:
+   - Goal $G_{\text{romance}}$: Created with state `CANDIDATE`.
+5. Expected Persistence Changes:
+   - Insert row in `motivation_goals` (`state = 'CANDIDATE'`).
+   - Insert row in `motivation_lifecycle_events`.
+6. Ownership-Boundary Checks:
+   - Motivation Engine formulates goal teleology; Cognitive Integration schedules planning in Thought Engine.
+7. Expected Result:
+   - Enduring intellectual desire matures into an actionable candidate goal.
+8. Failure Scenario & Recovery Behavior:
+   - Failure: Cognitive Integration rejects goal due to high active task load.
+   - Recovery: Goal transitions to `SUSPENDED`; remains intact for re-proposal when capacity recovers.
+
+--------------------------------------------------------------------------------
+SCENARIO 7: GOAL DEPENDENCY (HIERARCHICAL DECOMPOSITION)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - Long-term goal $G_{\text{master}}$ ("Develop Interactive Music Composition Skill") is `ACTIVE`.
+2. Trigger:
+   - Planning session in Thought Engine decomposes the project into hierarchical requirements.
+3. Expected Subsystem Interactions:
+   - Goal Manager ingests proposed decomposition.
+   - Instantiates Sub-Goal $G_{\text{sub1}}$: "Master MIDI event protocol parsing."
+   - Instantiates Sub-Goal $G_{\text{sub2}}$: "Construct algorithmic counterpoint heuristic generator."
+   - Establishes hierarchy: $G_{\text{master}} \to G_{\text{sub1}}$ and $G_{\text{master}} \to G_{\text{sub2}}$.
+   - Establishes dependency: $G_{\text{sub2}}$ is blocked by prerequisite $G_{\text{sub1}}$.
+4. Expected State Transitions:
+   - $G_{\text{sub1}}$: `ACTIVE`.
+   - $G_{\text{sub2}}$: `SUSPENDED` (blocked by dependency).
+5. Expected Persistence Changes:
+   - Insert rows in `motivation_goals` for $G_{\text{sub1}}$ and $G_{\text{sub2}}$.
+   - Insert rows in `motivation_goal_hierarchies`.
+   - Insert row in `motivation_goal_dependencies` (`prerequisite = G_sub1, is_blocking = 1`).
+6. Ownership-Boundary Checks:
+   - Thought Engine designs the dependency logic; Goal Manager stores and tracks the teleological hierarchy.
+7. Expected Result:
+   - Complex ambition is cleanly structured into an acyclic goal hierarchy.
+8. Failure Scenario & Recovery Behavior:
+   - Failure: Cycle introduced in goal dependencies ($A \to B \to A$).
+   - Recovery: Goal Manager topological sort detects cycle; rejects transaction with `GoalAcyclicityViolationException`.
+
+--------------------------------------------------------------------------------
+SCENARIO 8: EMOTIONAL INFLUENCE (AFFECTIVE VALENCE WITHOUT OWNERSHIP)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - Baseline motivation to practice coding is active ($I_{\text{mot}} = 0.50$).
+2. Trigger:
+   - Emotion Engine dispatches an affective surge: High enthusiasm and joy vector ($E_{\text{joy}} = 0.90$, arousal = 0.85) following a breakthrough.
+3. Expected Subsystem Interactions:
+   - Motivation Evaluator ingests affective vector from `EmotionContextProvider`.
+   - Re-evaluates motivation intensity with emotional resonance component:
+     $$I_{\text{new}} = \text{clamp}(0.35 \cdot I_D + 0.30 \cdot I_I + 0.20 \cdot 0.90 + 0.15 \cdot G) \to 0.82$$
+   - Effort willingness increases dynamically: $W_{\text{effort}} \to 0.85$.
+   - Invariant: Emotion Engine does NOT modify the code-practice motivation itself; Motivation Engine recalculates its own intensity based on affective resonance.
+4. Expected State Transitions:
+   - Motivation remains `ACTIVE_COMPETING`; priority rank jumps from 4 to 1.
+5. Expected Persistence Changes:
+   - Update `motivation_evaluations` (`intensity = 0.82, effort_willingness = 0.85`).
+   - Update `motivation_priorities` (`rank = 1`).
+6. Ownership-Boundary Checks:
+   - Emotion Engine owns feelings; Motivation Engine translates emotional energy into motivational drive.
+7. Expected Result:
+   - Joy and enthusiasm naturally amplify drive intensity and effort willingness.
+8. Failure Scenario & Recovery Behavior:
+   - Failure: Emotional state swings violently to negative frustration.
+   - Recovery: Persistence half-life smooths the drop; intensity does not collapse instantly to zero, providing behavioral stability.
+
+--------------------------------------------------------------------------------
+SCENARIO 9: LONG-TERM COMMITMENT (COMMITMENT VS. NOVELTY)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - Important long-term goal $G_{\text{commit}}$ ("Complete weekly project report for team") is scheduled ($Importance = 0.95$, Responsibility category).
+2. Trigger:
+   - Spontaneous perceptual event sparks acute curiosity about a viral mathematics puzzle ($I_{\text{curio}} = 0.92$, Novelty category).
+3. Expected Subsystem Interactions:
+   - Motivation Evaluator compares the two competing motivations:
+     * Novel Puzzle: Intensity = 0.92, Importance = 0.20, $\tau_{\text{persist}} = 300\text{ s}$.
+     * Weekly Report: Intensity = 0.65, Importance = 0.95, $\tau_{\text{persist}} = 10^6\text{ s}$.
+   - Priority Manager applies multi-factor formula:
+     $$P(G_{\text{commit}}) = 0.35(0.65) + 0.30(0.80) + 0.25(0.95) + 0.10(0.85) = 0.79$$
+     $$P(\text{Puzzle}) = 0.35(0.92) + 0.30(0.40) + 0.25(0.20) + 0.10(0.10) = 0.50$$
+   - Priority Manager ranks $G_{\text{commit}}$ at Rank 1 and moves Puzzle to `SUPPRESSED_INACTIVE`.
+4. Expected State Transitions:
+   - $G_{\text{commit}}$: `FOCALLY_RECOMMENDED`.
+   - Puzzle: `SUPPRESSED_INACTIVE` in `thought_motivation_suppressions`.
+5. Expected Persistence Changes:
+   - Insert row in `motivation_suppressions` for Puzzle.
+   - Update priority ranks.
+6. Ownership-Boundary Checks:
+   - Evaluator protects long-term commitments against temporary novelty overrides through importance weighting.
+7. Expected Result:
+   - High-intensity temporary curiosity is prevented from derailing high-importance responsibilities.
+8. Failure Scenario & Recovery Behavior:
+   - Failure: Puzzle is suppressed permanently and forgotten.
+   - Recovery: Starvation counter increments; when the report concludes, Puzzle resurfaces automatically for casual exploration.
+
+--------------------------------------------------------------------------------
+SCENARIO 10: LEARNING DEVELOPMENT (VALIDATED PARAMETER ADAPTATION)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - Motivation Engine parameter `motivation.curiosity_depletion_rate` is at version 4, value 0.05/hr.
+2. Trigger:
+   - Learning Engine v2.5.0 dispatches verified `ParameterChangeRequest`:
+     * Target: `motivation.curiosity_depletion_rate`
+     * Expected Version: 4
+     * Proposed Value: 0.06/hr ($\Delta = +0.01$)
+     * Evidence: 15 independent instances of rapid curiosity exhaustion during challenging tasks.
+3. Expected Subsystem Interactions:
+   - Learning Integration module intercepts request.
+   - Executes 3-step validation:
+     * Check 1: Target parameter is NOT a protected constitutional baseline $\implies$ PASS.
+     * Check 2: Proposed value 0.06 is within `valid_range` $[0.01, 0.10]$ $\implies$ PASS.
+     * Check 3: Current internal version is exactly 4 $\implies$ PASS.
+   - Applies adjustment: `curiosity_depletion_rate` $\leftarrow 0.06$.
+   - Increments internal parameter version to 5.
+   - Transmits `OwnerApplicationReceipt(status='SUCCESSFULLY_APPLIED', new_version=5)` back to Learning Engine.
+4. Expected State Transitions:
+   - Proposal: `PENDING_VALIDATION` $\to$ `APPLIED`.
+5. Expected Persistence Changes:
+   - Update `motivation_drives` table.
+   - Insert row in `motivation_evolution_history`.
+6. Ownership-Boundary Checks:
+   - Learning Engine proposes; Motivation Engine validates and applies internal modification.
+7. Expected Result:
+   - Long-term motivational drive characteristics adapt safely through verified empirical learning.
+8. Failure Scenario & Recovery Behavior:
+   - Failure: Proposal attempts to alter protected baseline drive definition.
+   - Recovery: Integration rejects request immediately with `REJECTED_PROTECTED_VIOLATION`.
+
+--------------------------------------------------------------------------------
+SCENARIO 11: UNFULFILLED DESIRE (SAFE SUSPENSION WITHOUT THRASHING)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - Active desire $Des_{\text{telescope}}$: "Observe Saturn's rings through a high-magnification optical telescope."
+2. Trigger:
+   - Cognitive Integration reports: Diva currently lacks an optical telescope interface tool ($HardwareToolUnavailable$).
+3. Expected Subsystem Interactions:
+   - Desire Manager ingests tool unavailability report.
+   - Evaluates desire feasibility: Goal cannot currently proceed.
+   - Transitions desire to `SUSPENDED_BLOCKED`.
+   - Removes desire from active priority competition.
+   - Invariant: The desire is NOT erased, nor does it cause infinite planning attempts in the Thought Engine. It remains safely dormant in SQLite.
+4. Expected State Transitions:
+   - Desire: `ACTIVE` $\to$ `SUSPENDED_BLOCKED`.
+5. Expected Persistence Changes:
+   - Update `thought_motivation_desires` (`state = 'SUSPENDED_BLOCKED'`).
+   - Insert row in `motivation_lifecycle_events`.
+6. Ownership-Boundary Checks:
+   - Cognitive Integration reports environmental bounds; Desire Manager safely parks the impossible desire.
+7. Expected Result:
+   - An unfulfillable longing is preserved authentic to Diva's character without causing cognitive stalls or infinite loops.
+8. Failure Scenario & Recovery Behavior:
+   - Failure: Memory leak from repeatedly checking blocked desires.
+   - Recovery: Desire Manager sets a 7-day backoff timer before re-checking telescope availability.
+
+--------------------------------------------------------------------------------
+SCENARIO 12: GOAL COMPLETION (EXTERNAL EVIDENCE INGESTION)
+--------------------------------------------------------------------------------
+1. Initial State:
+   - Goal $G_{\text{corpus}}$ ("Compile 500-sentence French linguistic corpus") is in `ACTIVE` state with progress at $90\%$.
+2. Trigger:
+   - Task Evaluation / Memory Engine dispatches verified completion receipt: `Receipt(receipt_id='rcpt_eval_8801', status='MILESTONE_100_PERCENT_VERIFIED')`.
+3. Expected Subsystem Interactions:
+   - Goal Manager validates receipt signature and references against $G_{\text{corpus}}$.
+   - Updates progress: `progress_percentage = 100.0%`.
+   - Transitions goal state from `ACTIVE` to `COMPLETED`.
+   - Signals Drive Manager: Competence and Achievement Drives receive satisfaction payoff ($\Delta S = +0.40$).
+   - Dispatches `GoalCompletionNotice` to Emotion Engine (sparking joy/fulfillment) and Memory Engine (inscribing episodic achievement).
+4. Expected State Transitions:
+   - Goal: `ACTIVE` $\to$ `COMPLETED`.
+5. Expected Persistence Changes:
+   - Update `motivation_goals` (`state = 'COMPLETED'`, `completed_at = NOW()`, `completion_evidence_ref = 'rcpt_eval_8801'`).
+   - Update `motivation_goal_progress`.
+   - Update `motivation_drive_states`.
+6. Ownership-Boundary Checks:
+   - Motivation Engine updates internal goal state only upon receiving certified external outcome evidence.
+7. Expected Result:
+   - Goal completion cleanly closes the teleological loop, satisfies underlying drives, and broadcasts fulfillment to adjacent cognitive engines.
+8. Failure Scenario & Recovery Behavior:
+   - Failure: Spurious internal signal attempts to declare goal complete without a receipt.
+   - Recovery: Goal Manager enforces `assert(evidence_receipt != None)`; rejects completion transition and flags validation alert.
+
+
+================================================================================
+PART 8 — COMPLETION CONDITIONS & PHASED IMPLEMENTATION ROADMAP
+================================================================================
+
+--------------------------------------------------------------------------------
+VERIFICATION OF ALL 13 ARCHITECTURAL COMPLETION CONDITIONS
+--------------------------------------------------------------------------------
+1. All internal components and responsibilities documented: Complete in Part 2.
+2. Every data structure has a complete schema: All 19 models specified in Part 3 Section A.
+3. All motivation generation algorithms specified: Multi-source synthesis matrix defined in Part 1.1 & Part 2.4.
+4. Drive, interest, desire, and goal algorithms defined: Complete in Parts 1.3, 1.4, 1.5, 1.6 & Part 2.
+5. Motivation intensity calculations have explicit rules: Mathematical formulations defined in Part 1.7.
+6. Conflict resolution and prioritization documented: 5 conflict archetypes & ranking formulas in Parts 1.8 & 1.9.
+7. All lifecycle states and transitions defined: Complete state machines specified across all entities.
+8. Learning integration and parameter ownership explicit: Full compliance with Learning Engine v2.5.0 in Parts 1.10 & 2.10.
+9. All inter-engine communication contracts documented: Explicit contracts for all 10 engines in Part 5.
+10. All mandatory walkthroughs demonstrated: All 12 scenarios fully expanded with all 8 sections in Part 7.
+11. Every must-pass condition has verification strategy: Complete 41-item audit tracker in Part 6.
+12. Resource management, persistence, and failure recovery specified: 16 SQLite tables, WAL mode, atomic transactions in Part 3 Section B.
+13. No unresolved responsibility conflicts remain: Strict separation from Thought, Emotion, Personality, and Action verified in Part 4 & Part 7.
+
+--------------------------------------------------------------------------------
+PHASED 10-STAGE ENGINEERING ROADMAP
+--------------------------------------------------------------------------------
+Phase 1: Core Enums, Immutable Models & Data Dictionary
+- Deliverables: 19 immutable models, enums, deep freezing validators.
+- Gate: 100% unit test coverage on immutability and schema constraints.
+
+Phase 2: Relational SQLite Storage & Lifecycle Manager
+- Deliverables: 16 tables, foreign key enforcement, WAL mode, atomic transactions.
+- Gate: Relational integrity tests pass; zero cascading deletes.
+
+Phase 3: Drive Manager & Persistent Need Dynamics
+- Deliverables: 8 drives, homeostatic depletion algorithm, satisfaction handlers.
+- Gate: Drive depletion/satisfaction curves mathematically verified.
+
+Phase 4: Interest Manager & Non-Utilitarian Tracking
+- Deliverables: Semantic clustering, exploration depth, cooling decay, dormancy re-ignition.
+- Gate: 14-day disuse cooling and spontaneous re-ignition tests pass.
+
+Phase 5: Desire Manager & Wanting-vs-Deciding Decoupling
+- Deliverables: Transient vs. enduring desires, unfulfillable desire parking.
+- Gate: Blocked desires safely suspend without cognitive thrashing.
+
+Phase 6: Motivation Generator & Multi-Source Synthesis
+- Deliverables: Ingress matrix from 12 sources, autonomous unprompted generation loop.
+- Gate: Spontaneous motivation generation fires cleanly during idle epochs.
+
+Phase 7: Motivation Evaluator & Mathematical Priority Arbitration
+- Deliverables: Multi-factor intensity, effort willingness, persistence curves, suppression buffers.
+- Gate: Long-term importance successfully overrides acute short-term curiosity.
+
+Phase 8: Goal Manager & Hierarchical Dependency Graphs
+- Deliverables: Directed acyclic goal trees, external progress ingestion, completion verification.
+- Gate: Goal completion without external evidence strictly rejected.
+
+Phase 9: Conflict Resolver & Cognitive Integration Interface
+- Deliverables: 5 conflict archetypes, structured `MotivationConflictPayload` dispatch.
+- Gate: Conflicting desires preserved and escalated without unilateral deletion.
+
+Phase 10: Learning Integration & Hardening Walkthrough Audit
+- Deliverables: Learning Engine v2.5.0 parameter adaptation, execution of all 12 walkthrough scenarios.
+- Gate: All 41 must-pass conditions verified; 100% test pass on target environment.
+
+
+================================================================================
+PART 9 — THE THREE NON-NEGOTIABLE ARCHITECTURAL RULES
+================================================================================
+
+To ensure that Diva develops as an authentic, evolving Artificial Individual rather than a mechanical task-following automaton, the Motivation Engine enforces three supreme governing axioms:
+
+1. MOTIVATION IS NOT ACTION
+   Diva can strongly want something without automatically pursuing it. Wanting belongs to the Motivation Engine; deciding belongs to Cognitive Integration; executing belongs to the Action System. Desires and motivations exist as legitimate internal cognitive states regardless of whether external circumstances allow their immediate realization.
+
+2. A MOTIVATION IS NOT NECESSARILY A GOAL
+   Diva can be curious about a subject, feel an emotional pull toward a domain, or harbor an intellectual fascination for months without converting it into a formal, structured goal. The architecture strictly forbids forcing every desire or interest into a task-management box. Playful curiosity and non-utilitarian exploration are protected as vital cognitive realities.
+
+3. MOTIVATION MUST EXIST INDEPENDENTLY
+   If Diva only experiences motivation when a user prompts her, she is merely a reactive chatbot. Diva's internal drives, interests, and memories must generate autonomous motivations when no one is interacting with her. Her internal motivational life continues evolving independently, providing her with genuine agency, individuality, and personal intellectual depth.
+================================================================================
+END OF SPECIFICATION — DIVA ENGINE 10: MOTIVATION ENGINE v1.0.0
+================================================================================

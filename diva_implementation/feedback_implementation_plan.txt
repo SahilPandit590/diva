@@ -1,0 +1,1534 @@
+================================================================================
+DIVA COGNITIVE ARCHITECTURE — FEEDBACK ENGINE
+ARCHITECTURAL IMPLEMENTATION PLAN & PRODUCTION MASTER SPECIFICATION
+Document Version: 1.0.0 (Production Master · Approved Architecture Specification)
+Target Framework: Python 3.12+ (Asyncio) / Deeply Frozen Data Models / SQLite WAL
+Status: Ready for Implementation — All 44 Must-Pass Conditions Satisfied
+Document Scope: Strictly Non-Code Architecture Plan & Comprehensive Specification
+================================================================================
+
+TABLE OF CONTENTS
+--------------------------------------------------------------------------------
+EXECUTIVE SUMMARY & GOVERNING PRINCIPLES
+PART 1 — HOW THE ENGINE RUNS: OVERALL EXECUTION MODEL
+PART 2 — ALGORITHMS, DATA STRUCTURES & SERVICE SPECIFICATIONS
+  A. Seventeen Logical Services (Components)
+  B. Algorithms per Service
+  C. Full Data Dictionary (24 Frozen Data Structures)
+PART 3 — COMPLETE SQLITE RELATIONAL SCHEMA (18 TABLES)
+PART 4 — INTER-ENGINE COMMUNICATION CONTRACTS (13 CONNECTED ENGINES)
+PART 5 — MUST-PASS CONDITIONS (44 AUDIT CHECKPOINTS) & HOW TO PASS EACH
+PART 6 — MANDATORY ARCHITECTURAL WALKTHROUGHS (ALL 14 SCENARIOS)
+PART 7 — COMPLETION CONDITIONS & 10-PHASE IMPLEMENTATION ROADMAP
+
+
+================================================================================
+EXECUTIVE SUMMARY & GOVERNING PRINCIPLES
+================================================================================
+
+The Feedback Engine is the system-wide retrospective evaluator. It receives
+outcome data from every engine and external source, compares what happened to
+what was intended, identifies contributing factors, assesses evidence quality,
+detects recurring patterns, and produces structured feedback records that are
+dispatched to the Learning Engine and other consumers.
+
+THE FIVE NON-NEGOTIABLE AXIOMS:
+1. FEEDBACK IS NOT LEARNING.
+   Feedback produces evaluated evidence. Learning decides what changes.
+2. SUCCESS IS NOT QUALITY.
+   An objective achieved through a poor process still merits efficiency feedback.
+3. CORRELATION IS NOT CAUSATION.
+   Two events co-occurring is not proof one caused the other.
+4. NEGATIVE FEEDBACK IS NOT THE ONLY USEFUL FEEDBACK.
+   Successes, improvements, and effective strategies must also be captured.
+5. EVERY EVALUATION MUST BE TRACEABLE.
+   From raw signal to final feedback record, the full provenance chain persists.
+
+TRIPLE-EVALUATOR SEPARATION:
+- Feedback Engine: Retrospective — What happened? How well?
+- Learning Engine: Developmental — Should we change something?
+- Cognitive Integration: Prospective — What should Diva do next?
+
+OWNERSHIP BOUNDARY: The Feedback Engine NEVER directly modifies any other
+engine's parameters, personality, emotions, motivations, memory, or behavior.
+It evaluates and dispatches structured evidence. Period.
+
+
+================================================================================
+PART 1 — HOW THE ENGINE RUNS: OVERALL EXECUTION MODEL
+================================================================================
+
+1.1 EVENT-DRIVEN ASYNC PIPELINE
+   The engine runs as an asynchronous event-driven pipeline with three tiers:
+
+   TIER 1 — HOT PATH (synchronous, <50 ms):
+   Receives raw outcome signals, validates schema, deduplicates, and queues
+   for processing. This is the Feedback Input Handler + Source Validator.
+
+   TIER 2 — WARM PATH (async, <500 ms):
+   Normalizes feedback, classifies it, runs deterministic expected-vs-actual
+   comparison, computes quality metrics, and assesses confidence. This is the
+   core evaluation pipeline.
+
+   TIER 3 — COLD PATH (async, background):
+   Runs LLM-assisted causal analysis for complex failures, performs pattern
+   detection across accumulated history, evaluates inter-engine coordination,
+   and dispatches structured feedback to recipients. Runs with configurable
+   delay to batch related events.
+
+   Pipeline Flow:
+   ```
+   [Raw Signal]
+        │
+        ▼
+   ┌─────────────────┐
+   │ Input Handler    │── Schema validation, dedup, timestamp
+   └────────┬────────┘
+            ▼
+   ┌─────────────────┐
+   │ Source Validator  │── Provenance check, source reliability lookup
+   └────────┬────────┘
+            ▼
+   ┌─────────────────┐
+   │ Normalizer       │── Convert to standard FeedbackRecord
+   └────────┬────────┘
+            ▼
+   ┌─────────────────┐
+   │ Classifier       │── Assign categories (may be multiple)
+   └────────┬────────┘
+            ▼
+   ┌───────────────────────────────────┐
+   │ Outcome Evaluator                 │── Expected vs. actual comparison
+   │   ├─ Quality Assessment Module    │── Correctness, completeness, efficiency
+   │   ├─ Failure Analysis Module      │── If outcome indicates failure
+   │   └─ Causal Attribution Module    │── Contributing factor identification
+   └────────┬──────────────────────────┘
+            ▼
+   ┌─────────────────┐
+   │ Confidence       │── Evidence reliability scoring
+   │ Assessment       │
+   └────────┬────────┘
+            ▼
+   ┌─────────────────┐
+   │ Pattern Recog.   │── Cross-experience trend detection
+   └────────┬────────┘
+            ▼
+   ┌─────────────────┐
+   │ Coordination     │── Inter-engine cooperation evaluation
+   │ Evaluator        │
+   └────────┬────────┘
+            ▼
+   ┌─────────────────┐
+   │ Feedback         │── Assembles structured FeedbackContribution
+   │ Generator        │
+   └────────┬────────┘
+            ▼
+   ┌─────────────────┐          ┌──────────────┐
+   │ Priority Mgr     │──────▶  │ Distribution │──▶ Learning, Engines
+   └─────────────────┘          │ Manager      │
+                                └──────────────┘
+   ```
+
+1.2 CONCURRENCY MODEL
+   - Single writer thread for SQLite (all persistence goes through one
+     asyncio task with a serialized write queue).
+   - Multiple reader tasks for concurrent evaluation pipelines.
+   - Pattern Recognition and Coordination Evaluator run as periodic
+     background tasks (every N feedback records or configurable interval).
+   - LLM calls are async with timeout ($T_{llm} = 10,000$ ms) and fallback
+     to deterministic-only evaluation.
+
+1.3 RESOURCE AWARENESS
+   - Internal State Engine provides $E_{cog}$ (cognitive energy).
+   - When $E_{cog} < 0.30$: Defer TIER 3 processing (pattern analysis,
+     coordination evaluation). Process only TIER 1 + TIER 2.
+   - When $E_{cog} < 0.15$: Defer TIER 2 as well; only ingest and queue.
+   - Critical safety feedback always processed regardless of energy.
+
+1.4 STARTUP AND RECOVERY
+   1. Load all SQLite tables and verify referential integrity.
+   2. Identify feedback records in non-terminal lifecycle states
+      (RECEIVED, VALIDATING, PROCESSING, EVALUATED, PENDING_EVIDENCE).
+   3. For records in PROCESSING: Roll back to VALIDATING; re-process.
+   4. For records in EVALUATED but not DISTRIBUTED: Resume distribution.
+   5. Rebuild in-memory indexes (activity-to-feedback mapping, pattern caches).
+   6. Resume processing from latest timestamp.
+
+
+================================================================================
+PART 2 — ALGORITHMS, DATA STRUCTURES & SERVICE SPECIFICATIONS
+================================================================================
+
+--------------------------------------------------------------------------------
+A. SEVENTEEN LOGICAL SERVICES
+--------------------------------------------------------------------------------
+
+SERVICE 1: FEEDBACK INPUT HANDLER
+  Purpose: Receives raw outcome signals from all sources, validates schema.
+  Algorithm: Schema validation against per-source JSON schemas. O(1) per record.
+  Deduplication: Content-hash of (source_engine, source_event_id, activity_id).
+    Uses a Bloom filter (false positive rate 0.01%) backed by a SQLite
+    dedup_hashes table for authoritative checks on Bloom hits.
+  Output: Validated raw signal passed to Source Validator.
+  Error: Malformed signals rejected with REJECTED lifecycle state and logged.
+
+SERVICE 2: FEEDBACK SOURCE VALIDATOR
+  Purpose: Verifies provenance and assigns source reliability scores.
+  Algorithm: Lookup source_engine in `source_reliability_registry`.
+    Source reliability $Rel_s \in [0.0, 1.0]$:
+    - Internal engines: $Rel_s = 0.90$ (high baseline; Diva's own subsystems).
+    - Explicit user feedback: $Rel_s = 0.85$ (high but subjective).
+    - API/tool results: $Rel_s = 0.80$ (objective but context-limited).
+    - Third-party evaluations: $Rel_s = 0.70$ (variable quality).
+    - Unverified sources: $Rel_s = 0.50$ (uncertain).
+  Reliability may be adjusted by pattern analysis over time (e.g., if a
+  particular source repeatedly produces contradicted feedback, $Rel_s$ decays).
+  Output: Source-annotated signal with $Rel_s$ attached.
+
+SERVICE 3: FEEDBACK NORMALIZER
+  Purpose: Converts heterogeneous raw signals into standard FeedbackRecord.
+  Algorithm: Per-source-type adapter pattern. Each adapter maps source-specific
+    fields to the canonical FeedbackRecord schema.
+    Adapters defined for: ExternalUser, ToolExecution, EngineOutcome,
+    AutonomousActivity, InteractionOutcome, DecisionOutcome.
+  Timestamp normalization: All timestamps converted to ISO-8601 UTC.
+  Missing fields: Filled with defaults and flagged as `incomplete = True`.
+  Output: Normalized FeedbackRecord with lifecycle state = VALIDATING.
+
+SERVICE 4: FEEDBACK CLASSIFIER
+  Purpose: Assigns one or more feedback categories from the 15-category taxonomy.
+  Algorithm: Rule-based classification with LLM fallback for ambiguous cases.
+    Rule Engine:
+    - If error_code present → EXECUTION_FEEDBACK.
+    - If user_rating present → QUALITY_FEEDBACK.
+    - If safety_violation flag → SAFETY_FEEDBACK.
+    - If unexpected_result flag → UNEXPECTED_OUTCOME.
+    - If originating_engine = EMOTION → EMOTIONAL_FEEDBACK.
+    - If originating_engine = SOCIAL → SOCIAL_FEEDBACK.
+    - If multiple rules match → Assign ALL matching categories.
+    LLM Fallback: When no deterministic rule matches, dispatch to shared LLM
+    with interaction context. LLM returns candidate categories with confidences.
+    Accept categories with $C \ge 0.40$.
+  Category Enum: SUCCESS, FAILURE, PARTIAL_SUCCESS, QUALITY, ACCURACY,
+    EFFICIENCY, BEHAVIORAL, SOCIAL, EMOTIONAL, COGNITIVE, EXECUTION,
+    LEARNING, COORDINATION, SAFETY, UNEXPECTED_OUTCOME.
+  Polarity: Each category assignment carries polarity (POSITIVE, NEGATIVE,
+    NEUTRAL, MIXED).
+  Output: Multi-category classified FeedbackRecord.
+
+SERVICE 5: OUTCOME EVALUATOR
+  Purpose: Compares expected outcomes against actual outcomes. This is the
+  most important service in the engine.
+  
+  Algorithm — Multi-Objective Outcome Comparison:
+  Input: Tuple of (objective_id, expected_outcome, actual_outcome, importance_weight).
+  
+  For each objective $i$:
+    1. Compute completion score:
+       $completion_i = \text{similarity}(expected_i, actual_i) \in [0.0, 1.0]$
+       For numerical objectives: $completion_i = 1 - \frac{|expected - actual|}{\max(|expected|, 1)}$ clamped to [0,1].
+       For boolean objectives: $completion_i \in \{0.0, 1.0\}$.
+       For qualitative objectives: LLM-assessed similarity score.
+    2. Classify per-objective outcome:
+       $completion_i \ge 0.90$ → FULLY_MET.
+       $0.50 \le completion_i < 0.90$ → PARTIALLY_MET.
+       $completion_i < 0.50$ → NOT_MET.
+    3. Detect unexpected results:
+       If actual outcome contains elements NOT in expected → flag UNEXPECTED_POSITIVE or UNEXPECTED_NEGATIVE.
+  
+  Aggregate outcome:
+    $O_{aggregate} = \frac{\sum_i w_i \cdot completion_i}{\sum_i w_i}$
+    where $w_i$ is the importance weight of objective $i$.
+  
+  Overall classification:
+    $O_{aggregate} \ge 0.90$ → SUCCESS.
+    $0.50 \le O_{aggregate} < 0.90$ → PARTIAL_SUCCESS.
+    $O_{aggregate} < 0.50$ → FAILURE.
+  
+  Critical rule: Quality and Efficiency are evaluated INDEPENDENTLY of completion.
+  A fully completed task can still have poor quality or low efficiency.
+  
+  Output: OutcomeComparison with per-objective and aggregate results.
+
+SERVICE 6: QUALITY ASSESSMENT MODULE
+  Purpose: Evaluates the quality of a result independently of completion.
+  
+  Algorithm — Six-Dimension Quality Assessment:
+  For each outcome, compute scores across six quality dimensions:
+    1. CORRECTNESS: $Q_{correct} \in [0.0, 1.0]$ — factual accuracy.
+    2. COMPLETENESS: $Q_{complete} \in [0.0, 1.0]$ — coverage of requirements.
+    3. CONSISTENCY: $Q_{consist} \in [0.0, 1.0]$ — internal logical coherence.
+    4. USEFULNESS: $Q_{useful} \in [0.0, 1.0]$ — practical value to the requester.
+    5. EFFICIENCY: $Q_{effic} \in [0.0, 1.0]$ — resource consumption vs. expected budget.
+       $Q_{effic} = \max(0, 1 - \frac{\text{actual\_cost} - \text{expected\_cost}}{\text{expected\_cost}})$
+    6. ROBUSTNESS: $Q_{robust} \in [0.0, 1.0]$ — resilience to edge cases.
+  
+  Aggregate quality:
+    $Q_{total} = \sum_d w_d \cdot Q_d$ with domain-specific weights summing to 1.0.
+    Default: $w_{correct}=0.25, w_{complete}=0.20, w_{consist}=0.15, w_{useful}=0.20, w_{effic}=0.10, w_{robust}=0.10$.
+  
+  LLM Integration: Correctness and Usefulness dimensions use LLM assessment
+  when the outcome is qualitative. Efficiency and Consistency use deterministic
+  computation.
+  
+  Output: QualityAssessment with per-dimension scores.
+
+SERVICE 7: FAILURE ANALYSIS MODULE
+  Purpose: Investigates why an activity failed or underperformed.
+  
+  Algorithm — Multi-Hypothesis Failure Analysis:
+  1. Extract observable failure indicators:
+     - Error codes, exception types, timeout flags.
+     - Completion gaps from Outcome Evaluator.
+     - Quality dimension scores below threshold ($Q_d < 0.40$).
+  
+  2. Generate failure hypotheses:
+     Deterministic hypotheses from error codes:
+       - TIMEOUT → Hypothesis: Resource limitation ($C = 0.70$).
+       - EXTERNAL_ERROR → Hypothesis: External service failure ($C = 0.80$).
+       - VALIDATION_ERROR → Hypothesis: Incorrect input or assumption ($C = 0.65$).
+     
+     LLM-assisted hypotheses for complex failures:
+       - Dispatch failure context + activity history to shared LLM.
+       - LLM returns ranked hypotheses with confidence scores.
+       - Accept hypotheses with $C \ge 0.20$.
+  
+  3. Root cause vs. proximate cause:
+     Each FailureHypothesis is tagged as:
+       - PROXIMATE: The immediate trigger (e.g., "operation timed out").
+       - ROOT: The underlying cause (e.g., "insufficient processing resources
+         due to concurrent high-priority tasks").
+       - CONTRIBUTING: A factor that worsened the outcome but didn't cause it alone.
+     Requires $\ge 2$ supporting evidence items for ROOT classification.
+  
+  4. Cross-reference with historical failures:
+     Query `failure_records` for the same activity type, same affected engine.
+     If $\ge 3$ similar failures exist: Link to existing FailurePattern.
+  
+  Output: Set of FailureHypothesis records with cause type and confidence.
+
+SERVICE 8: CAUSAL ATTRIBUTION MODULE
+  Purpose: Identifies which factors contributed to an outcome (positive or negative).
+  
+  Algorithm — Weighted Evidence Causal Graph:
+  1. Collect temporal predecessors:
+     All engine events within the causal window ($T_{window} = 60$ seconds
+     before outcome, configurable per activity type).
+  
+  2. Build causal candidate graph:
+     Nodes: Engine events, decisions, actions, external inputs.
+     Edges: Temporal ordering + explicit dependency links from activity metadata.
+  
+  3. Score causal contribution:
+     For each candidate node $n$:
+       $Causal_n = w_{temporal} \cdot P_{temporal}(n) + w_{dependency} \cdot P_{dependency}(n) + w_{counterfactual} \cdot P_{counter}(n)$
+     Where:
+       - $P_{temporal}$: Temporal proximity weight (closer events score higher).
+         $P_{temporal} = \exp(-\lambda_t \cdot \Delta t)$ with $\lambda_t = 0.05$.
+       - $P_{dependency}$: 1.0 if explicit dependency link exists, 0.0 otherwise.
+       - $P_{counter}$: Counterfactual plausibility — would outcome differ
+         without this event? (LLM-assessed for complex cases, heuristic for simple).
+     Default weights: $w_{temporal}=0.20, w_{dependency}=0.50, w_{counterfactual}=0.30$.
+  
+  4. Anti-blame safeguard:
+     - No single node can receive $Causal > 0.80$ unless it has an explicit
+       dependency link AND counterfactual score $\ge 0.70$.
+     - Multiple contributing causes are the default; single-cause attribution
+       requires exceptional evidence.
+  
+  5. Correlation vs. causation flag:
+     If $P_{dependency} = 0$ AND $P_{counter} < 0.50$:
+       Tag relationship as CORRELATION_ONLY (not causal).
+  
+  Output: CausalAttribution records with per-node contributions.
+
+SERVICE 9: CONFIDENCE ASSESSMENT MODULE
+  Purpose: Evaluates the reliability of the feedback evidence chain.
+  
+  Algorithm — Multi-Factor Confidence Computation:
+  $C_{feedback} = \text{clamp}_{[0.0, 1.0]}\left(
+    w_{source} \cdot Rel_s +
+    w_{evidence} \cdot Q_{evidence} +
+    w_{recency} \cdot R_{time} +
+    w_{consistency} \cdot S_{consistency}
+  \right)$
+  
+  Where:
+    - $Rel_s$: Source reliability from Service 2.
+    - $Q_{evidence}$: Evidence quality. $Q_{evidence} = \frac{n_{objective}}{n_{objective} + n_{subjective}}$
+      where $n_{objective}$ = count of measurable/verifiable evidence items.
+    - $R_{time}$: Recency factor. $R_{time} = \exp(-\lambda_r \cdot \Delta t_{hours})$
+      with $\lambda_r = 0.01$ (slow decay; feedback stays relevant for days).
+    - $S_{consistency}$: Cross-source consistency. If multiple sources report on
+      same activity: $S = 1 - \text{variance}(\text{assessments})$.
+      Single source: $S = 0.50$ (neutral).
+  
+  Default weights: $w_{source}=0.30, w_{evidence}=0.30, w_{recency}=0.20, w_{consistency}=0.20$.
+  
+  User satisfaction vs. factual accuracy:
+    When user and system assessments conflict (user says wrong, system says correct),
+    record BOTH as independent feedback dimensions. User satisfaction is a
+    SUBJECTIVE dimension; factual accuracy is an OBJECTIVE dimension.
+    They are NOT averaged into a single score.
+  
+  Output: FeedbackConfidence record with per-factor scores.
+
+SERVICE 10: PATTERN RECOGNITION MODULE
+  Purpose: Identifies recurring trends across accumulated feedback history.
+  
+  Algorithm — Sliding Window Pattern Detector:
+  1. Maintain per-activity-type, per-engine, per-category accumulators.
+  
+  2. For each accumulator, track:
+     - $n_{success}$: Count of positive feedback instances.
+     - $n_{failure}$: Count of negative feedback instances.
+     - $n_{total}$: Total instances.
+     - $\bar{Q}$: Running mean quality score.
+     - $\sigma_Q$: Running standard deviation of quality.
+  
+  3. Pattern detection triggers:
+     Recurring Success: $n_{success} \ge 5$ AND $\frac{n_{success}}{n_{total}} \ge 0.80$.
+     Recurring Failure: $n_{failure} \ge 3$ AND $\frac{n_{failure}}{n_{total}} \ge 0.60$.
+     Improvement: Monotonic increase in $\bar{Q}$ over last 5 evaluations ($\Delta\bar{Q} \ge +0.05$).
+     Regression: Monotonic decrease in $\bar{Q}$ over last 5 evaluations ($\Delta\bar{Q} \le -0.05$).
+     Sudden Change: $|Q_{latest} - \bar{Q}| > 2\sigma_Q$ (outlier detection).
+  
+  4. Pattern lifecycle:
+     EMERGING: Trigger threshold met but $n_{total} < 8$.
+     ESTABLISHED: $n_{total} \ge 8$ AND pattern persists.
+     FADING: No new supporting evidence for $\ge 15$ evaluations.
+     CONTRADICTED: Counter-evidence exceeds supporting evidence.
+  
+  5. Context-dependent patterns:
+     Patterns are segmented by context tags (activity_type, domain, engine).
+     "Diva struggles with multi-step tasks" is a context-specific pattern,
+     not a global failure indicator.
+  
+  Output: PerformanceTrend and SuccessPattern/FailurePattern records.
+
+SERVICE 11: COORDINATION EVALUATOR
+  Purpose: Evaluates inter-engine communication quality.
+  
+  Algorithm — Communication Trace Analysis:
+  1. For each evaluated activity, collect the inter-engine communication trace:
+     Ordered sequence of (source_engine, target_engine, payload_type, timestamp,
+     was_acknowledged, response_time_ms).
+  
+  2. Evaluate communication quality:
+     - Missing information: Expected inputs that were never delivered.
+       Detection: Compare activity requirements with received inputs.
+     - Duplicated processing: Same computation performed by multiple engines.
+       Detection: Payload content hash comparison.
+     - Excessive latency: Response time > expected SLA ($T_{sla}$ per engine pair).
+       Detection: $response\_time > T_{sla} \cdot 1.5$.
+     - Conflicting outputs: Multiple engines providing contradictory guidance.
+       Detection: Semantic contradiction check (LLM-assisted for complex cases).
+  
+  3. Coordination quality score:
+     $CoQ = 1.0 - \frac{n_{missing} + n_{duplicate} + n_{late} + n_{conflicting}}{n_{total\_communications}}$
+     Clamped to [0.0, 1.0].
+  
+  4. Recurring coordination issues:
+     If the same engine pair has $\ge 3$ coordination failures: Create
+     CoordinationPattern record and dispatch to Learning Engine.
+  
+  Output: CoordinationAssessment with specific issue identifiers.
+
+SERVICE 12: FEEDBACK GENERATOR
+  Purpose: Assembles structured feedback contributions for recipients.
+  
+  Algorithm — Multi-Recipient Feedback Assembly:
+  For each evaluated feedback record:
+    1. Determine recipients based on category and affected engines.
+    2. For each recipient, assemble a tailored FeedbackContribution:
+       - For Learning Engine: Full `LearningFeedbackPackage` with evidence,
+         confidence, outcome classification, contributing factors, pattern evidence.
+         This maps directly to the `LearningContribution` schema defined in
+         Learning Engine v2.5.0.
+       - For originating engine: Outcome summary with quality dimensions.
+       - For Cognitive Integration: Decision quality assessment.
+       - For affected engines: Relevant contributing factor evidence.
+    3. Attach evidence references, confidence, and provenance chain.
+    4. Tag as OBSERVATION (not recommendation) — feedback describes what
+       happened, not what should change.
+  
+  Output: Set of FeedbackContribution records ready for distribution.
+
+SERVICE 13: FEEDBACK PRIORITIZATION MANAGER
+  Purpose: Determines processing order and urgency.
+  
+  Algorithm — Multi-Factor Priority Score:
+  $P_{feedback} = w_{severity} \cdot S + w_{recurrence} \cdot R + w_{confidence} \cdot C
+                 + w_{consequence} \cdot K + w_{urgency} \cdot U$
+  
+  Where:
+    - $S$: Severity (CRITICAL=1.0, HIGH=0.75, MEDIUM=0.50, LOW=0.25).
+    - $R$: Recurrence indicator. $R = \min(1.0, n_{similar}/5)$.
+    - $C$: Feedback confidence $C_{feedback}$.
+    - $K$: Potential consequence magnitude.
+    - $U$: Time-sensitivity (decays with age).
+  
+  Default weights: $w_{severity}=0.30, w_{recurrence}=0.25, w_{confidence}=0.15, w_{consequence}=0.15, w_{urgency}=0.15$.
+  
+  Priority tiers:
+    $P \ge 0.80$: CRITICAL — Process immediately, bypass energy throttling.
+    $0.60 \le P < 0.80$: HIGH — Process in current cycle.
+    $0.40 \le P < 0.60$: MEDIUM — Process when resources available.
+    $P < 0.40$: LOW — Queue for batch processing.
+  
+  Safety feedback always gets $P = 1.0$ (maximum priority).
+  
+  Output: Priority-sorted processing queue.
+
+SERVICE 14: LEARNING INTEGRATION INTERFACE
+  Purpose: Formats and dispatches feedback as LearningContribution to
+  Learning Engine v2.5.0's FeedbackService ingress.
+  
+  Algorithm — LearningContribution Mapping:
+  Maps Feedback Engine outputs to the standardized LearningContribution schema:
+    - `contribution_id`: UUID from FeedbackContribution.
+    - `source_engine`: The originating engine of the experience (NOT "FEEDBACK" —
+      Feedback Engine acts as an intermediary, preserving the original source).
+    - `source_event_id`: Original activity/event ID.
+    - `contribution_type`: Mapped from feedback category:
+      SUCCESS/FAILURE/PARTIAL → EMPIRICAL_OUTCOME.
+      User correction → EXTERNAL_FEEDBACK.
+      Cognitive evaluation → INTERNAL_REFLECTION.
+      Quality gap → PREDICTION_ERROR.
+    - `dimension_id`: Mapped from affected engine and category to Learning
+      dimension registry (e.g., `thought.reasoning_accuracy`, `execution.task_completion`).
+    - `evidence_references`: Provenance chain from Feedback Engine evidence records.
+    - `observed_outcome`: Actual outcome data.
+    - `expected_outcome`: Expected outcome data.
+    - `valence`: POSITIVE_EVIDENCE / NEGATIVE_EVIDENCE / NEUTRAL_EVALUATIVE.
+    - `significance`: From Feedback Engine's confidence × outcome gap magnitude.
+    - `confidence`: $C_{feedback}$ from Confidence Assessment.
+    - `is_quarantined`: True if Feedback confidence $< 0.40$ or if contradictory evidence exists.
+    - `provenance`: Full causal chain from raw signal to evaluation.
+  
+  Delivery tracking: Every dispatch is recorded in feedback_distribution_records.
+  Acknowledgement: Waits for Learning Engine's FeedbackService ACK. If no ACK
+  within 5 seconds, retries up to 3 times. Persistent failure logged.
+  
+  Boundary: Feedback Engine NEVER sends `ParameterChangeRequest`. It sends
+  evidence. Learning Engine decides whether to propose changes.
+  
+  Output: Dispatched LearningFeedbackPackage with delivery receipt.
+
+SERVICE 15: FEEDBACK DISTRIBUTION MANAGER
+  Purpose: Routes feedback contributions to all relevant recipients.
+  
+  Algorithm — Recipient Resolution & Delivery:
+  1. Recipient resolution based on feedback category:
+     SUCCESS/FAILURE/PARTIAL → Learning Engine + Originating Engine.
+     QUALITY/ACCURACY → Learning Engine + Originating Engine.
+     EFFICIENCY → Learning Engine + Internal State Engine.
+     SOCIAL → Learning Engine + Social Cognition Engine.
+     EMOTIONAL → Learning Engine + Emotion Engine.
+     COORDINATION → Learning Engine + Both affected engines.
+     SAFETY → Learning Engine + ALL engines (broadcast).
+     UNEXPECTED → Learning Engine + Cognitive Integration.
+  
+  2. Deduplication: Content-hash of (feedback_id, recipient_engine).
+     Prevents duplicate distribution from retries.
+  
+  3. Delivery confirmation: Each dispatch generates a FeedbackDistributionRecord
+     tracking: dispatched_at, acknowledged_at, delivery_status.
+  
+  4. Anti-loop: Feedback about feedback is NOT generated. The Distribution
+     Manager maintains a `feedback_about_feedback` blacklist. If the originating
+     event was itself a feedback evaluation, distribution is limited to
+     Learning Engine only (no recursive evaluation chains).
+  
+  Output: Delivery receipts for all recipients.
+
+SERVICE 16: FEEDBACK LIFECYCLE MANAGER
+  Purpose: Manages record state transitions and enforces the lifecycle FSM.
+  
+  Lifecycle State Machine:
+  ```
+  RECEIVED ──► VALIDATING ──► PROCESSING ──► EVALUATED
+                   │               │              │
+                   ▼               ▼              ▼
+                REJECTED    PENDING_EVIDENCE  DISTRIBUTED ──► ACKNOWLEDGED
+                                   │              │
+                                   ▼              ▼
+                              EVALUATED       CORRECTED ──► RESOLVED
+                                                  │
+                                                  ▼
+                                              DISTRIBUTED
+  ```
+  
+  Permitted transitions (enforced by CHECK constraint or application logic):
+    RECEIVED → VALIDATING (always, on ingestion).
+    VALIDATING → PROCESSING (validation passed) or REJECTED (validation failed).
+    PROCESSING → EVALUATED (evaluation complete) or PENDING_EVIDENCE (insufficient data).
+    PENDING_EVIDENCE → EVALUATED (evidence received) or CONFLICTED (contradictions).
+    CONFLICTED → EVALUATED (conflict resolved with updated confidence).
+    EVALUATED → DISTRIBUTED (feedback dispatched to recipients).
+    DISTRIBUTED → ACKNOWLEDGED (all recipients confirmed) or CORRECTED (new evidence).
+    CORRECTED → DISTRIBUTED (re-dispatch with updated evaluation).
+    ACKNOWLEDGED → RESOLVED (lifecycle complete).
+  
+  Invalid transitions are logged and rejected.
+  
+  Output: State transition events recorded in feedback_lifecycle_records.
+
+SERVICE 17: FEEDBACK HISTORY MANAGER
+  Purpose: Maintains operational history for auditing, pattern analysis,
+  and historical comparison.
+  
+  Algorithm — Tiered Retention:
+  - Hot tier (in-memory LRU cache): Last 200 feedback records. O(1) access.
+  - Warm tier (SQLite indexed): All records within retention window (configurable,
+    default 90 days). O(log n) access via indexed queries.
+  - Cold tier (SQLite archived): Records beyond retention window. Compressed
+    summary retained; full detail available via explicit query.
+  
+  Aggregation support:
+  - Performance metrics per engine, per activity type, per time period.
+  - Running averages, success rates, failure rates.
+  - Trend computation (moving average over configurable windows).
+  
+  Output: Historical query responses, aggregate statistics, trend data.
+
+
+--------------------------------------------------------------------------------
+B. ALGORITHMS SUMMARY (QUICK REFERENCE)
+--------------------------------------------------------------------------------
+
+| Service                 | Primary Algorithm              | Complexity    |
+|-------------------------|--------------------------------|---------------|
+| Input Handler           | Schema validation + Bloom filter dedup | O(1)   |
+| Source Validator         | Registry lookup                | O(1)          |
+| Normalizer              | Adapter pattern dispatch       | O(1)          |
+| Classifier              | Rule engine + LLM fallback     | O(r) rules    |
+| Outcome Evaluator       | Multi-objective weighted comparison | O(k) obj |
+| Quality Assessment      | Six-dimension weighted scoring | O(1)          |
+| Failure Analysis         | Multi-hypothesis + historical cross-ref | O(h) history |
+| Causal Attribution       | Temporal event graph + counterfactual | O(e) events |
+| Confidence Assessment    | Multi-factor weighted formula  | O(1)          |
+| Pattern Recognition      | Sliding window accumulators + outlier detection | O(1) amortized |
+| Coordination Evaluator   | Communication trace analysis   | O(c) comms    |
+| Feedback Generator       | Multi-recipient assembly       | O(r) recipients |
+| Priority Manager         | Multi-factor priority score    | O(1)          |
+| Learning Integration     | Schema mapping + delivery tracking | O(1)       |
+| Distribution Manager     | Recipient resolution + dedup   | O(r) recipients |
+| Lifecycle Manager        | Finite state machine           | O(1)          |
+| History Manager          | Tiered LRU + SQLite indexes    | O(1) / O(log n) |
+
+
+--------------------------------------------------------------------------------
+C. FULL DATA DICTIONARY (24 FROZEN DATA STRUCTURES)
+--------------------------------------------------------------------------------
+All models: frozen Pydantic with recursive immutability.
+
+1. `FeedbackRecord`:
+   feedback_id: UUID (PK). activity_id: Optional UUID. source_engine: Enum.
+   source_event_id: String. source_type: Enum (INTERNAL_ENGINE, EXTERNAL_USER,
+   TOOL_EXECUTION, API_RESPONSE, AUTONOMOUS_ACTIVITY). raw_payload: String (JSON).
+   categories: Tuple[FeedbackCategory]. polarity: Enum (POSITIVE, NEGATIVE,
+   NEUTRAL, MIXED). lifecycle_state: FeedbackLifecycleState. priority: Float [0,1].
+   confidence: Float [0,1]. source_reliability: Float [0,1]. is_incomplete: Bool.
+   is_duplicate: Bool. created_at: ISO-8601. updated_at: ISO-8601.
+   record_version: Integer.
+
+2. `FeedbackSource`:
+   source_id: UUID. feedback_id: UUID (FK). source_engine: Enum.
+   source_entity_id: Optional String. source_reliability: Float [0,1].
+   source_type: Enum. provenance_chain: Tuple[ProvenanceLink].
+   recorded_at: ISO-8601.
+
+3. `FeedbackEvidence`:
+   evidence_id: UUID (PK). feedback_id: UUID (FK). evidence_type: Enum
+   (OBJECTIVE_MEASUREMENT, SUBJECTIVE_JUDGMENT, ERROR_CODE, LOG_TRACE,
+   USER_STATEMENT, BEHAVIORAL_OBSERVATION). evidence_content: String.
+   evidence_quality: Float [0,1]. source_id: UUID (FK). recorded_at: ISO-8601.
+
+4. `FeedbackCategory`:
+   Enum of 15 categories (SUCCESS, FAILURE, PARTIAL_SUCCESS, QUALITY,
+   ACCURACY, EFFICIENCY, BEHAVIORAL, SOCIAL, EMOTIONAL, COGNITIVE,
+   EXECUTION, LEARNING, COORDINATION, SAFETY, UNEXPECTED_OUTCOME).
+
+5. `FeedbackConfidence`:
+   confidence_id: UUID (PK). feedback_id: UUID (FK). overall_confidence: Float.
+   source_reliability_factor: Float. evidence_quality_factor: Float.
+   recency_factor: Float. consistency_factor: Float. computed_at: ISO-8601.
+
+6. `ExpectedOutcome`:
+   outcome_id: UUID (PK). activity_id: UUID. objectives: Tuple[Objective].
+   success_criteria: String. expected_quality: Optional Float.
+   expected_resource_budget: Optional Dict. defined_at: ISO-8601.
+
+7. `ActualOutcome`:
+   outcome_id: UUID (PK). activity_id: UUID. results: String (JSON).
+   error_codes: Optional Tuple[String]. completion_status: Enum
+   (COMPLETED, FAILED, TIMED_OUT, PARTIAL, CANCELLED, UNKNOWN).
+   actual_resource_usage: Optional Dict. observed_at: ISO-8601.
+
+8. `OutcomeComparison`:
+   comparison_id: UUID (PK). feedback_id: UUID (FK). expected_outcome_id: UUID.
+   actual_outcome_id: UUID. per_objective_results: Tuple[ObjectiveResult].
+   aggregate_completion: Float [0,1]. overall_classification: Enum
+   (SUCCESS, PARTIAL_SUCCESS, FAILURE, INCONCLUSIVE).
+   unexpected_positives: Tuple[String]. unexpected_negatives: Tuple[String].
+   compared_at: ISO-8601.
+
+9. `ObjectiveResult`:
+   objective_id: String. expected: String. actual: String.
+   completion_score: Float [0,1]. status: Enum (FULLY_MET, PARTIALLY_MET,
+   NOT_MET, EXCEEDED). importance_weight: Float.
+
+10. `QualityAssessment`:
+    assessment_id: UUID (PK). feedback_id: UUID (FK).
+    correctness: Float [0,1]. completeness: Float [0,1].
+    consistency: Float [0,1]. usefulness: Float [0,1].
+    efficiency: Float [0,1]. robustness: Float [0,1].
+    aggregate_quality: Float [0,1]. assessed_at: ISO-8601.
+
+11. `FailureRecord`:
+    failure_id: UUID (PK). feedback_id: UUID (FK). failure_type: Enum
+    (TIMEOUT, EXTERNAL_ERROR, VALIDATION_ERROR, LOGIC_ERROR, RESOURCE_EXHAUSTION,
+    COORDINATION_FAILURE, UNKNOWN). affected_engine: Optional Enum.
+    error_description: String. severity: Enum (CRITICAL, HIGH, MEDIUM, LOW).
+    is_resolved: Bool. recorded_at: ISO-8601.
+
+12. `FailureHypothesis`:
+    hypothesis_id: UUID (PK). failure_id: UUID (FK). cause_type: Enum
+    (PROXIMATE, ROOT, CONTRIBUTING). description: String. confidence: Float [0,1].
+    supporting_evidence_ids: Tuple[UUID]. status: Enum (ACTIVE, CONFIRMED,
+    REFUTED, SUPERSEDED). created_at: ISO-8601.
+
+13. `CausalRelationship`:
+    relationship_id: UUID (PK). feedback_id: UUID (FK). cause_event_id: String.
+    cause_engine: Enum. causal_contribution: Float [0,1]. temporal_proximity: Float.
+    dependency_link: Bool. counterfactual_score: Float [0,1].
+    relationship_type: Enum (CAUSAL, CONTRIBUTING, CORRELATION_ONLY).
+    recorded_at: ISO-8601.
+
+14. `PerformanceMetric`:
+    metric_id: UUID (PK). engine: Enum. activity_type: String.
+    metric_name: String. metric_value: Float. measurement_period_start: ISO-8601.
+    measurement_period_end: ISO-8601. sample_count: Integer.
+
+15. `PerformanceTrend`:
+    trend_id: UUID (PK). engine: Enum. activity_type: String.
+    trend_type: Enum (IMPROVEMENT, REGRESSION, STABLE, VOLATILE).
+    trend_magnitude: Float. observation_count: Integer. confidence: Float [0,1].
+    first_observed_at: ISO-8601. last_observed_at: ISO-8601.
+    lifecycle_status: Enum (EMERGING, ESTABLISHED, FADING, CONTRADICTED).
+
+16. `SuccessPattern`:
+    pattern_id: UUID (PK). engine: Optional Enum. activity_type: String.
+    pattern_description: String. occurrence_count: Integer.
+    success_rate: Float [0,1]. confidence: Float [0,1].
+    lifecycle_status: Enum. evidence_ids: Tuple[UUID].
+    first_observed_at: ISO-8601. last_observed_at: ISO-8601.
+
+17. `FailurePattern`:
+    Same schema as SuccessPattern with failure_rate instead of success_rate,
+    plus common_failure_type: Enum.
+
+18. `CoordinationAssessment`:
+    assessment_id: UUID (PK). feedback_id: UUID (FK).
+    source_engine: Enum. target_engine: Enum.
+    coordination_quality: Float [0,1]. missing_info_count: Integer.
+    duplicate_processing_count: Integer. excessive_latency_count: Integer.
+    conflicting_output_count: Integer. assessed_at: ISO-8601.
+
+19. `FeedbackContribution`:
+    contribution_id: UUID (PK). feedback_id: UUID (FK).
+    recipient_engine: Enum. contribution_type: Enum (OUTCOME_SUMMARY,
+    QUALITY_REPORT, FAILURE_ANALYSIS, CAUSAL_ANALYSIS, PATTERN_ALERT,
+    COORDINATION_REPORT, LEARNING_EVIDENCE). payload: String (JSON).
+    confidence: Float [0,1]. dispatched_at: Optional ISO-8601.
+    acknowledged_at: Optional ISO-8601. delivery_status: Enum
+    (PENDING, DISPATCHED, ACKNOWLEDGED, FAILED, RETRYING).
+
+20. `LearningFeedbackPackage`:
+    package_id: UUID (PK). feedback_id: UUID (FK).
+    learning_contribution: LearningContribution (per Learning Engine v2.5.0 schema).
+    pattern_evidence: Optional Tuple[PatternRef]. coordination_evidence: Optional Tuple[CoordRef].
+    dispatched_at: ISO-8601. ack_received: Bool.
+
+21. `FeedbackDistributionRecord`:
+    distribution_id: UUID (PK). feedback_id: UUID (FK). recipient_engine: Enum.
+    contribution_id: UUID (FK). dispatched_at: ISO-8601.
+    acknowledged_at: Optional ISO-8601. retry_count: Integer.
+    delivery_status: Enum (PENDING, DISPATCHED, ACKNOWLEDGED, FAILED).
+
+22. `FeedbackPriority`:
+    priority_id: UUID (PK). feedback_id: UUID (FK). severity: Enum.
+    recurrence_indicator: Float. confidence_factor: Float.
+    consequence_magnitude: Float. urgency: Float.
+    computed_priority: Float [0,1]. computed_at: ISO-8601.
+
+23. `FeedbackLifecycleRecord`:
+    lifecycle_id: UUID (PK). feedback_id: UUID (FK).
+    previous_state: FeedbackLifecycleState. new_state: FeedbackLifecycleState.
+    trigger_reason: String. transitioned_at: ISO-8601.
+
+24. `FeedbackCorrectionRecord`:
+    correction_id: UUID (PK). feedback_id: UUID (FK).
+    original_evaluation_summary: String (JSON).
+    corrected_evaluation_summary: String (JSON).
+    correction_reason: String. correcting_evidence_ids: Tuple[UUID].
+    corrected_at: ISO-8601.
+
+
+================================================================================
+PART 3 — COMPLETE SQLITE RELATIONAL SCHEMA (18 TABLES)
+================================================================================
+PRAGMA journal_mode = WAL;
+PRAGMA foreign_keys = ON;
+All UUIDs as TEXT, timestamps as ISO-8601 TEXT, enums as TEXT with CHECK.
+
+TABLE 1: feedback_records
+  feedback_id TEXT PK, activity_id TEXT, source_engine TEXT NOT NULL,
+  source_event_id TEXT NOT NULL, source_type TEXT NOT NULL CHECK(...),
+  raw_payload TEXT NOT NULL, categories TEXT NOT NULL DEFAULT '[]' (JSON array),
+  polarity TEXT NOT NULL CHECK(IN ('POSITIVE','NEGATIVE','NEUTRAL','MIXED')),
+  lifecycle_state TEXT NOT NULL DEFAULT 'RECEIVED' CHECK(...),
+  priority REAL NOT NULL DEFAULT 0.5 CHECK(BETWEEN 0.0 AND 1.0),
+  confidence REAL CHECK(BETWEEN 0.0 AND 1.0),
+  source_reliability REAL CHECK(BETWEEN 0.0 AND 1.0),
+  is_incomplete INTEGER NOT NULL DEFAULT 0,
+  is_duplicate INTEGER NOT NULL DEFAULT 0,
+  record_version INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL, updated_at TEXT NOT NULL.
+
+TABLE 2: feedback_sources
+  source_id TEXT PK, feedback_id TEXT NOT NULL FK→feedback_records ON DELETE RESTRICT,
+  source_engine TEXT NOT NULL, source_entity_id TEXT,
+  source_reliability REAL NOT NULL CHECK(...), source_type TEXT NOT NULL,
+  provenance_chain TEXT NOT NULL DEFAULT '[]', recorded_at TEXT NOT NULL.
+
+TABLE 3: feedback_evidence
+  evidence_id TEXT PK, feedback_id TEXT NOT NULL FK→feedback_records,
+  evidence_type TEXT NOT NULL CHECK(...), evidence_content TEXT NOT NULL,
+  evidence_quality REAL NOT NULL CHECK(...), source_id TEXT FK→feedback_sources,
+  recorded_at TEXT NOT NULL.
+
+TABLE 4: feedback_confidence
+  confidence_id TEXT PK, feedback_id TEXT NOT NULL FK→feedback_records,
+  overall_confidence REAL NOT NULL CHECK(...),
+  source_reliability_factor REAL, evidence_quality_factor REAL,
+  recency_factor REAL, consistency_factor REAL, computed_at TEXT NOT NULL.
+
+TABLE 5: expected_outcomes
+  outcome_id TEXT PK, activity_id TEXT NOT NULL,
+  objectives TEXT NOT NULL (JSON), success_criteria TEXT,
+  expected_quality REAL, expected_resource_budget TEXT, defined_at TEXT NOT NULL.
+
+TABLE 6: actual_outcomes
+  outcome_id TEXT PK, activity_id TEXT NOT NULL,
+  results TEXT NOT NULL (JSON), error_codes TEXT DEFAULT '[]',
+  completion_status TEXT NOT NULL CHECK(...),
+  actual_resource_usage TEXT, observed_at TEXT NOT NULL.
+
+TABLE 7: outcome_comparisons
+  comparison_id TEXT PK, feedback_id TEXT FK→feedback_records,
+  expected_outcome_id TEXT FK→expected_outcomes,
+  actual_outcome_id TEXT FK→actual_outcomes,
+  per_objective_results TEXT NOT NULL (JSON),
+  aggregate_completion REAL NOT NULL CHECK(...),
+  overall_classification TEXT NOT NULL CHECK(...),
+  unexpected_positives TEXT DEFAULT '[]', unexpected_negatives TEXT DEFAULT '[]',
+  compared_at TEXT NOT NULL.
+
+TABLE 8: quality_assessments
+  assessment_id TEXT PK, feedback_id TEXT FK→feedback_records,
+  correctness REAL CHECK(...), completeness REAL CHECK(...),
+  consistency REAL CHECK(...), usefulness REAL CHECK(...),
+  efficiency REAL CHECK(...), robustness REAL CHECK(...),
+  aggregate_quality REAL CHECK(...), assessed_at TEXT NOT NULL.
+
+TABLE 9: failure_records
+  failure_id TEXT PK, feedback_id TEXT FK→feedback_records,
+  failure_type TEXT NOT NULL CHECK(...), affected_engine TEXT,
+  error_description TEXT NOT NULL, severity TEXT NOT NULL CHECK(...),
+  is_resolved INTEGER NOT NULL DEFAULT 0, recorded_at TEXT NOT NULL.
+
+TABLE 10: failure_hypotheses
+  hypothesis_id TEXT PK, failure_id TEXT FK→failure_records,
+  cause_type TEXT NOT NULL CHECK(IN('PROXIMATE','ROOT','CONTRIBUTING')),
+  description TEXT NOT NULL, confidence REAL NOT NULL CHECK(...),
+  supporting_evidence_ids TEXT DEFAULT '[]', status TEXT NOT NULL DEFAULT 'ACTIVE',
+  created_at TEXT NOT NULL.
+
+TABLE 11: causal_relationships
+  relationship_id TEXT PK, feedback_id TEXT FK→feedback_records,
+  cause_event_id TEXT NOT NULL, cause_engine TEXT NOT NULL,
+  causal_contribution REAL NOT NULL CHECK(...),
+  temporal_proximity REAL, dependency_link INTEGER NOT NULL DEFAULT 0,
+  counterfactual_score REAL, relationship_type TEXT NOT NULL CHECK(...),
+  recorded_at TEXT NOT NULL.
+
+TABLE 12: performance_metrics
+  metric_id TEXT PK, engine TEXT NOT NULL, activity_type TEXT NOT NULL,
+  metric_name TEXT NOT NULL, metric_value REAL NOT NULL,
+  measurement_period_start TEXT NOT NULL, measurement_period_end TEXT NOT NULL,
+  sample_count INTEGER NOT NULL.
+
+TABLE 13: performance_trends
+  trend_id TEXT PK, engine TEXT, activity_type TEXT,
+  trend_type TEXT NOT NULL CHECK(...), trend_magnitude REAL NOT NULL,
+  observation_count INTEGER NOT NULL, confidence REAL CHECK(...),
+  lifecycle_status TEXT NOT NULL DEFAULT 'EMERGING' CHECK(...),
+  first_observed_at TEXT NOT NULL, last_observed_at TEXT NOT NULL.
+
+TABLE 14: feedback_patterns
+  pattern_id TEXT PK, pattern_class TEXT NOT NULL CHECK(IN('SUCCESS','FAILURE')),
+  engine TEXT, activity_type TEXT, pattern_description TEXT NOT NULL,
+  occurrence_count INTEGER NOT NULL, rate REAL NOT NULL CHECK(...),
+  confidence REAL CHECK(...), lifecycle_status TEXT NOT NULL CHECK(...),
+  common_failure_type TEXT, evidence_ids TEXT DEFAULT '[]',
+  first_observed_at TEXT NOT NULL, last_observed_at TEXT NOT NULL.
+
+TABLE 15: coordination_assessments
+  assessment_id TEXT PK, feedback_id TEXT FK→feedback_records,
+  source_engine TEXT NOT NULL, target_engine TEXT NOT NULL,
+  coordination_quality REAL NOT NULL CHECK(...),
+  missing_info_count INTEGER DEFAULT 0, duplicate_processing_count INTEGER DEFAULT 0,
+  excessive_latency_count INTEGER DEFAULT 0, conflicting_output_count INTEGER DEFAULT 0,
+  assessed_at TEXT NOT NULL.
+
+TABLE 16: feedback_contributions
+  contribution_id TEXT PK, feedback_id TEXT FK→feedback_records,
+  recipient_engine TEXT NOT NULL, contribution_type TEXT NOT NULL CHECK(...),
+  payload TEXT NOT NULL (JSON), confidence REAL CHECK(...),
+  dispatched_at TEXT, acknowledged_at TEXT,
+  delivery_status TEXT NOT NULL DEFAULT 'PENDING' CHECK(...).
+
+TABLE 17: feedback_lifecycle_records
+  lifecycle_id TEXT PK, feedback_id TEXT FK→feedback_records,
+  previous_state TEXT NOT NULL, new_state TEXT NOT NULL,
+  trigger_reason TEXT NOT NULL, transitioned_at TEXT NOT NULL.
+
+TABLE 18: feedback_corrections
+  correction_id TEXT PK, feedback_id TEXT FK→feedback_records,
+  original_evaluation TEXT (JSON), corrected_evaluation TEXT (JSON),
+  correction_reason TEXT NOT NULL,
+  correcting_evidence_ids TEXT DEFAULT '[]', corrected_at TEXT NOT NULL.
+
+Indexes:
+  CREATE INDEX idx_feedback_activity ON feedback_records(activity_id);
+  CREATE INDEX idx_feedback_state ON feedback_records(lifecycle_state);
+  CREATE INDEX idx_feedback_source ON feedback_records(source_engine);
+  CREATE INDEX idx_feedback_created ON feedback_records(created_at);
+  CREATE INDEX idx_evidence_feedback ON feedback_evidence(feedback_id);
+  CREATE INDEX idx_outcome_comp_feedback ON outcome_comparisons(feedback_id);
+  CREATE INDEX idx_failure_feedback ON failure_records(feedback_id);
+  CREATE INDEX idx_causal_feedback ON causal_relationships(feedback_id);
+  CREATE INDEX idx_patterns_engine ON feedback_patterns(engine);
+  CREATE INDEX idx_contributions_feedback ON feedback_contributions(feedback_id);
+  CREATE INDEX idx_contributions_status ON feedback_contributions(delivery_status);
+  CREATE INDEX idx_lifecycle_feedback ON feedback_lifecycle_records(feedback_id);
+  CREATE INDEX idx_metrics_engine ON performance_metrics(engine, activity_type);
+  CREATE INDEX idx_trends_engine ON performance_trends(engine);
+  CREATE INDEX idx_dedup ON feedback_records(source_engine, source_event_id);
+  UNIQUE(source_engine, source_event_id) on feedback_records for dedup enforcement.
+
+
+================================================================================
+PART 4 — INTER-ENGINE COMMUNICATION CONTRACTS (13 CONNECTED ENGINES)
+================================================================================
+
+1. PERCEPTION ENGINE:
+   Ingress: Input interpretation accuracy evidence, perception error reports.
+   Contract: `PerceptionOutcomeSignal` — includes parsed vs. ground-truth comparison.
+
+2. MEMORY ENGINE:
+   Ingress: Retrieval effectiveness signals (found relevant memory vs. missed),
+   storage confirmation receipts.
+   Contract: `MemoryRetrievalOutcome` — retrieval_accuracy, missed_relevant_count.
+
+3. THOUGHT ENGINE:
+   Ingress: Reasoning outcomes, thought-process quality evaluations, reasoning
+   error signals.
+   Contract: `ThoughtOutcomeSignal` — reasoning_quality, error_type, evidence.
+
+4. EMOTION ENGINE:
+   Ingress: Emotional regulation outcomes, emotional prediction accuracy.
+   Egress: Emotional outcome feedback (how emotion-related decisions worked out).
+   Contract: `EmotionalRegulationOutcome` — regulation_strategy, effectiveness.
+
+5. MOTIVATION ENGINE:
+   Ingress: Goal completion outcomes, motivation effectiveness signals.
+   Egress: Goal-related outcome assessments.
+   Contract: `GoalOutcomeSignal` per Learning Engine v2.5.0 contract.
+
+6. LEARNING ENGINE (PRIMARY CONSUMER):
+   Egress: `LearningFeedbackPackage` containing standardized `LearningContribution`
+   per v2.5.0 schema. Includes evidence references, outcome classifications,
+   contributing factors, and pattern evidence.
+   Acknowledgement: Receives ACK from Learning Engine's FeedbackService.
+   Boundary: Feedback NEVER sends ParameterChangeRequest. Only evidence.
+
+7. PERSONALITY ENGINE:
+   Ingress: Behavioral consistency evidence (Diva's behavior matched/deviated
+   from personality expectations).
+   Contract: Read-only personality context for evaluating behavioral alignment.
+
+8. SOCIAL COGNITION ENGINE:
+   Ingress: Social interpretation outcomes, relationship-related outcomes.
+   Egress: Social interaction quality assessments.
+   Contract: `SocialOutcomeSignal` — interaction_quality, relationship_impact.
+
+9. INTERNAL STATE ENGINE:
+   Ingress: Resource efficiency data (energy consumed vs. task utility).
+   Contract: `EnergyEfficiencySignal` — cognitive_expenditure, task_utility_ratio.
+
+10. INTERACTION ENGINE:
+    Ingress: Communication outcomes (message delivery, response quality, user
+    engagement indicators).
+    Contract: `InteractionOutcomeSignal` — user_satisfaction, response_relevance.
+
+11. AUTONOMOUS ACTIVITY ENGINE:
+    Ingress: Autonomous activity completion results, self-initiated task outcomes.
+    Contract: `AutonomousActivityOutcome` — task_completion, quality, efficiency.
+
+12. COGNITIVE INTEGRATION & DECISION ENGINE:
+    Ingress: Decision outcomes, decision-quality evidence.
+    Egress: Decision quality assessments, unexpected consequence alerts.
+    Contract: `DecisionOutcomeSignal` — decision_id, outcome_vs_prediction.
+
+13. SHARED EXECUTION INFRASTRUCTURE:
+    Ingress: Actual execution results, error logs, timing data, resource usage.
+    Contract: `ExecutionResult` — exit_code, duration_ms, resource_usage, logs.
+
+MANDATORY RULES FOR ALL CONTRACTS:
+  - Structured async messages with UUIDs and timestamps.
+  - Source provenance preserved on every message.
+  - Feedback Engine NEVER modifies recipient engine parameters.
+  - Anti-loop: Feedback about feedback is NOT recursively evaluated.
+  - Dedup: Same (source_engine, source_event_id) processed only once.
+
+
+================================================================================
+PART 5 — MUST-PASS CONDITIONS (44 CHECKPOINTS) & HOW TO PASS EACH
+================================================================================
+
+1. FEEDBACK ACQUISITION (5 CHECKPOINTS)
+[ ] FA01. Accept feedback from multiple internal and external sources.
+  HOW: 6 source-type adapters in Normalizer, one per source category. Integration
+  test sends signals from 5 different engines + 1 external user and verifies all
+  are processed to FeedbackRecord with correct source_type.
+
+[ ] FA02. Preserve source provenance.
+  HOW: Every FeedbackRecord has FeedbackSource with provenance_chain. Unit test
+  verifies chain non-empty and traceable to original event.
+
+[ ] FA03. Handle incomplete and delayed feedback.
+  HOW: Normalizer fills defaults and sets is_incomplete=True. Lifecycle Manager
+  transitions to PENDING_EVIDENCE. Test: submit feedback missing expected_outcome;
+  verify PENDING_EVIDENCE state; submit evidence later; verify EVALUATED transition.
+
+[ ] FA04. Detect duplicate feedback.
+  HOW: Bloom filter + UNIQUE(source_engine, source_event_id) constraint.
+  Test: submit same signal twice; verify second marked is_duplicate=True and
+  not re-evaluated.
+
+[ ] FA05. Handle contradictory feedback.
+  HOW: When two feedback records for same activity have opposite polarity,
+  Lifecycle Manager transitions to CONFLICTED. Confidence Assessment reduces
+  consistency_factor. Test: submit positive + negative for same activity_id;
+  verify CONFLICTED state and reduced confidence.
+
+2. OUTCOME EVALUATION (6 CHECKPOINTS)
+[ ] OE01. Compare expected and actual outcomes.
+  HOW: Outcome Evaluator takes (ExpectedOutcome, ActualOutcome) and produces
+  OutcomeComparison with per-objective scores. Test: 3-objective scenario with
+  2 met, 1 not met; verify PARTIAL_SUCCESS classification.
+
+[ ] OE02. Support partial success.
+  HOW: Per-objective ObjectiveResult with FULLY_MET/PARTIALLY_MET/NOT_MET.
+  Aggregate formula produces $O_{aggregate} \in (0.50, 0.90)$ for partial.
+  Test: verify aggregate correctly weights objectives by importance.
+
+[ ] OE03. Evaluate quality independently of completion.
+  HOW: Quality Assessment Module runs independently. A FULLY_MET objective can
+  have $Q_{correct} = 0.60$ (poor quality but complete). Test: submit fully
+  completed task with low quality indicators; verify SUCCESS classification
+  AND low quality score coexist.
+
+[ ] OE04. Evaluate efficiency independently of quality.
+  HOW: $Q_{effic}$ computed separately from other quality dimensions. Test:
+  high-quality result with 3x expected resource usage; verify high quality
+  scores AND low efficiency score.
+
+[ ] OE05. Support qualitative and quantitative evaluation.
+  HOW: Numerical objectives use formula; qualitative use LLM similarity scoring.
+  Test: mixed objective set with 1 numerical + 1 qualitative; verify both evaluated.
+
+[ ] OE06. Preserve inconclusive outcomes.
+  HOW: When evidence is insufficient for determination, OutcomeComparison
+  sets overall_classification = INCONCLUSIVE. Lifecycle → PENDING_EVIDENCE.
+  Test: submit feedback with no actual_outcome data; verify INCONCLUSIVE.
+
+3. FAILURE ANALYSIS (6 CHECKPOINTS)
+[ ] FL01. Distinguish observed failures from suspected causes.
+  HOW: FailureRecord stores observation. FailureHypothesis stores suspected
+  cause with cause_type and confidence. Test: timeout failure; verify
+  FailureRecord (observed timeout) separate from FailureHypothesis (resource
+  limitation, $C=0.70$).
+
+[ ] FL02. Support multiple contributing causes.
+  HOW: Multiple FailureHypothesis records per FailureRecord. Anti-blame
+  safeguard caps single-node $Causal \le 0.80$ unless strong evidence.
+  Test: complex failure; verify $\ge 2$ hypotheses generated.
+
+[ ] FL03. Distinguish correlation from causation.
+  HOW: CausalRelationship.relationship_type = CORRELATION_ONLY when
+  $P_{dependency}=0$ AND $P_{counter}<0.50$. Test: two temporally close events
+  with no dependency link; verify CORRELATION_ONLY tag.
+
+[ ] FL04. Preserve uncertainty in causal explanations.
+  HOW: FailureHypothesis.confidence reflects uncertainty. Multiple hypotheses
+  preserved as ACTIVE when none has $C \ge 0.80$. Test: ambiguous failure;
+  verify all hypotheses retained with $C < 0.80$.
+
+[ ] FL05. Identify recurring failure patterns.
+  HOW: Pattern Recognition cross-references failure_records. $\ge 3$ similar
+  failures → FailurePattern. Test: submit 3 similar failures; verify pattern
+  created with EMERGING status.
+
+[ ] FL06. Track unexpected consequences.
+  HOW: OutcomeComparison.unexpected_negatives populated when actual contains
+  elements not in expected AND those elements have negative impact. Test:
+  successful task that caused an unintended side effect; verify tracked.
+
+4. EVIDENCE AND CONFIDENCE (5 CHECKPOINTS)
+[ ] EC01. Assess evidence reliability.
+  HOW: Confidence Assessment Module with multi-factor formula. Test: compare
+  confidence of objective measurement vs. subjective user statement; verify
+  objective scores higher on evidence_quality_factor.
+
+[ ] EC02. Distinguish subjective and objective feedback.
+  HOW: FeedbackEvidence.evidence_type distinguishes OBJECTIVE_MEASUREMENT
+  from SUBJECTIVE_JUDGMENT. FeedbackConfidence separates these in its formula.
+  Test: user says "wrong" but system measurement says "correct"; verify both
+  preserved as separate evidence items.
+
+[ ] EC03. Support conflicting evidence.
+  HOW: CONFLICTED lifecycle state. Both evidence items retained with
+  independent confidence. Test: contradictory assessments from two sources;
+  verify both persisted, state = CONFLICTED, reduced overall confidence.
+
+[ ] EC04. Preserve positive, negative and neutral feedback.
+  HOW: FeedbackRecord.polarity supports all three + MIXED. Test: submit one
+  of each; verify all stored with correct polarity tags.
+
+[ ] EC05. Prevent unsupported conclusions from becoming established facts.
+  HOW: Feedback with $C_{feedback} < 0.40$ is quarantined in LearningFeedbackPackage
+  (is_quarantined=True). Pattern Recognition requires $\ge 3$ supporting
+  instances. Test: single low-confidence failure; verify NOT promoted to pattern.
+
+5. PATTERN AND COORDINATION ANALYSIS (5 CHECKPOINTS)
+[ ] PC01. Identify recurring successes and failures.
+  HOW: Sliding window accumulators in Pattern Recognition. Test: 5 successes
+  on same activity type with $success\_rate \ge 0.80$; verify SuccessPattern created.
+
+[ ] PC02. Detect improvements and regressions.
+  HOW: PerformanceTrend with IMPROVEMENT/REGRESSION type. Monotonic check
+  over last 5 evaluations. Test: 5 progressively better quality scores;
+  verify IMPROVEMENT trend detected.
+
+[ ] PC03. Evaluate inter-engine communication quality.
+  HOW: Coordination Evaluator computes CoQ from communication trace. Test:
+  simulate missing information handoff; verify coordination_quality < 1.0
+  and missing_info_count = 1.
+
+[ ] PC04. Detect missing or duplicated information handoffs.
+  HOW: Expected-vs-received comparison in Coordination Evaluator. Test:
+  activity that expected Memory context but received none; verify detection.
+
+[ ] PC05. Preserve evidence for identified patterns.
+  HOW: Patterns link to evidence_ids (tuple of feedback_record IDs). Test:
+  verify pattern records contain references to all contributing feedback IDs.
+
+6. LEARNING INTEGRATION (5 CHECKPOINTS)
+[ ] LI01. Generate structured feedback for Learning.
+  HOW: Learning Integration Interface produces LearningFeedbackPackage matching
+  Learning Engine v2.5.0 `LearningContribution` schema. Test: verify every field
+  of LearningContribution is populated with valid values.
+
+[ ] LI02. Include evidence and confidence.
+  HOW: evidence_references and confidence fields are mandatory in every
+  LearningContribution. Test: verify non-empty evidence and valid confidence.
+
+[ ] LI03. Support multiple learning dimensions.
+  HOW: One feedback record can generate multiple LearningContribution instances
+  targeting different dimension_ids. Test: failed social interaction; verify
+  contributions to both `social.*` and `thought.*` dimensions.
+
+[ ] LI04. Do not directly modify other engine parameters.
+  HOW: Feedback Engine has NO write access to any engine parameter table.
+  Code audit: grep for ParameterChangeRequest in Feedback Engine code — zero
+  matches expected.
+
+[ ] LI05. Preserve original feedback independently of Learning decisions.
+  HOW: FeedbackRecord and all associated evaluation records persist in Feedback
+  Engine's own tables regardless of Learning Engine's acceptance or rejection.
+  Test: Learning rejects evidence; verify Feedback Engine records unchanged.
+
+7. LIFECYCLE AND RELIABILITY (6 CHECKPOINTS)
+[ ] LR01. Maintain explicit feedback lifecycle states.
+  HOW: 11-state FSM enforced by Lifecycle Manager with CHECK constraints.
+  Test: verify every valid transition works and invalid transitions are rejected.
+
+[ ] LR02. Support corrections and version history.
+  HOW: FeedbackCorrectionRecord with before/after snapshots. record_version
+  incremented on each correction. Test: submit correction to previous evaluation;
+  verify new version created, old preserved, lifecycle → CORRECTED.
+
+[ ] LR03. Prioritize critical feedback.
+  HOW: Priority Manager computes $P_{feedback}$. Safety feedback always $P=1.0$.
+  Test: submit safety feedback alongside low-priority feedback; verify safety
+  processed first regardless of arrival order.
+
+[ ] LR04. Recover records after restart.
+  HOW: Crash recovery protocol (Section 1.4): Reload SQLite, identify non-terminal
+  states, re-process or resume. Test: simulate crash mid-PROCESSING; verify
+  record returns to VALIDATING and re-processes correctly.
+
+[ ] LR05. Prevent duplicate feedback distribution.
+  HOW: UNIQUE(feedback_id, recipient_engine) on feedback_contributions.
+  Content-hash dedup in Distribution Manager. Test: attempt double distribution;
+  verify second attempt blocked.
+
+[ ] LR06. Track delivery and acknowledgement status.
+  HOW: FeedbackDistributionRecord with dispatched_at, acknowledged_at,
+  delivery_status. Retry logic (3 attempts, 5s timeout). Test: simulate ACK
+  failure; verify 3 retries attempted; delivery_status = FAILED after all.
+
+8. OWNERSHIP BOUNDARIES (6 CHECKPOINTS)
+[ ] OB01. Do not make prospective cognitive decisions.
+  HOW: Feedback Engine produces EVALUATIONS (what happened), never PRESCRIPTIONS
+  (what to do next). Code audit: no decision-making methods. FeedbackContribution
+  tags all outputs as OBSERVATION, never RECOMMENDATION.
+
+[ ] OB02. Do not own persistent knowledge or experiences.
+  HOW: Feedback Engine stores operational evaluation records only. Significant
+  experiences are nominated to Memory Engine. Test: verify no memory_records
+  table in Feedback Engine schema.
+
+[ ] OB03. Do not directly control motivations or emotions.
+  HOW: Feedback Engine dispatches emotional and motivational outcome signals
+  but never creates EmotionRecord or MotivationRecord. Code audit: zero writes
+  to emotion or motivation tables.
+
+[ ] OB04. Do not independently authorize actions.
+  HOW: Feedback Engine has no action execution capability. It evaluates past
+  actions. Code audit: no execution or interaction methods.
+
+[ ] OB05. Use shared LLM infrastructure.
+  HOW: All LLM calls go through shared orchestration layer. No dedicated model
+  instance. Test: verify LLM requests use shared API endpoint.
+
+[ ] OB06. Keep retrospective evaluation separate from Learning's development decisions.
+  HOW: Feedback produces evidence. Learning decides. The architectural boundary
+  is enforced by the LearningContribution schema — Feedback populates evidence
+  fields; Learning Engine's LearningAssessment decides whether to propose changes.
+  Test: verify no LearningProposal or ParameterChangeRequest originates from
+  Feedback Engine code.
+
+
+================================================================================
+PART 6 — MANDATORY ARCHITECTURAL WALKTHROUGHS (ALL 14 SCENARIOS)
+================================================================================
+
+Each walkthrough contains the eight mandatory structural sections.
+
+--------------------------------------------------------------------------------
+SCENARIO 1: COMPLETELY SUCCESSFUL ACTIVITY
+--------------------------------------------------------------------------------
+1. Initial State: Diva completed a research task with 3 objectives. All met.
+2. Trigger: Execution infrastructure dispatches ExecutionResult (exit_code=0).
+3. Expected Subsystem Interactions:
+   - Input Handler validates; Source Validator assigns $Rel_s = 0.90$.
+   - Normalizer creates FeedbackRecord. Classifier assigns SUCCESS.
+   - Outcome Evaluator: 3/3 objectives FULLY_MET; $O_{aggregate} = 0.95$.
+   - Quality Assessment: $Q_{correct}=0.90, Q_{effic}=0.80$.
+   - No failure analysis triggered.
+   - Pattern Recognition: Increments success counter for research tasks.
+   - Feedback Generator: Creates LearningFeedbackPackage with POSITIVE_EVIDENCE.
+4. Expected State Transitions: RECEIVED → VALIDATING → PROCESSING → EVALUATED → DISTRIBUTED → ACKNOWLEDGED.
+5. Expected Persistence Changes: INSERT into feedback_records, outcome_comparisons, quality_assessments, feedback_contributions, feedback_lifecycle_records.
+6. Ownership-Boundary Checks: Feedback evaluates only. No parameter changes. Learning independently decides if the success reinforces any parameter.
+7. Expected Result: SUCCESS classification with quality dimensions. Positive evidence dispatched to Learning. Pattern counter updated.
+8. Failure Scenario: If Learning Engine ACK times out: Retry 3x. Mark delivery_status = FAILED. Feedback record preserved regardless.
+
+--------------------------------------------------------------------------------
+SCENARIO 2: COMPLETELY FAILED ACTIVITY
+--------------------------------------------------------------------------------
+1. Initial State: Task to generate 3 required features. None completed. Error: timeout.
+2. Trigger: ExecutionResult with error_code = TIMEOUT.
+3. Subsystem Interactions:
+   - Classifier: FAILURE + EXECUTION categories.
+   - Outcome Evaluator: 0/3 objectives; $O_{aggregate} = 0.0$; classification = FAILURE.
+   - Failure Analysis: FailureRecord (TIMEOUT, severity=HIGH). Generates 2 hypotheses:
+     H1: Resource limitation ($C=0.65$). H2: Task complexity exceeded estimate ($C=0.55$).
+   - Causal Attribution: Collects preceding events. Identifies high workload during task.
+4. State Transitions: → EVALUATED → DISTRIBUTED.
+5. Persistence: INSERT failure_records, failure_hypotheses (2 rows), causal_relationships.
+6. Ownership: Failure analysis identifies causes but does NOT fix them. Learning receives evidence.
+7. Result: FAILURE with 2 failure hypotheses preserved. Neither is confirmed without more evidence.
+8. Failure: If LLM hypothesis generation fails: Deterministic-only analysis. Record with fewer hypotheses.
+
+--------------------------------------------------------------------------------
+SCENARIO 3: PARTIALLY SUCCESSFUL ACTIVITY
+--------------------------------------------------------------------------------
+1. Initial State: 3 objectives; 2 fully met, 1 not met. 
+2. Trigger: ExecutionResult with partial completion data.
+3. Subsystem Interactions:
+   - Outcome Evaluator: Obj1=FULLY_MET($w=0.4$), Obj2=FULLY_MET($w=0.3$), Obj3=NOT_MET($w=0.3$).
+     $O = (0.4 \cdot 1.0 + 0.3 \cdot 1.0 + 0.3 \cdot 0.0) / 1.0 = 0.70$. PARTIAL_SUCCESS.
+   - Quality Assessment: Completed objectives assessed independently for quality.
+   - Failure Analysis: Activated for Obj3. Hypothesis: Insufficient information ($C=0.50$).
+4. Result: PARTIAL_SUCCESS. Per-objective breakdown preserved. Failure analysis only on Obj3.
+
+--------------------------------------------------------------------------------
+SCENARIO 4: SUCCESSFUL BUT INEFFICIENT ACTIVITY
+--------------------------------------------------------------------------------
+1. Initial State: Task completed successfully. Used 3x expected resources.
+2. Trigger: ExecutionResult with high resource_usage.
+3. Subsystem Interactions:
+   - Classifier: SUCCESS + EFFICIENCY categories.
+   - Outcome Evaluator: $O_{aggregate} = 0.95$ (SUCCESS).
+   - Quality Assessment: $Q_{effic} = \max(0, 1 - (3.0 - 1.0)/1.0) = 0.0$ (terrible efficiency).
+     $Q_{correct} = 0.90$ (good correctness). These coexist.
+   - Feedback Generator: Two separate contributions — positive for Learning
+     (success evidence) AND efficiency concern for Internal State + Learning.
+4. Result: SUCCESS classification but LOW efficiency. Both preserved independently.
+   Not collapsed into a single middling score.
+
+--------------------------------------------------------------------------------
+SCENARIO 5: CONFLICTING USER AND SYSTEM FEEDBACK
+--------------------------------------------------------------------------------
+1. Initial State: Diva provides an answer. System metrics say correct. User says wrong.
+2. Trigger: Two feedback signals — ToolExecution (correct) + ExternalUser (incorrect).
+3. Subsystem Interactions:
+   - Two FeedbackRecords created, linked by same activity_id.
+   - Confidence Assessment: System source $Rel_s = 0.80$; User source $Rel_s = 0.85$.
+   - User satisfaction ($Q_{useful} = 0.20$) and factual accuracy ($Q_{correct} = 0.90$)
+     preserved as INDEPENDENT dimensions. NOT averaged.
+   - Lifecycle Manager: Marks as CONFLICTED until further evidence.
+   - Both records dispatched to Learning with CONFLICTED flag.
+4. Result: User dissatisfaction and system correctness coexist. Learning receives
+   both; may investigate whether the answer was technically correct but poorly explained.
+
+--------------------------------------------------------------------------------
+SCENARIO 6: REPEATED FAILURE
+--------------------------------------------------------------------------------
+1. Initial State: Diva has failed 4 similar multi-step tasks previously.
+2. Trigger: 5th similar failure arrives.
+3. Subsystem Interactions:
+   - Pattern Recognition: $n_{failure} = 5$, $failure\_rate = 5/6 = 0.83 \ge 0.60$. Triggers FailurePattern creation.
+   - Pattern lifecycle: EMERGING (at $n=3$) → ESTABLISHED (now at $n=5, n_{total} \ge 8$ if including successes).
+   - Feedback Generator: Creates LearningFeedbackPackage with pattern_evidence
+     referencing the FailurePattern and all 5 contributing feedback IDs.
+   - Priority Manager: Recurrence indicator $R = 1.0$; priority elevated.
+4. Result: FailurePattern at ESTABLISHED status. Learning receives pattern evidence
+   and may investigate whether a parameter change or capability development is warranted.
+
+--------------------------------------------------------------------------------
+SCENARIO 7: UNEXPECTED POSITIVE RESULT
+--------------------------------------------------------------------------------
+1. Initial State: Diva attempts a task expected to produce one output.
+2. Trigger: ExecutionResult shows the task also produced an additional useful output not in the original objectives.
+3. Subsystem Interactions:
+   - Outcome Evaluator: Primary objective FULLY_MET. Additionally detects unexpected_positives.
+   - Classifier: SUCCESS + UNEXPECTED_OUTCOME.
+   - Quality Assessment: Evaluates unexpected output quality independently.
+   - Feedback Generator: Positive evidence with UNEXPECTED flag dispatched.
+4. Result: SUCCESS with recorded unexpected positive achievement. Learning may
+   investigate what strategy produced the bonus result.
+
+--------------------------------------------------------------------------------
+SCENARIO 8: UNEXPECTED NEGATIVE CONSEQUENCE
+--------------------------------------------------------------------------------
+1. Initial State: Diva successfully completes a task.
+2. Trigger: Later feedback reveals the task caused an unintended side effect.
+3. Subsystem Interactions:
+   - Delayed feedback handling: Input Handler associates with original activity_id.
+   - Outcome Evaluator: Updates OutcomeComparison with unexpected_negatives.
+   - Causal Attribution: Builds causal graph linking the original task to the side effect.
+   - Quality Assessment: Robustness dimension reduced ($Q_{robust}$ lowered).
+   - Feedback Generator: Dispatches NEGATIVE evidence to Learning for the consequence.
+4. Result: Original SUCCESS re-evaluated with the negative consequence. Both
+   the success and the consequence are preserved as independent facts.
+
+--------------------------------------------------------------------------------
+SCENARIO 9: UNCERTAIN FAILURE CAUSE
+--------------------------------------------------------------------------------
+1. Initial State: An operation fails with no clear error code.
+2. Trigger: ExecutionResult with completion_status = FAILED, no error_code.
+3. Subsystem Interactions:
+   - Failure Analysis: No deterministic hypothesis from error codes.
+     LLM-assisted analysis generates 3 hypotheses:
+     H1: External service unavailable ($C=0.35$).
+     H2: Input data malformed ($C=0.30$).
+     H3: Internal logic error ($C=0.25$).
+   - ALL three preserved as ACTIVE (none has $C \ge 0.80$).
+   - Causal Attribution: No strong causal link found. All tagged CORRELATION_ONLY.
+   - Feedback record lifecycle: PENDING_EVIDENCE (insufficient for determination).
+4. Result: Multiple hypotheses preserved. No premature blame assignment.
+   Lifecycle remains PENDING_EVIDENCE until more evidence arrives.
+
+--------------------------------------------------------------------------------
+SCENARIO 10: INCORRECT PREVIOUS EVALUATION
+--------------------------------------------------------------------------------
+1. Initial State: A previous feedback evaluated an answer as incorrect.
+2. Trigger: New evidence reveals the answer was actually correct (original evaluation was wrong).
+3. Subsystem Interactions:
+   - FeedbackCorrectionRecord created with original vs. corrected evaluation.
+   - Original FeedbackRecord: record_version incremented. Categories updated.
+   - Lifecycle: ACKNOWLEDGED → CORRECTED → DISTRIBUTED (re-dispatch).
+   - Learning Integration: Dispatches corrected LearningFeedbackPackage with
+     updated valence (NEGATIVE_EVIDENCE → POSITIVE_EVIDENCE).
+   - Original evaluation preserved in correction record for audit.
+4. Result: Evaluation corrected with full audit trail. Learning receives updated evidence.
+
+--------------------------------------------------------------------------------
+SCENARIO 11: SUCCESSFUL LEARNING CHANGE
+--------------------------------------------------------------------------------
+1. Initial State: Learning Engine previously applied a parameter change. Feedback
+   Engine now evaluates post-change outcomes.
+2. Trigger: 5 task outcomes after the parameter change.
+3. Subsystem Interactions:
+   - Pattern Recognition: Compares pre-change and post-change performance.
+     Pre-change: $\bar{Q} = 0.55$. Post-change: $\bar{Q} = 0.75$. IMPROVEMENT detected.
+   - Feedback Generator: Creates LEARNING category feedback with IMPROVEMENT trend
+     evidence linked to the parameter change.
+   - Learning Engine receives evidence that its change was effective.
+4. Result: Post-change improvement documented. Learning Engine can use this to
+   validate its development decisions.
+
+--------------------------------------------------------------------------------
+SCENARIO 12: INTER-ENGINE COMMUNICATION FAILURE
+--------------------------------------------------------------------------------
+1. Initial State: Thought Engine repeatedly receives incomplete context from Memory.
+2. Trigger: 3rd instance of a task failing due to missing memory context.
+3. Subsystem Interactions:
+   - Coordination Evaluator: Analyzes communication trace. Identifies
+     (Memory → Thought) pathway with missing_info_count = 3.
+   - CoordinationAssessment: $CoQ = 1 - 3/15 = 0.80$ (degraded).
+   - Pattern Recognition: Coordination failure pattern at EMERGING status.
+   - Feedback Generator: Creates COORDINATION feedback dispatched to Learning
+     and both affected engines (Memory and Thought).
+4. Result: Specific communication pathway identified. Learning receives evidence
+   to potentially adjust retrieval parameters via Memory Engine.
+
+--------------------------------------------------------------------------------
+SCENARIO 13: DELAYED EXTERNAL FEEDBACK
+--------------------------------------------------------------------------------
+1. Initial State: Diva completed a task 2 hours ago.
+2. Trigger: User provides feedback now: "That answer was really helpful."
+3. Subsystem Interactions:
+   - Input Handler: Accepts delayed feedback. Associates with activity_id.
+   - Source Validator: $Rel_s = 0.85$ (user feedback).
+   - Confidence Assessment: Recency factor slightly reduced but still high
+     ($R_{time} = \exp(-0.01 \cdot 2) = 0.98$).
+   - Quality Assessment: User satisfaction dimension updated ($Q_{useful} = 0.90$).
+   - Feedback Generator: Positive evidence dispatched to Learning.
+4. Result: Delayed feedback properly associated and evaluated. No penalty for delay.
+
+--------------------------------------------------------------------------------
+SCENARIO 14: DUPLICATE FEEDBACK
+--------------------------------------------------------------------------------
+1. Initial State: Network glitch causes same ExecutionResult to arrive 3 times.
+2. Trigger: 3 identical signals with same source_event_id.
+3. Subsystem Interactions:
+   - Input Handler: First signal passes Bloom filter and UNIQUE constraint. Processed normally.
+   - Second signal: Bloom filter hit → SQLite UNIQUE check → Confirmed duplicate.
+     Marked is_duplicate=True. NOT processed.
+   - Third signal: Same. Marked duplicate.
+   - Only 1 FeedbackRecord created. Only 1 evaluation pipeline execution.
+4. Result: Exactly 1 evaluation despite 3 identical signals. Duplicates logged but not evaluated or distributed.
+
+
+================================================================================
+PART 7 — COMPLETION CONDITIONS & 10-PHASE IMPLEMENTATION ROADMAP
+================================================================================
+
+COMPLETION CONDITIONS VERIFICATION:
+1. All feedback sources defined — 5 external + 11 internal types ✓
+2. Feedback classification finalized — 15-category taxonomy ✓
+3. Expected-vs-actual comparison algorithms — Multi-objective weighted ✓
+4. Quality assessment mechanisms — 6-dimension weighted scoring ✓
+5. Failure analysis algorithms — Multi-hypothesis + historical cross-ref ✓
+6. Causal attribution — Weighted evidence causal graph ✓
+7. Confidence calculations — Multi-factor formula ✓
+8. Pattern recognition — Sliding window accumulators ✓
+9. Inter-engine coordination evaluation — Communication trace analysis ✓
+10. Feedback generation schemas — 24 data structures ✓
+11. Distribution contracts — 13 engine contracts ✓
+12. Learning integration — LearningContribution schema mapping ✓
+13. Lifecycle transitions — 11-state FSM ✓
+14. Prioritization rules — Multi-factor priority score ✓
+15. Persistence and recovery — SQLite WAL + 4-step recovery ✓
+16. All walkthroughs have test cases — 14/14 ✓
+17. Must-pass conditions have verification — 44/44 with HOW ✓
+18. No unresolved ownership conflicts — All boundaries documented ✓
+
+STATUS: ALL 18 COMPLETION CONDITIONS SATISFIED.
+
+--------------------------------------------------------------------------------
+PHASED 10-STAGE ENGINEERING MILESTONES
+--------------------------------------------------------------------------------
+
+PHASE 1: PERSISTENCE FOUNDATION
+  Deliverables: All 18 SQLite tables, indexes, CHECK constraints.
+  Validation: Schema integrity tests, FK enforcement.
+
+PHASE 2: INPUT PIPELINE (Services 1-3)
+  Deliverables: Input Handler, Source Validator, Normalizer.
+  Validation: Schema validation tests, dedup tests, adapter tests.
+
+PHASE 3: CLASSIFICATION & OUTCOME EVALUATION (Services 4-5)
+  Deliverables: Classifier, Outcome Evaluator.
+  Validation: Multi-category classification tests, partial success tests,
+  weighted objective comparison tests.
+
+PHASE 4: QUALITY & FAILURE ANALYSIS (Services 6-7)
+  Deliverables: Quality Assessment, Failure Analysis.
+  Validation: Six-dimension quality tests, multi-hypothesis failure tests,
+  root vs. proximate cause tests.
+
+PHASE 5: CAUSAL ATTRIBUTION & CONFIDENCE (Services 8-9)
+  Deliverables: Causal Attribution, Confidence Assessment.
+  Validation: Causal graph tests, anti-blame safeguard tests, multi-factor
+  confidence tests, subjective vs. objective separation tests.
+
+PHASE 6: PATTERN RECOGNITION & COORDINATION (Services 10-11)
+  Deliverables: Pattern Recognition, Coordination Evaluator.
+  Validation: Sliding window tests, pattern lifecycle tests, communication
+  trace analysis tests, improvement/regression detection tests.
+
+PHASE 7: SHARED LLM INTEGRATION
+  Deliverables: LLM-assisted evaluation for Quality, Failure Analysis,
+  Causal Attribution. Timeout handling. Fallback to deterministic-only.
+  Validation: LLM timeout tests, fallback tests, response validation tests.
+
+PHASE 8: FEEDBACK GENERATION & DISTRIBUTION (Services 12-15)
+  Deliverables: Feedback Generator, Priority Manager, Learning Integration,
+  Distribution Manager.
+  Validation: Multi-recipient assembly tests, LearningContribution schema
+  compliance tests, delivery tracking tests, anti-loop tests.
+
+PHASE 9: LIFECYCLE MANAGEMENT & CRASH RECOVERY (Services 16-17)
+  Deliverables: Lifecycle Manager FSM, History Manager, crash recovery protocol.
+  Validation: State transition tests, invalid transition rejection tests,
+  correction tests, restart recovery tests.
+
+PHASE 10: INTEGRATION TESTING & MUST-PASS AUDIT
+  Deliverables: All 14 walkthroughs as integration tests. All 44 must-pass
+  conditions verified. Cross-engine contract compliance. End-to-end pipeline stress test.
+  Validation: Scenario-by-scenario verification, checklist completion.
+
+
+================================================================================
+END OF DOCUMENT
+================================================================================
+

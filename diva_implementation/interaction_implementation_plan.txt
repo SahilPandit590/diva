@@ -1,0 +1,1784 @@
+================================================================================
+DIVA COGNITIVE ARCHITECTURE — INTERACTION ENGINE
+ARCHITECTURAL IMPLEMENTATION PLAN & PRODUCTION MASTER SPECIFICATION
+Document Version: 1.0.0 (Production Master · Approved Architecture Specification)
+Target Framework: Python 3.12+ (Asyncio) / Deeply Frozen Data Models / SQLite WAL
+Status: Ready for Implementation — All 72 Must-Pass Conditions & 20 Scenarios Satisfied
+Document Scope: Strictly Non-Code Architecture Plan & Comprehensive Relational Specification
+================================================================================
+
+TABLE OF CONTENTS
+--------------------------------------------------------------------------------
+EXECUTIVE ARCHITECTURAL SUMMARY & GOVERNING PRINCIPLES
+  The Eight Non-Negotiable Axioms
+  Strict Architectural Ownership & Boundary Matrix
+PART 1 — HOW THE ENGINE RUNS: OVERALL EXECUTION MODEL & CONCURRENCY
+  1.1 Multi-Tier Asynchronous Pipeline Topology
+  1.2 Concurrency & Per-Conversation Isolation Model
+  1.3 Resource Throttling & Backpressure Mechanics
+  1.4 Crash Recovery & Startup Reconciliation Protocol
+PART 2 — INTERNAL ARCHITECTURE & THE TWENTY-ONE LOGICAL MODULES
+  1. Channel Adapter Manager
+  2. Inbound Message Handler
+  3. Message Normalizer
+  4. Participant Manager
+  5. Conversation Manager
+  6. Session Lifecycle Manager
+  7. Turn Manager
+  8. Context Manager
+  9. Interaction Router
+  10. Outbound Message Manager
+  11. Content Coordination Module
+  12. Delivery Manager
+  13. Retry and Recovery Manager
+  14. Interruption Manager
+  15. Preference Manager
+  16. Authorization Validator
+  17. Proactive Communication Handler
+  18. Queue and Priority Manager
+  19. Interaction History Manager
+  20. Lifecycle and State Validator
+  21. Event and Feedback Publisher
+PART 3 — COMPREHENSIVE DATA DICTIONARY (20 FROZEN DATA STRUCTURES)
+PART 4 — COMPLETE SQLITE RELATIONAL SCHEMA (16 TABLES)
+PART 5 — INTER-ENGINE COMMUNICATION CONTRACTS (12 CONNECTED SYSTEMS)
+PART 6 — MUST-PASS CONDITIONS: AUDIT & VERIFICATION MATRIX (ALL 72 CHECKPOINTS)
+  Domain A: Inbound Communication (MP-01 to MP-10)
+  Domain B: Conversation Lifecycle (MP-11 to MP-18)
+  Domain C: Turn Management (MP-19 to MP-25)
+  Domain D: Outbound Communication (MP-26 to MP-35)
+  Domain E: Communication Preferences & Continuity (MP-36 to MP-41)
+  Domain F: Proactive Communication (MP-42 to MP-48)
+  Domain G: Privacy & Security (MP-49 to MP-55)
+  Domain H: Reliability & Persistence (MP-56 to MP-64)
+  Domain I: Architectural Ownership (MP-65 to MP-72)
+PART 7 — MANDATORY ARCHITECTURAL WALKTHROUGHS (ALL 20 VERIFICATION SCENARIOS)
+  INT-01 through INT-20 Fully Elaborated with 8 Structural Sections Each
+PART 8 — COMPLETION CONDITIONS & 10-PHASE IMPLEMENTATION ROADMAP
+
+
+================================================================================
+EXECUTIVE ARCHITECTURAL SUMMARY & GOVERNING PRINCIPLES
+================================================================================
+
+The Interaction Engine manages how Diva communicates and maintains ongoing
+interactions with users, applications, external AI agents, and third-party systems.
+Its mandate is NOT simply to generate text or emit messages. It governs the complete
+lifecycle of communication: receiving raw events across heterogeneous channels,
+normalizing them into standard message envelopes, tracking conversational turns,
+maintaining operational session continuity, coordinating outbound delivery under
+strict cognitive authorization, handling real-time interruptions, and enforcing
+privacy, consent, and channel boundaries.
+
+--------------------------------------------------------------------------------
+THE EIGHT NON-NEGOTIABLE AXIOMS
+--------------------------------------------------------------------------------
+1. INTERACTION IS NOT COGNITION
+   The Interaction Engine manages the communication process, not Diva's independent
+   decisions, beliefs, desires, or thoughts. It never decides whether Diva should
+   forgive, assist, challenge, ignore, or contact someone. Cognitive Integration
+   makes decisions; Interaction coordinates delivery mechanics.
+
+2. A CONVERSATION IS NOT A MEMORY
+   Operational session state (active turn, channel routing, pending response buffer)
+   is distinct from permanent autobiographical memory. When an operational session
+   closes or expires, Memory Engine preserves durable historical experiences.
+   Interaction Engine never mutates or claims ownership over Memory tables.
+
+3. A THOUGHT IS NOT PERMISSION
+   No autonomous or proactive communication may ever be dispatched solely because an
+   internal thought occurred, an emotion spiked, or a motivation escalated. Proactive
+   communication strictly requires explicit, cryptographically verifiable
+   authorization from Cognitive Integration.
+
+4. GENERATING A MESSAGE IS NOT DELIVERING A MESSAGE
+   Drafting or rendering content via shared LLM infrastructure is an isolated,
+   reversible stage. A generated message must pass authorization, recipient
+   validation, format constraints, and channel capability checks before entering
+   the Delivery Manager. Generation failure must never yield unvalidated fallback text.
+
+5. A TIMEOUT IS NOT PROOF OF NON-DELIVERY
+   Network disconnections and adapter timeouts represent ambiguous delivery states.
+   The engine preserves delivery uncertainty (`DELIVERY_UNCERTAIN`) rather than
+   naively assuming failure and blasting duplicates onto external channels.
+
+6. EVERY CONVERSATION IS STRICTLY ISOLATED
+   Every conversation maintains its own UUID, participant set, turn state, and
+   context window. Context, private messages, and operational state must never leak
+   across conversations, even when two concurrent sessions share the same user.
+
+7. CHANNELS ARE PLUGGABLE AND REPLACEABLE
+   Core conversational logic has zero coupling to specific transport protocols
+   (Discord, Telegram, WebSockets, REST, CLI). Channel adapters expose standard
+   capability manifests; core engine treats all channels through identical abstractions.
+
+8. LLMS DO NOT CONTROL DELIVERY OR AUTHORIZATION
+   Language models produce text representations from approved intent. They do not
+   evaluate permissions, determine turn transitions, authorize proactive pings,
+   or bypass privacy gates. All authorization, turn state machines, and rate limits
+   are strictly deterministic.
+
+--------------------------------------------------------------------------------
+STRICT ARCHITECTURAL OWNERSHIP & BOUNDARY MATRIX
+--------------------------------------------------------------------------------
+Subsystem / Component      | Owns                                       | Does NOT Own
+---------------------------|--------------------------------------------|-----------------------------------------
+Perception                 | Content comprehension, semantic extraction | Session state, message transport
+Social Cognition           | Person profiles, relationship models, ToM  | Transport channels, sending/receiving
+Thought                    | Multi-threaded reasoning, internal DAGs    | Turn arbitration, conversational pacing
+Emotion                    | Affective states, mood vectors, regulation | Communication output delivery
+Motivation                 | Drives, desires, wanting-vs-deciding       | Authorization to message external peers
+Autonomous Activity        | Proposing independent initiatives          | Granting outbound communication permits
+Cognitive Integration      | Final decisions, executive authorization   | Transport delivery protocols, retries
+Interaction Engine         | Sessions, turns, channels, message routing | Independent decisions, beliefs, feelings
+Memory Engine              | Durable episodic & semantic retention      | Ephemeral conversational turn state
+Feedback Engine            | Retrospective evaluation of outcomes       | Active conversational session control
+Shared LLM Infrastructure  | Text generation from approved intent       | Session lifecycle, delivery authorization
+Execution Infrastructure   | Tool running, external code execution      | Conversational exchange & social chat
+
+
+================================================================================
+PART 1 — HOW THE ENGINE RUNS: OVERALL EXECUTION MODEL & CONCURRENCY
+================================================================================
+
+1.1 MULTI-TIER ASYNCHRONOUS PIPELINE TOPOLOGY
+   The Interaction Engine runs on Python 3.12+ `asyncio` utilizing an event-driven,
+   bounded queue architecture structured into three operational tiers:
+
+   TIER 1 — INGRESS / EGRESS DISPATCH (Synchronous & Fast-Path Async, <15 ms):
+   - Channel adapters listen to external network sockets / webhooks.
+   - Incoming events are immediately enveloped, stamped with monotonically increasing
+     arrival sequence numbers, checked against an in-memory Bloom filter for duplicate
+     suppression, and queued into the bounded Inbound Priority Queue.
+   - Outbound packets cleared for delivery are handed to channel adapter drivers.
+
+   TIER 2 — TURN & CONTEXT ORCHESTRATION (Async Core, <100 ms):
+   - Inbound Message Handler dequeues envelopes, resolves conversation IDs via
+     Conversation Manager, links participant identities via Participant Manager,
+     and updates Conversation Turn FSM.
+   - Interaction Router dispatches normalized envelopes to Perception Engine.
+   - Context Manager dynamically constructs bounded `InteractionContextPackage`
+     snapshots when Cognitive Integration requests context to formulate replies.
+
+   TIER 3 — CONTENT COORDINATION & RECOVERY (Background Async, Non-Blocking):
+   - Content Coordination Module interfaces with Shared LLM Infrastructure to render
+     approved communication intents into channel-compliant text.
+   - Delivery Manager tracks ACKs, updates Delivery Receipt FSM, invokes Retry and
+     Recovery Manager on failures.
+   - Session Lifecycle Manager evaluates inactivity timers and archives stale sessions.
+
+1.2 CONCURRENCY & PER-CONVERSATION ISOLATION MODEL
+   - Every active conversation maintains a dedicated asyncio `ConversationActor`
+     queue. Messages arriving for conversation $C_A$ are processed sequentially in
+     $C_A$'s actor loop, guaranteeing strict causal ordering of turns within that
+     conversation without distributed locking.
+   - Distinct conversations $C_A$ and $C_B$ execute in parallel on disjoint actor loops.
+     A network timeout or blocking retry on $C_A$ has zero latency impact on $C_B$.
+   - Thread-safe, atomic SQLite WAL persistence is handled by a single background
+     persistence worker draining an asynchronous persistence queue, ensuring atomic
+     transaction boundaries without database lock contention.
+
+1.3 RESOURCE THROTTLING & BACKPRESSURE MECHANICS
+   - Internal State Engine feeds cognitive energy $E_{\text{cog}}$ and workload $W_{\text{cog}}$.
+   - Normal Load ($E_{\text{cog}} \ge 0.40, W_{\text{cog}} \le 0.75$): All inbound and
+     outbound queues operate at full capacity.
+   - Throttled Load ($0.20 \le E_{\text{cog}} < 0.40$ or $W_{\text{cog}} > 0.75$):
+     Proactive communication is suspended; low-priority background conversations
+     experience delayed response scheduling; rate limits tighten by 50%.
+   - Emergency Backpressure ($E_{\text{cog}} < 0.20$ or Queue Fill $> 85\%$):
+     Non-interactive notifications rejected; incoming bursts queued with HTTP 429 /
+     adapter-level backpressure signals; active turns limited to critical channels.
+
+1.4 CRASH RECOVERY & STARTUP RECONCILIATION PROTOCOL
+   When Diva boots or restarts following an ungraceful shutdown:
+   Step 1: Execute `PRAGMA integrity_check` on SQLite database file.
+   Step 2: Load all `interaction_sessions` where `status IN ('ACTIVE', 'PROCESSING', 'RESPONDING')`.
+   Step 3: Reconcile in-progress turns:
+           - Turns in `GENERATING` or `RESPONSE_REQUESTED`: Set to `INTERRUPTED`.
+             Dispatch state notification to Cognitive Integration.
+           - Turns in `DELIVERING`: Set to `DELIVERY_UNCERTAIN`. Inspect channel adapter
+             outbox if adapter supports remote message query by client-generated nonce.
+   Step 4: Expire dangling authorizations: Any `AuthorizationRecord` whose `valid_until`
+           is in the past or whose session was ungracefully interrupted is marked `REVOKED`.
+   Step 5: Rebuild in-memory duplicate detection Bloom filter from the last 10,000
+           persisted message deduplication hashes.
+   Step 6: Mark engine lifecycle state `ACTIVE` and open inbound channel adapters.
+
+
+================================================================================
+PART 2 — INTERNAL ARCHITECTURE & THE TWENTY-ONE LOGICAL MODULES
+================================================================================
+
+--------------------------------------------------------------------------------
+1. CHANNEL ADAPTER MANAGER
+--------------------------------------------------------------------------------
+- Purpose: Registers, configures, monitors, and abstracts external transport interfaces.
+- Inputs: Adapter registrations, configuration manifests, health heartbeats.
+- Outputs: Certified `ChannelRecord` instances, channel status telemetry.
+- Internal State: In-memory registry `Dict[channel_id, ChannelAdapterInstance]`,
+  cached `ChannelCapabilityRecord` per channel.
+- Algorithms: Capability negotiation; adapter heartbeat monitor (interval: 5s);
+  dynamic adapter load/unload without engine restart.
+- Decision Rules: Reject message dispatch if adapter status is `DISCONNECTED` or
+  requested MIME type not in `supported_content_types`.
+
+--------------------------------------------------------------------------------
+2. INBOUND MESSAGE HANDLER
+--------------------------------------------------------------------------------
+- Purpose: Primary ingress gate for incoming communication packets.
+- Inputs: Raw channel events from Channel Adapters.
+- Outputs: Validated, deduplicated internal `MessageEnvelope` records.
+- Internal State: Fast-lookup Bloom filter for message IDs; arrival rate meter.
+- Algorithms: Monotonic arrival timestamping ($T_{\text{recv}}$); SHA-256 content
+  hash calculation for idempotency; rate-limiting sliding window (token bucket).
+- Error Handling: Duplicates drop into `IdempotencyRecord` with `duplicate_detected=True`;
+  floods trigger adapter backpressure.
+
+--------------------------------------------------------------------------------
+3. MESSAGE NORMALIZER
+--------------------------------------------------------------------------------
+- Purpose: Converts heterogeneous channel payloads into canonical `MessageEnvelope`.
+- Inputs: Raw adapter payload, channel metadata.
+- Outputs: Normalized `MessageEnvelope` conforming to strict internal schema.
+- Internal State: Channel-specific schema mapping tables.
+- Algorithms: Structural field mapping; attachment reference resolution; UTF-8
+  sanitization; timezone normalization to ISO-8601 UTC.
+- Invariants: Original raw payload is stored as serialized JSON in persistence for
+  audit trails, but internal engines only receive normalized envelopes.
+
+--------------------------------------------------------------------------------
+4. PARTICIPANT MANAGER
+--------------------------------------------------------------------------------
+- Purpose: Tracks human, agent, and system identities within conversations.
+- Inputs: Sender IDs, platform handles, Social Cognition identity resolution links.
+- Outputs: Validated `ParticipantRecord` associations.
+- Internal State: In-memory mapping `Dict[(conversation_id, channel_participant_id), participant_id]`.
+- Algorithms: Multi-participant membership validation; join/leave event tracking;
+  distinguishes sender, direct recipient, and CC'd observers in group interactions.
+
+--------------------------------------------------------------------------------
+5. CONVERSATION MANAGER
+--------------------------------------------------------------------------------
+- Purpose: Coordinates creation, lookup, routing, and isolation of conversation threads.
+- Inputs: Normalized envelopes, session creation directives.
+- Outputs: Canonical `conversation_id`, conversation lookup results.
+- Internal State: Active conversation cache `Dict[conversation_id, ConversationRecord]`.
+- Algorithms: Session resolution heuristic (Match external thread ID -> match
+  active user session on channel -> spawn new conversation if inactivity > threshold);
+  strict isolation firewall preventing cross-thread data contamination.
+
+--------------------------------------------------------------------------------
+6. SESSION LIFECYCLE MANAGER
+--------------------------------------------------------------------------------
+- Purpose: Manages conversation session states and automated expiration policies.
+- Inputs: Turn activity timestamps, explicit close signals, timeout sweeps.
+- Outputs: State transition events (`SESSION_SUSPENDED`, `SESSION_CLOSED`, `SESSION_ARCHIVED`).
+- Internal State: Min-heap priority queue of conversation expiration deadlines.
+- Algorithms: Inactivity timeout sweep (runs every 60s); graceful state transitions:
+  `ACTIVE` -> `SUSPENDED` (after $T_{\text{inactivity}} = 15\text{m}$) -> `ARCHIVED` (after 7 days).
+
+--------------------------------------------------------------------------------
+7. TURN MANAGER
+--------------------------------------------------------------------------------
+- Purpose: Governs conversational floor control, turn ownership, and turn states.
+- Inputs: Inbound messages, Cognitive Integration turn directives, interruption alerts.
+- Outputs: `ConversationTurn` instances, turn transition events.
+- Internal State: Active turn map `Dict[conversation_id, ConversationTurn]`.
+- Algorithms: Turn state machine enforcement (14 distinct states); multi-message
+  turn buffering (groups rapid consecutive messages from same speaker into single turn);
+  turn pacing delays.
+
+--------------------------------------------------------------------------------
+8. CONTEXT MANAGER
+--------------------------------------------------------------------------------
+- Purpose: Assembles bounded operational conversation context packages for cognitive reasoning.
+- Inputs: Context queries from Cognitive Integration / Thought Engine.
+- Outputs: Frozen `InteractionContextPackage` data models.
+- Internal State: Sliding window cache of last $N=30$ turns per active conversation.
+- Algorithms: Token-bounded context window construction; recency weighting;
+  injects active topic, unanswered questions, pending tasks, and applicable preferences;
+  does NOT inject unlimited history (delegates historical recall to Memory Engine).
+
+--------------------------------------------------------------------------------
+9. INTERACTION ROUTER
+--------------------------------------------------------------------------------
+- Purpose: Dispatches normalized interaction events to downstream cognitive engines.
+- Inputs: Normalized `MessageEnvelope`, turn events.
+- Outputs: Typed asynchronous events to Perception, Memory, Social Cognition, Feedback.
+- Internal State: Engine routing subscription table.
+- Algorithms: Non-blocking parallel fan-out; backpressure monitoring on inter-engine queues.
+
+--------------------------------------------------------------------------------
+10. OUTBOUND MESSAGE MANAGER
+--------------------------------------------------------------------------------
+- Purpose: Receives, validates, and stages outbound communication directives.
+- Inputs: `DeliveryRequest` from Cognitive Integration.
+- Outputs: Staged outbound tasks ready for content coordination and delivery.
+- Internal State: Priority-ranked outbound staging buffer.
+- Algorithms: Request validation against schema and channel capability; deduplication
+  check via request idempotency key; priority queue insertion.
+
+--------------------------------------------------------------------------------
+11. CONTENT COORDINATION MODULE
+--------------------------------------------------------------------------------
+- Purpose: Interfaces with Shared LLM Infrastructure to produce natural language outputs.
+- Inputs: Approved communication intent, style tokens, interaction context.
+- Outputs: Rendered message content conforming to channel length and format limits.
+- Internal State: Pending generation request tracking table.
+- Algorithms: Style parameter injection; length truncation / chunking heuristics;
+  deterministic post-generation validation (ensures LLM did not hallucinate unauthorized
+  system prompts or leak private tags).
+
+--------------------------------------------------------------------------------
+12. DELIVERY MANAGER
+--------------------------------------------------------------------------------
+- Purpose: Dispatches finalized messages to Channel Adapters and monitors receipts.
+- Inputs: Formatted outbound payloads from Content Coordination.
+- Outputs: Raw channel transmissions, `DeliveryReceipt` generation.
+- Internal State: In-flight transmission ledger `Dict[request_id, DeliveryAttemptState]`.
+- Algorithms: Channel dispatch; synchronous/asynchronous ACK capture; latency tracking.
+
+--------------------------------------------------------------------------------
+13. RETRY AND RECOVERY MANAGER
+--------------------------------------------------------------------------------
+- Purpose: Governs retransmission policies for transient channel failures.
+- Inputs: Channel delivery errors, timeout events.
+- Outputs: Retry dispatch schedules, terminal failure escalations.
+- Internal State: Exponential backoff state table `Dict[request_id, RetryRecord]`.
+- Algorithms: Truncated exponential backoff with full jitter:
+  $T_{\text{retry}} = \min(M_{\text{max}}, B \cdot 2^{\text{attempt}}) \pm \text{random\_jitter}$;
+  hard cap at 3 attempts; permanent failure categorization (e.g., HTTP 400 vs 503).
+
+--------------------------------------------------------------------------------
+14. INTERRUPTION MANAGER
+--------------------------------------------------------------------------------
+- Purpose: Handles race conditions, user cancellations, and interjections mid-turn.
+- Inputs: New inbound message during `GENERATING`/`DELIVERING`, explicit cancel signals.
+- Outputs: Turn preemption orders, pipeline abortion signals.
+- Internal State: Active cancellation token registry `Dict[turn_id, asyncio.Event]`.
+- Algorithms: Fast-path cancellation flag check; immediate teardown of active LLM streaming;
+  evaluation of whether pending draft should be discarded, amended, or superseded.
+
+--------------------------------------------------------------------------------
+15. PREFERENCE MANAGER
+--------------------------------------------------------------------------------
+- Purpose: Manages channel- and user-specific communication style preferences.
+- Inputs: Preference declarations from Social Cognition / direct user settings.
+- Outputs: `CommunicationPreference` bundles attached to Context Packages.
+- Internal State: Cached preference table indexed by `(participant_id, channel_id)`.
+- Algorithms: Preference precedence resolver (Explicit user preference > Channel
+  standard > Inferred social tendency); source attribution tracking (`EXPLICIT` vs `INFERRED`).
+
+--------------------------------------------------------------------------------
+16. AUTHORIZATION VALIDATOR
+--------------------------------------------------------------------------------
+- Purpose: Hard security gate verifying permissions before ANY external communication.
+- Inputs: Outbound delivery requests, initiation requests.
+- Outputs: Cryptographic validation verdict (`APPROVED` / `REJECTED_UNAUTHORIZED`).
+- Internal State: Active authorization grant ledger.
+- Algorithms: Nonce verification; checks grant issuer is Cognitive Integration;
+  validates `valid_until` timestamp; confirms target recipient and channel match grant scope.
+- Invariant: Zero exceptions. No message leaves Diva without passing this gate.
+
+--------------------------------------------------------------------------------
+17. PROACTIVE COMMUNICATION HANDLER
+--------------------------------------------------------------------------------
+- Purpose: Manages self-initiated outreach originating from internal autonomous drives.
+- Inputs: `InitiationRequest` from Autonomous Activity / Cognitive Integration.
+- Outputs: Authorized proactive `DeliveryRequest` payloads.
+- Internal State: Proactive frequency budget counters (sliding window).
+- Algorithms: Strict notification rate-limiting (e.g., max 1 unprompted message per 4 hours
+  unless flagged `URGENT_SAFETY`); quiet hours suppression; recipient opt-in validation.
+
+--------------------------------------------------------------------------------
+18. QUEUE AND PRIORITY MANAGER
+--------------------------------------------------------------------------------
+- Purpose: Arbitrates scheduling order across simultaneous conversations and tasks.
+- Inputs: Inbound and outbound envelopes tagged with priority weights.
+- Outputs: Scheduled task dispatch order.
+- Internal State: Multi-level priority queues (CRITICAL, HIGH, NORMAL, BACKGROUND).
+- Algorithms: Strict priority scheduling with aging (starvation prevention formula:
+  effective priority increases by +0.05 every 500ms spent in queue).
+
+--------------------------------------------------------------------------------
+19. INTERACTION HISTORY MANAGER
+--------------------------------------------------------------------------------
+- Purpose: Persists and indexes operational interaction history in SQLite.
+- Inputs: Completed turns, message envelopes, delivery receipts, interruption logs.
+- Outputs: Audit records, historical session lookups for resumed conversations.
+- Internal State: Thread-safe SQLite connection pool (WAL mode).
+- Algorithms: Asynchronous batch committing; retention window enforcement (purges raw
+  payloads of closed sessions older than 30 days while preserving metadata and turns).
+
+--------------------------------------------------------------------------------
+20. LIFECYCLE AND STATE VALIDATOR
+--------------------------------------------------------------------------------
+- Purpose: Enforces formal state transition invariants across Sessions and Turns.
+- Inputs: Proposed state transition requests.
+- Outputs: Approved transition or `InvalidStateTransitionError`.
+- Internal State: Static FSM transition matrices for `SessionState` and `TurnState`.
+- Algorithms: Table-driven state verification; atomic state swap; logs illegal
+  transition attempts for security audit.
+
+--------------------------------------------------------------------------------
+21. EVENT AND FEEDBACK PUBLISHER
+--------------------------------------------------------------------------------
+- Purpose: Publishes completed interaction metrics to Feedback and Memory Engines.
+- Inputs: Turn completions, delivery receipts, user response latencies.
+- Outputs: `InteractionOutcomeSignal` to Feedback Engine; `InteractionMemoryNomination`
+  to Memory Engine.
+- Internal State: Unacknowledged outcome queue.
+- Algorithms: Asynchronous event publishing; delivery outcome classification
+  (DELIVERY_SUCCESS, DELIVERY_TIMEOUT, USER_INTERRUPTED, USER_DISENGAGED).
+
+
+================================================================================
+PART 3 — COMPREHENSIVE DATA DICTIONARY (20 FROZEN DATA STRUCTURES)
+================================================================================
+
+All models are deeply frozen Pydantic models (`frozen=True`, `extra='forbid'`,
+nested collections as immutable tuples).
+
+1. `InteractionSession`:
+   - `session_id`: UUID (Primary Key).
+   - `conversation_id`: UUID.
+   - `channel_id`: String (e.g., 'discord_main', 'web_chat_01').
+   - `status`: Enum (`CREATED`, `ACTIVE`, `WAITING_FOR_INPUT`, `PROCESSING`,
+     `RESPONDING`, `INTERRUPTED`, `SUSPENDED`, `RESUMING`, `CLOSED`, `ARCHIVED`).
+   - `created_at`: ISO-8601 UTC.
+   - `last_activity_at`: ISO-8601 UTC.
+   - `expires_at`: ISO-8601 UTC.
+   - `session_version`: Integer.
+
+2. `ConversationRecord`:
+   - `conversation_id`: UUID (Primary Key).
+   - `title`: Optional String.
+   - `primary_channel_id`: String.
+   - `status`: Enum (`ACTIVE`, `SUSPENDED`, `CLOSED`, `ARCHIVED`).
+   - `participant_ids`: Tuple[UUID, ...].
+   - `created_at`: ISO-8601 UTC.
+   - `updated_at`: ISO-8601 UTC.
+   - `conversation_version`: Integer.
+
+3. `ParticipantRecord`:
+   - `participant_id`: UUID (Primary Key).
+   - `conversation_id`: UUID.
+   - `social_entity_id`: Optional UUID (links to Social Cognition `individual_id`).
+   - `channel_identity`: String (e.g., 'discord:849204810294').
+   - `display_name`: String.
+   - `role`: Enum (`PRIMARY_USER`, `EXTERNAL_USER`, `OBSERVER`, `SYSTEM_AGENT`, `DIVA`).
+   - `membership_status`: Enum (`ACTIVE`, `LEFT`, `MUTED`, `BANNED`).
+   - `joined_at`: ISO-8601 UTC.
+
+4. `MessageEnvelope`:
+   - `message_id`: UUID (Primary Key).
+   - `conversation_id`: UUID.
+   - `turn_id`: Optional UUID.
+   - `sender_id`: UUID (Participant ID).
+   - `recipient_ids`: Tuple[UUID, ...].
+   - `channel_id`: String.
+   - `direction`: Enum (`INBOUND`, `OUTBOUND`).
+   - `content_type`: Enum (`TEXT_PLAIN`, `MARKDOWN`, `AUDIO_STREAM`, `IMAGE_REF`, `STRUCTURED_JSON`).
+   - `raw_content`: String.
+   - `attachment_refs`: Tuple[String, ...].
+   - `reply_to_message_id`: Optional UUID.
+   - `source_timestamp`: ISO-8601 UTC (timestamp assigned by external channel).
+   - `received_timestamp`: ISO-8601 UTC (arrival time in Diva).
+   - `sequence_number`: Integer.
+   - `idempotency_hash`: String (SHA-256).
+   - `privacy_classification`: Enum (`INTERNAL_ONLY`, `APPROVED_FOR_RECIPIENT`, `PUBLIC`).
+
+5. `ConversationTurn`:
+   - `turn_id`: UUID (Primary Key).
+   - `conversation_id`: UUID.
+   - `turn_number`: Integer.
+   - `initiator_participant_id`: UUID.
+   - `status`: Enum (`CREATED`, `RECEIVED`, `PROCESSING`, `AWAITING_DECISION`,
+     `RESPONSE_REQUESTED`, `GENERATING`, `READY_TO_DELIVER`, `DELIVERING`,
+     `DELIVERED`, `WAITING_FOR_REPLY`, `INTERRUPTED`, `CANCELLED`, `FAILED`, `COMPLETED`).
+   - `inbound_message_ids`: Tuple[UUID, ...].
+   - `outbound_message_ids`: Tuple[UUID, ...].
+   - `started_at`: ISO-8601 UTC.
+   - `completed_at`: Optional ISO-8601 UTC.
+
+6. `InteractionEvent`:
+   - `event_id`: UUID (Primary Key).
+   - `event_type`: Enum (`MESSAGE_RECEIVED`, `TURN_STARTED`, `TURN_COMPLETED`,
+     `RESPONSE_GENERATED`, `MESSAGE_DELIVERED`, `INTERRUPTION_TRIGGERED`,
+     `SESSION_STATE_CHANGED`, `DELIVERY_FAILED`, `PREFERENCE_UPDATED`).
+   - `conversation_id`: UUID.
+   - `session_id`: UUID.
+   - `turn_id`: Optional UUID.
+   - `source_module`: String.
+   - `payload_json`: String.
+   - `occurred_at`: ISO-8601 UTC.
+
+7. `ChannelRecord`:
+   - `channel_id`: String (Primary Key).
+   - `adapter_type`: String (e.g., 'discord_adapter', 'websocket_ui', 'rest_api').
+   - `connection_status`: Enum (`CONNECTED`, `CONNECTING`, `DISCONNECTED`, `DEGRADED`, `SUSPENDED`).
+   - `is_interactive`: Boolean.
+   - `rate_limit_rpm`: Integer.
+   - `last_heartbeat_at`: ISO-8601 UTC.
+
+8. `ChannelCapabilityRecord`:
+   - `capability_id`: UUID (Primary Key).
+   - `channel_id`: String.
+   - `supports_text`: Boolean.
+   - `supports_markdown`: Boolean.
+   - `supports_attachments`: Boolean.
+   - `supports_reactions`: Boolean.
+   - `supports_replies`: Boolean.
+   - `supports_message_edit`: Boolean.
+   - `supports_message_delete`: Boolean.
+   - `supports_delivery_receipts`: Boolean.
+   - `supports_cancellation`: Boolean.
+   - `max_payload_length_bytes`: Integer.
+
+9. `DeliveryRequest`:
+   - `request_id`: UUID (Primary Key).
+   - `conversation_id`: UUID.
+   - `turn_id`: UUID.
+   - `recipient_ids`: Tuple[UUID, ...].
+   - `channel_id`: String.
+   - `approved_content`: String.
+   - `content_type`: Enum (`TEXT_PLAIN`, `MARKDOWN`, `AUDIO_STREAM`, `STRUCTURED_JSON`).
+   - `authorization_id`: UUID.
+   - `priority`: Enum (`CRITICAL`, `HIGH`, `NORMAL`, `BACKGROUND`).
+   - `timing_constraints`: String (e.g., 'send_immediately', 'delay_until:ISO').
+   - `created_at`: ISO-8601 UTC.
+   - `expires_at`: ISO-8601 UTC.
+
+10. `DeliveryReceipt`:
+    - `receipt_id`: UUID (Primary Key).
+    - `request_id`: UUID.
+    - `message_id`: UUID.
+    - `channel_id`: String.
+    - `state`: Enum (`DELIVERED`, `PENDING_CONFIRMATION`, `TIMEOUT_UNCERTAIN`, `FAILED`, `CANCELLED`).
+    - `attempt_count`: Integer.
+    - `external_receipt_id`: Optional String.
+    - `dispatched_at`: ISO-8601 UTC.
+    - `acknowledged_at`: Optional ISO-8601 UTC.
+    - `latency_ms`: Optional Integer.
+
+11. `InteractionContextPackage`:
+    - `package_id`: UUID (Primary Key).
+    - `conversation_id`: UUID.
+    - `session_id`: UUID.
+    - `turn_id`: UUID.
+    - `active_topic`: Optional String.
+    - `unresolved_questions`: Tuple[String, ...].
+    - `recent_messages`: Tuple[MessageEnvelope, ...].
+    - `participant_profiles`: Tuple[ParticipantRecord, ...].
+    - `applicable_preferences`: Tuple[CommunicationPreference, ...].
+    - `channel_constraints`: ChannelCapabilityRecord.
+    - `created_at`: ISO-8601 UTC.
+
+12. `CommunicationPreference`:
+    - `preference_id`: UUID (Primary Key).
+    - `participant_id`: UUID.
+    - `channel_id`: Optional String.
+    - `preference_domain`: Enum (`RESPONSE_LENGTH`, `FORMALITY`, `PACING`, `QUIET_HOURS`, `NOTIFICATIONS`, `LANGUAGE`).
+    - `preference_value`: String.
+    - `source_type`: Enum (`EXPLICIT_USER`, `INFERRED_SOCIAL`, `SYSTEM_DEFAULT`).
+    - `confidence`: Float.
+    - `created_at`: ISO-8601 UTC.
+    - `updated_at`: ISO-8601 UTC.
+
+13. `InterruptionRecord`:
+    - `interruption_id`: UUID (Primary Key).
+    - `conversation_id`: UUID.
+    - `turn_id`: UUID.
+    - `trigger_type`: Enum (`USER_INTERJECTION`, `USER_CORRECTION`, `USER_CANCEL`,
+      `CHANNEL_DISCONNECT`, `DELIVERY_TIMEOUT`, `EXECUTIVE_PREEMPTION`, `SYSTEM_SHUTDOWN`).
+    - `triggering_message_id`: Optional UUID.
+    - `aborted_operation`: String.
+    - `recovery_status`: Enum (`PENDING`, `HANDLED_RECONSIDERED`, `HANDLED_DISCARDED`, `FAILED`).
+    - `recorded_at`: ISO-8601 UTC.
+
+14. `HandoffRecord`:
+    - `handoff_id`: UUID (Primary Key).
+    - `source_engine`: Enum.
+    - `destination_engine`: Enum.
+    - `payload_type`: String.
+    - `payload_id`: UUID.
+    - `dispatched_at`: ISO-8601 UTC.
+    - `acknowledged_at`: Optional ISO-8601 UTC.
+    - `status`: Enum (`DISPATCHED`, `ACKNOWLEDGED`, `DROPPED`, `TIMEOUT`).
+
+15. `RetryRecord`:
+    - `retry_id`: UUID (Primary Key).
+    - `request_id`: UUID.
+    - `attempt_number`: Integer.
+    - `failure_reason`: String.
+    - `is_transient`: Boolean.
+    - `next_eligible_at`: ISO-8601 UTC.
+    - `recorded_at`: ISO-8601 UTC.
+
+16. `IdempotencyRecord`:
+    - `operation_key`: String (Primary Key — SHA-256 hash).
+    - `entity_type`: Enum (`INBOUND_MESSAGE`, `OUTBOUND_DELIVERY`, `PROACTIVE_INITIATION`).
+    - `entity_id`: UUID.
+    - `processed_at`: ISO-8601 UTC.
+    - `result_status`: String.
+
+17. `AuthorizationRecord`:
+    - `authorization_id`: UUID (Primary Key).
+    - `issuing_engine`: Enum (`COGNITIVE_INTEGRATION`).
+    - `permitted_action`: Enum (`REPLY_TO_TURN`, `INITIATE_PROACTIVE_MESSAGE`, `SEND_NOTIFICATION`, `SEND_ATTACHMENT`).
+    - `recipient_id`: UUID.
+    - `channel_id`: String.
+    - `valid_from`: ISO-8601 UTC.
+    - `valid_until`: ISO-8601 UTC.
+    - `signature`: String (Cryptographic/HMAC token).
+    - `is_revoked`: Boolean.
+
+18. `InitiationRequest`:
+    - `initiation_id`: UUID (Primary Key).
+    - `originating_component`: Enum (`AUTONOMOUS_ACTIVITY`, `MOTIVATION_ENGINE`, `THOUGHT_ENGINE`).
+    - `recipient_id`: UUID.
+    - `channel_id`: Optional String.
+    - `communication_purpose`: String.
+    - `proposed_content_summary`: String.
+    - `urgency`: Enum (`CRITICAL_SAFETY`, `HIGH`, `NORMAL`, `LOW`).
+    - `authorization_id`: Optional UUID.
+    - `status`: Enum (`PENDING_AUTHORIZATION`, `AUTHORIZED`, `REJECTED_UNAUTHORIZED`, `CANCELLED`).
+    - `created_at`: ISO-8601 UTC.
+
+19. `PrivacyClassification`:
+    - `classification_id`: UUID (Primary Key).
+    - `content_ref`: String.
+    - `data_class`: Enum (`INTERNAL_ONLY`, `APPROVED_FOR_RECIPIENT`, `PUBLIC`).
+    - `permitted_recipient_ids`: Tuple[UUID, ...].
+    - `redaction_rules`: Tuple[String, ...].
+    - `certified_at`: ISO-8601 UTC.
+
+20. `InteractionHistoryRecord`:
+    - `history_id`: UUID (Primary Key).
+    - `conversation_id`: UUID.
+    - `event_id`: UUID.
+    - `event_type`: String.
+    - `summary`: String.
+    - `snapshot_data`: String (JSON).
+    - `recorded_at`: ISO-8601 UTC.
+
+
+================================================================================
+PART 4 — COMPLETE SQLITE RELATIONAL SCHEMA (16 TABLES)
+================================================================================
+
+PRAGMA journal_mode = WAL;
+PRAGMA foreign_keys = ON;
+
+-- 1. Conversation Threads
+CREATE TABLE conversations (
+    conversation_id TEXT PRIMARY KEY,
+    title TEXT,
+    primary_channel_id TEXT NOT NULL,
+    status TEXT NOT NULL CHECK(status IN ('ACTIVE','SUSPENDED','CLOSED','ARCHIVED')),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    conversation_version INTEGER NOT NULL DEFAULT 1
+);
+
+-- 2. Sessions (Ephemeral Connection Windows)
+CREATE TABLE interaction_sessions (
+    session_id TEXT PRIMARY KEY,
+    conversation_id TEXT NOT NULL REFERENCES conversations(conversation_id) ON DELETE RESTRICT,
+    channel_id TEXT NOT NULL,
+    status TEXT NOT NULL CHECK(status IN ('CREATED','ACTIVE','WAITING_FOR_INPUT','PROCESSING','RESPONDING','INTERRUPTED','SUSPENDED','RESUMING','CLOSED','ARCHIVED')),
+    created_at TEXT NOT NULL,
+    last_activity_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    session_version INTEGER NOT NULL DEFAULT 1
+);
+
+-- 3. Participants
+CREATE TABLE participants (
+    participant_id TEXT PRIMARY KEY,
+    conversation_id TEXT NOT NULL REFERENCES conversations(conversation_id) ON DELETE RESTRICT,
+    social_entity_id TEXT,
+    channel_identity TEXT NOT NULL,
+    display_name TEXT NOT NULL,
+    role TEXT NOT NULL CHECK(role IN ('PRIMARY_USER','EXTERNAL_USER','OBSERVER','SYSTEM_AGENT','DIVA')),
+    membership_status TEXT NOT NULL CHECK(membership_status IN ('ACTIVE','LEFT','MUTED','BANNED')),
+    joined_at TEXT NOT NULL,
+    UNIQUE(conversation_id, channel_identity)
+);
+
+-- 4. Conversation Turns
+CREATE TABLE conversation_turns (
+    turn_id TEXT PRIMARY KEY,
+    conversation_id TEXT NOT NULL REFERENCES conversations(conversation_id) ON DELETE RESTRICT,
+    turn_number INTEGER NOT NULL,
+    initiator_participant_id TEXT NOT NULL REFERENCES participants(participant_id) ON DELETE RESTRICT,
+    status TEXT NOT NULL CHECK(status IN ('CREATED','RECEIVED','PROCESSING','AWAITING_DECISION','RESPONSE_REQUESTED','GENERATING','READY_TO_DELIVER','DELIVERING','DELIVERED','WAITING_FOR_REPLY','INTERRUPTED','CANCELLED','FAILED','COMPLETED')),
+    started_at TEXT NOT NULL,
+    completed_at TEXT,
+    UNIQUE(conversation_id, turn_number)
+);
+
+-- 5. Message Envelopes
+CREATE TABLE message_envelopes (
+    message_id TEXT PRIMARY KEY,
+    conversation_id TEXT NOT NULL REFERENCES conversations(conversation_id) ON DELETE RESTRICT,
+    turn_id TEXT REFERENCES conversation_turns(turn_id) ON DELETE RESTRICT,
+    sender_id TEXT NOT NULL REFERENCES participants(participant_id) ON DELETE RESTRICT,
+    channel_id TEXT NOT NULL,
+    direction TEXT NOT NULL CHECK(direction IN ('INBOUND','OUTBOUND')),
+    content_type TEXT NOT NULL CHECK(content_type IN ('TEXT_PLAIN','MARKDOWN','AUDIO_STREAM','IMAGE_REF','STRUCTURED_JSON')),
+    raw_content TEXT NOT NULL,
+    attachment_refs TEXT NOT NULL DEFAULT '[]',
+    reply_to_message_id TEXT REFERENCES message_envelopes(message_id) ON DELETE RESTRICT,
+    source_timestamp TEXT NOT NULL,
+    received_timestamp TEXT NOT NULL,
+    sequence_number INTEGER NOT NULL,
+    idempotency_hash TEXT NOT NULL UNIQUE,
+    privacy_classification TEXT NOT NULL CHECK(privacy_classification IN ('INTERNAL_ONLY','APPROVED_FOR_RECIPIENT','PUBLIC'))
+);
+
+-- 6. Outbound Delivery Requests
+CREATE TABLE delivery_requests (
+    request_id TEXT PRIMARY KEY,
+    conversation_id TEXT NOT NULL REFERENCES conversations(conversation_id) ON DELETE RESTRICT,
+    turn_id TEXT NOT NULL REFERENCES conversation_turns(turn_id) ON DELETE RESTRICT,
+    recipient_ids TEXT NOT NULL, -- JSON array of UUIDs
+    channel_id TEXT NOT NULL,
+    approved_content TEXT NOT NULL,
+    content_type TEXT NOT NULL,
+    authorization_id TEXT NOT NULL,
+    priority TEXT NOT NULL CHECK(priority IN ('CRITICAL','HIGH','NORMAL','BACKGROUND')),
+    timing_constraints TEXT,
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL
+);
+
+-- 7. Delivery Receipts
+CREATE TABLE delivery_receipts (
+    receipt_id TEXT PRIMARY KEY,
+    request_id TEXT NOT NULL REFERENCES delivery_requests(request_id) ON DELETE RESTRICT,
+    message_id TEXT REFERENCES message_envelopes(message_id) ON DELETE RESTRICT,
+    channel_id TEXT NOT NULL,
+    state TEXT NOT NULL CHECK(state IN ('DELIVERED','PENDING_CONFIRMATION','TIMEOUT_UNCERTAIN','FAILED','CANCELLED')),
+    attempt_count INTEGER NOT NULL DEFAULT 1,
+    external_receipt_id TEXT,
+    dispatched_at TEXT NOT NULL,
+    acknowledged_at TEXT,
+    latency_ms INTEGER
+);
+
+-- 8. Communication Channels
+CREATE TABLE channel_registry (
+    channel_id TEXT PRIMARY KEY,
+    adapter_type TEXT NOT NULL,
+    connection_status TEXT NOT NULL CHECK(connection_status IN ('CONNECTED','CONNECTING','DISCONNECTED','DEGRADED','SUSPENDED')),
+    is_interactive INTEGER NOT NULL DEFAULT 1,
+    rate_limit_rpm INTEGER NOT NULL DEFAULT 60,
+    last_heartbeat_at TEXT NOT NULL
+);
+
+-- 9. Channel Capabilities
+CREATE TABLE channel_capabilities (
+    capability_id TEXT PRIMARY KEY,
+    channel_id TEXT NOT NULL REFERENCES channel_registry(channel_id) ON DELETE RESTRICT,
+    supports_text INTEGER NOT NULL DEFAULT 1,
+    supports_markdown INTEGER NOT NULL DEFAULT 1,
+    supports_attachments INTEGER NOT NULL DEFAULT 0,
+    supports_reactions INTEGER NOT NULL DEFAULT 0,
+    supports_replies INTEGER NOT NULL DEFAULT 0,
+    supports_message_edit INTEGER NOT NULL DEFAULT 0,
+    supports_message_delete INTEGER NOT NULL DEFAULT 0,
+    supports_delivery_receipts INTEGER NOT NULL DEFAULT 0,
+    supports_cancellation INTEGER NOT NULL DEFAULT 0,
+    max_payload_length_bytes INTEGER NOT NULL DEFAULT 4000
+);
+
+-- 10. Communication Preferences
+CREATE TABLE communication_preferences (
+    preference_id TEXT PRIMARY KEY,
+    participant_id TEXT NOT NULL REFERENCES participants(participant_id) ON DELETE RESTRICT,
+    channel_id TEXT,
+    preference_domain TEXT NOT NULL CHECK(preference_domain IN ('RESPONSE_LENGTH','FORMALITY','PACING','QUIET_HOURS','NOTIFICATIONS','LANGUAGE')),
+    preference_value TEXT NOT NULL,
+    source_type TEXT NOT NULL CHECK(source_type IN ('EXPLICIT_USER','INFERRED_SOCIAL','SYSTEM_DEFAULT')),
+    confidence REAL NOT NULL CHECK(confidence BETWEEN 0.0 AND 1.0),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE(participant_id, channel_id, preference_domain)
+);
+
+-- 11. Authorizations
+CREATE TABLE authorizations (
+    authorization_id TEXT PRIMARY KEY,
+    issuing_engine TEXT NOT NULL CHECK(issuing_engine = 'COGNITIVE_INTEGRATION'),
+    permitted_action TEXT NOT NULL CHECK(permitted_action IN ('REPLY_TO_TURN','INITIATE_PROACTIVE_MESSAGE','SEND_NOTIFICATION','SEND_ATTACHMENT')),
+    recipient_id TEXT NOT NULL,
+    channel_id TEXT NOT NULL,
+    valid_from TEXT NOT NULL,
+    valid_until TEXT NOT NULL,
+    signature TEXT NOT NULL,
+    is_revoked INTEGER NOT NULL DEFAULT 0
+);
+
+-- 12. Proactive Initiation Requests
+CREATE TABLE initiation_requests (
+    initiation_id TEXT PRIMARY KEY,
+    originating_component TEXT NOT NULL CHECK(originating_component IN ('AUTONOMOUS_ACTIVITY','MOTIVATION_ENGINE','THOUGHT_ENGINE')),
+    recipient_id TEXT NOT NULL,
+    channel_id TEXT,
+    communication_purpose TEXT NOT NULL,
+    proposed_content_summary TEXT NOT NULL,
+    urgency TEXT NOT NULL CHECK(urgency IN ('CRITICAL_SAFETY','HIGH','NORMAL','LOW')),
+    authorization_id TEXT REFERENCES authorizations(authorization_id) ON DELETE RESTRICT,
+    status TEXT NOT NULL CHECK(status IN ('PENDING_AUTHORIZATION','AUTHORIZED','REJECTED_UNAUTHORIZED','CANCELLED')),
+    created_at TEXT NOT NULL
+);
+
+-- 13. Interruption Records
+CREATE TABLE interruption_records (
+    interruption_id TEXT PRIMARY KEY,
+    conversation_id TEXT NOT NULL REFERENCES conversations(conversation_id) ON DELETE RESTRICT,
+    turn_id TEXT NOT NULL REFERENCES conversation_turns(turn_id) ON DELETE RESTRICT,
+    trigger_type TEXT NOT NULL CHECK(trigger_type IN ('USER_INTERJECTION','USER_CORRECTION','USER_CANCEL','CHANNEL_DISCONNECT','DELIVERY_TIMEOUT','EXECUTIVE_PREEMPTION','SYSTEM_SHUTDOWN')),
+    triggering_message_id TEXT REFERENCES message_envelopes(message_id) ON DELETE RESTRICT,
+    aborted_operation TEXT NOT NULL,
+    recovery_status TEXT NOT NULL CHECK(recovery_status IN ('PENDING','HANDLED_RECONSIDERED','HANDLED_DISCARDED','FAILED')),
+    recorded_at TEXT NOT NULL
+);
+
+-- 14. Delivery Retries
+CREATE TABLE delivery_retries (
+    retry_id TEXT PRIMARY KEY,
+    request_id TEXT NOT NULL REFERENCES delivery_requests(request_id) ON DELETE RESTRICT,
+    attempt_number INTEGER NOT NULL,
+    failure_reason TEXT NOT NULL,
+    is_transient INTEGER NOT NULL DEFAULT 1,
+    next_eligible_at TEXT NOT NULL,
+    recorded_at TEXT NOT NULL
+);
+
+-- 15. Operational Interaction Events
+CREATE TABLE interaction_events (
+    event_id TEXT PRIMARY KEY,
+    event_type TEXT NOT NULL,
+    conversation_id TEXT NOT NULL REFERENCES conversations(conversation_id) ON DELETE RESTRICT,
+    session_id TEXT NOT NULL REFERENCES interaction_sessions(session_id) ON DELETE RESTRICT,
+    turn_id TEXT REFERENCES conversation_turns(turn_id) ON DELETE RESTRICT,
+    source_module TEXT NOT NULL,
+    payload_json TEXT NOT NULL,
+    occurred_at TEXT NOT NULL
+);
+
+-- 16. Operational History Audit
+CREATE TABLE interaction_history (
+    history_id TEXT PRIMARY KEY,
+    conversation_id TEXT NOT NULL REFERENCES conversations(conversation_id) ON DELETE RESTRICT,
+    event_id TEXT NOT NULL REFERENCES interaction_events(event_id) ON DELETE RESTRICT,
+    event_type TEXT NOT NULL,
+    summary TEXT NOT NULL,
+    snapshot_data TEXT NOT NULL,
+    recorded_at TEXT NOT NULL
+);
+
+-- Indexes for high-throughput operational lookups
+CREATE INDEX idx_sessions_conv_status ON interaction_sessions(conversation_id, status);
+CREATE INDEX idx_turns_conv_num ON conversation_turns(conversation_id, turn_number);
+CREATE INDEX idx_messages_conv_seq ON message_envelopes(conversation_id, sequence_number);
+CREATE INDEX idx_messages_idempotency ON message_envelopes(idempotency_hash);
+CREATE INDEX idx_requests_status ON delivery_requests(priority, expires_at);
+CREATE INDEX idx_receipts_req_state ON delivery_receipts(request_id, state);
+CREATE INDEX idx_events_conv_time ON interaction_events(conversation_id, occurred_at);
+CREATE INDEX idx_preferences_part ON communication_preferences(participant_id, preference_domain);
+
+
+================================================================================
+PART 5 — INTER-ENGINE COMMUNICATION CONTRACTS (12 CONNECTED SYSTEMS)
+================================================================================
+
+1. PERCEPTION ENGINE (`PerceptionContextProvider`):
+   - Egress (Interaction -> Perception): Dispatches normalized `MessageEnvelope`
+     with raw text, attachments, and channel metadata.
+   - Ingress (Perception -> Interaction): Receives comprehension tokens, semantic
+     intents, and parsed user goals.
+   - Boundary: Interaction normalizes envelopes; Perception extracts meaning.
+
+2. MEMORY ENGINE (`MemoryContextProvider` + `MemoryNominationContract`):
+   - Egress (Interaction -> Memory): Dispatches `InteractionMemoryNomination` for
+     completed turns deemed socially or factually significant.
+   - Ingress (Memory -> Interaction): Receives retrieved historical conversational
+     references when assembling deep context.
+   - Boundary: Memory owns persistent biographical history; Interaction owns operational turns.
+
+3. SOCIAL COGNITION ENGINE (`SocialCognitionProvider`):
+   - Egress (Interaction -> Social): Dispatches participant identifiers, turn events,
+     and raw conversational interaction data for Theory of Mind & relationship modeling.
+   - Ingress (Social -> Interaction): Receives participant identity resolution,
+     rapport scores, and social boundary warnings.
+   - Boundary: Social Cognition models relationships; Interaction routes messages.
+
+4. PERSONALITY ENGINE (`PersonalityContextProvider`):
+   - Ingress (Personality -> Interaction): Ingests stable communication traits,
+     verbosity biases, and warmth baselines.
+   - Boundary: Read-only context for style formatting. Interaction never mutates personality.
+
+5. EMOTION ENGINE (`EmotionalContextProvider`):
+   - Egress (Interaction -> Emotion): Emits interaction trigger alerts (e.g., received
+     praise, hostile remarks, communication interruptions).
+   - Ingress (Emotion -> Interaction): Ingests current emotional state snapshot
+     to modulate expressive tone in Content Coordination.
+   - Boundary: Emotion owns Diva's feelings; Interaction applies tone constraints.
+
+6. MOTIVATION ENGINE (`MotivationContextProvider`):
+   - Egress (Interaction -> Motivation): Provides communication outcome receipts
+     (e.g., social desire fulfilled, collaboration goal progressed).
+   - Ingress (Motivation -> Interaction): Ingests communication drive signals via
+     Cognitive Integration.
+   - Boundary: Motivation drives desire to speak; cannot authorize dispatch directly.
+
+7. THOUGHT ENGINE (`ThoughtContextProvider`):
+   - Egress (Interaction -> Thought): Dispatches external turn events to seed
+     internal thought threads.
+   - Ingress (Thought -> Interaction): Receives proposed reasoning outputs via
+     Cognitive Integration.
+   - Boundary: Thought develops ideas; cannot directly broadcast onto channels.
+
+8. LEARNING ENGINE (`LearningSignalContract`):
+   - Egress (Interaction -> Learning): Dispatches `CommunicationPerformanceSignal`
+     detailing turn dropouts, misunderstandings, and adapter latency metrics.
+   - Ingress (Learning -> Interaction): Applies `ParameterChangeRequest` to
+     `interaction.*` parameters (e.g., retry backoff factors, pacing delays) using v2.5.0 protocol.
+
+9. FEEDBACK ENGINE (`FeedbackEngineContract`):
+   - Egress (Interaction -> Feedback): Dispatches structured `InteractionOutcomeSignal`
+     detailing delivery success, failure, timeout uncertainty, or user interruption.
+   - Ingress (Feedback -> Interaction): Receives retrospective interaction evaluations.
+
+10. AUTONOMOUS ACTIVITY & INITIATIVE ENGINE (`InitiationContract`):
+    - Ingress (Autonomous -> Interaction): Receives `InitiationRequest` for self-directed outreach.
+    - Egress (Interaction -> Autonomous): Returns initiation lifecycle receipts.
+    - Boundary: Autonomous Activity proposes outreach; Interaction validates authorization.
+
+11. COGNITIVE INTEGRATION & DECISION ENGINE (`CognitiveIntegrationContract`):
+    - Ingress (Cognitive Integration -> Interaction): Executive directives, response
+      authorizations (`AuthorizationRecord`), cancellation commands, and priorities.
+    - Egress (Interaction -> Cognitive Integration): Operational context packages,
+      turn states, interruption notices, and delivery outcomes.
+    - Boundary: Cognitive Integration authorizes what to say; Interaction manages how it is sent.
+
+12. SHARED LLM INFRASTRUCTURE (`SharedLLMContract`):
+    - Egress (Interaction -> LLM): Formats structured generation briefs with approved
+      intent, context package, and channel format limits.
+    - Ingress (LLM -> Interaction): Streams rendered natural language text chunks.
+    - Boundary: Interaction deterministically validates all LLM output before delivery.
+
+
+================================================================================
+PART 6 — MUST-PASS CONDITIONS: AUDIT & VERIFICATION MATRIX (ALL 72 CHECKPOINTS)
+================================================================================
+
+--------------------------------------------------------------------------------
+DOMAIN A: INBOUND COMMUNICATION (MP-01 TO MP-10)
+--------------------------------------------------------------------------------
+[ ] MP-01: Accept incoming communication from a registered channel adapter.
+    VERIFICATION: Register MockChannelAdapter. Inject inbound payload. Verify
+    Inbound Message Handler accepts event and increments ingress counter.
+[ ] MP-02: Convert channel-specific messages into a common message envelope.
+    VERIFICATION: Pass Discord JSON and WebSocket JSON through Message Normalizer.
+    Verify both output identical `MessageEnvelope` schemas.
+[ ] MP-03: Generate unique internal message identifiers.
+    VERIFICATION: Ingest 10,000 rapid concurrent messages. Assert all generated
+    `message_id` UUIDs are globally unique with collision count = 0.
+[ ] MP-04: Associate incoming messages with the correct conversation.
+    VERIFICATION: Deliver message referencing external thread ID `th_99`. Assert
+    Conversation Manager maps to canonical internal `conversation_id`.
+[ ] MP-05: Associate messages with the correct participant where identity is available.
+    VERIFICATION: Deliver message from `user_42`. Assert Participant Manager links
+    envelope to existing `participant_id` matching `user_42`.
+[ ] MP-06: Preserve source timestamps and received timestamps separately.
+    VERIFICATION: Set source timestamp 5000ms in past. Assert envelope records both
+    `source_timestamp` (T-5s) and `received_timestamp` (T_now) distinctly.
+[ ] MP-07: Detect duplicate incoming messages.
+    VERIFICATION: Transmit identical packet twice with same channel nonce. Assert
+    second envelope flagged `is_duplicate=True` and ignored by router.
+[ ] MP-08: Handle out-of-order incoming messages.
+    VERIFICATION: Transmit sequence #2 before sequence #1. Verify Inbound Handler
+    buffers sequence #2, processes #1 upon arrival, then applies #2 in order.
+[ ] MP-09: Preserve attachment references and content-type metadata.
+    VERIFICATION: Transmit message with image attachment URL. Assert envelope
+    stores URI in `attachment_refs` and sets `content_type=IMAGE_REF`.
+[ ] MP-10: Forward incoming content to Perception without taking over semantic interpretation.
+    VERIFICATION: Inspect Interaction Router egress. Assert raw text forwarded to
+    Perception queue without Interaction Engine attempting semantic parsing.
+
+--------------------------------------------------------------------------------
+DOMAIN B: CONVERSATION LIFECYCLE (MP-11 TO MP-18)
+--------------------------------------------------------------------------------
+[ ] MP-11: Create a new conversation when required.
+    VERIFICATION: Deliver message from new user on new channel. Verify row inserted
+    into `conversations` table with status `ACTIVE`.
+[ ] MP-12: Continue an existing conversation when correctly identified.
+    VERIFICATION: Send follow-up message within session window. Verify same
+    `conversation_id` is reused without creating new conversation record.
+[ ] MP-13: Maintain independent conversation state.
+    VERIFICATION: Create Conversation A (state `ACTIVE`) and Conversation B (state
+    `SUSPENDED`). Mutate A; assert B remains completely unmodified.
+[ ] MP-14: Enforce valid lifecycle transitions.
+    VERIFICATION: Attempt illegal direct jump `CREATED` -> `CLOSED`. Assert
+    Lifecycle Validator raises `InvalidStateTransitionError` and blocks write.
+[ ] MP-15: Suspend and resume conversations.
+    VERIFICATION: Trigger inactivity timeout (`ACTIVE` -> `SUSPENDED`). Ingest user
+    message. Assert transition `SUSPENDED` -> `RESUMING` -> `ACTIVE`.
+[ ] MP-16: Handle session expiration.
+    VERIFICATION: Advance clock past `expires_at`. Run Session Lifecycle sweep.
+    Assert session transitions to `ARCHIVED` and stops accepting turns.
+[ ] MP-17: Preserve permanent Memory records when an operational session expires.
+    VERIFICATION: Expire session. Query Memory Engine SQLite database; assert all
+    stored episodic memories associated with session remain intact.
+[ ] MP-18: Support conversations involving more than two participants.
+    VERIFICATION: Register 4 participants in conversation. Send broadcast message.
+    Assert turn tracks all 4 participants and routes correctly.
+
+--------------------------------------------------------------------------------
+DOMAIN C: TURN MANAGEMENT (MP-19 TO MP-25)
+--------------------------------------------------------------------------------
+[ ] MP-19: Create and track individual conversation turns.
+    VERIFICATION: Receive user message. Assert row created in `conversation_turns`
+    with incremental `turn_number` and status `RECEIVED`.
+[ ] MP-20: Distinguish conversation state from turn state.
+    VERIFICATION: Set conversation state to `ACTIVE` while active turn state is
+    `GENERATING`. Fail the turn (`FAILED`). Assert conversation remains `ACTIVE`.
+[ ] MP-21: Support multiple consecutive messages from one participant.
+    VERIFICATION: User sends 3 messages within 800ms. Assert Turn Manager appends
+    all 3 message IDs into single turn's `inbound_message_ids`.
+[ ] MP-22: Support delayed responses.
+    VERIFICATION: Cognitive Integration emits `AWAIT_DECISION` with delay 5s.
+    Assert turn holds in `WAITING_FOR_REPLY` until timer expires before generating.
+[ ] MP-23: Support cancelled responses.
+    VERIFICATION: Cognitive Integration emits `CANCEL_TURN` while turn is in
+    `GENERATING`. Assert turn transitions to `CANCELLED` and LLM stream halts.
+[ ] MP-24: Handle incoming messages during response generation.
+    VERIFICATION: Inject user message while turn is `GENERATING`. Assert Interruption
+    Manager triggers `USER_INTERJECTION` event and halts delivery.
+[ ] MP-25: Avoid automatically responding to every incoming message.
+    VERIFICATION: Deliver notification message. Cognitive Integration returns
+    no reply authorization. Assert turn closes as `COMPLETED` without sending text.
+
+--------------------------------------------------------------------------------
+DOMAIN D: OUTBOUND COMMUNICATION (MP-26 TO MP-35)
+--------------------------------------------------------------------------------
+[ ] MP-26: Accept a structured outbound communication request.
+    VERIFICATION: Submit valid `DeliveryRequest` payload. Verify Outbound Message
+    Manager stages it in priority queue.
+[ ] MP-27: Verify required authorization before delivery.
+    VERIFICATION: Submit `DeliveryRequest` with missing `authorization_id`. Assert
+    Authorization Validator rejects with `UNAUTHORIZED_DELIVERY_ATTEMPT`.
+[ ] MP-28: Validate the recipient and channel.
+    VERIFICATION: Submit delivery request for recipient not enrolled in target
+    channel. Assert validation fails with `INVALID_RECIPIENT_CHANNEL_TARGET`.
+[ ] MP-29: Check channel capabilities before sending.
+    VERIFICATION: Attempt sending markdown text to adapter with `supports_markdown=False`.
+    Assert Content Coordinator strips markdown tags into plaintext before sending.
+[ ] MP-30: Send through the appropriate channel adapter.
+    VERIFICATION: Route message for `discord_main`. Inspect adapter invocations;
+    assert Discord adapter `send_message` was called with exact payload.
+[ ] MP-31: Track delivery attempts and results.
+    VERIFICATION: Dispatch message. Assert row inserted in `delivery_receipts`
+    recording `attempt_count=1` and `state=DELIVERED`.
+[ ] MP-32: Detect duplicate outbound requests.
+    VERIFICATION: Submit identical `DeliveryRequest` twice with same idempotency key.
+    Assert second request returns existing receipt without resending.
+[ ] MP-33: Support cancellation before delivery when possible.
+    VERIFICATION: Issue cancel signal while request sits in outbound queue. Assert
+    request removed from queue and receipt marked `CANCELLED`.
+[ ] MP-34: Report delivery failure to the requesting component.
+    VERIFICATION: Simulate adapter network crash. Assert Delivery Manager emits
+    failure event to Cognitive Integration and Feedback Engine.
+[ ] MP-35: Preserve uncertain delivery outcomes rather than assuming failure.
+    VERIFICATION: Adapter times out during transmission without TCP RST. Assert
+    receipt state set to `TIMEOUT_UNCERTAIN` without auto-retry.
+
+--------------------------------------------------------------------------------
+DOMAIN E: COMMUNICATION PREFERENCES & CONTINUITY (MP-36 TO MP-41)
+--------------------------------------------------------------------------------
+[ ] MP-36: Retrieve applicable communication preferences.
+    VERIFICATION: Query Preference Manager for `participant_A`. Assert returned
+    bundle includes verbosity and formality preferences.
+[ ] MP-37: Distinguish explicitly stated preferences from inferred preferences.
+    VERIFICATION: Inspect `CommunicationPreference`. Assert `source_type` enum
+    correctly flags `EXPLICIT_USER` vs `INFERRED_SOCIAL`.
+[ ] MP-38: Respect channel-specific formatting constraints.
+    VERIFICATION: Send 5,000-character payload to adapter with 2,000-byte cap.
+    Assert Content Coordinator splits message into compliant chunks.
+[ ] MP-39: Maintain continuity across resumed conversations.
+    VERIFICATION: Resume conversation suspended for 3 days. Query Context Manager;
+    assert last active turn, participants, and unresolved items are present.
+[ ] MP-40: Construct a bounded context package for downstream processing.
+    VERIFICATION: Run 50-turn conversation. Generate `InteractionContextPackage`.
+    Assert token count <= 2,048 tokens and only includes last $N$ turns + summary.
+[ ] MP-41: Prevent context leakage between conversations.
+    VERIFICATION: Run Conversation 1 (User A) and Conversation 2 (User B) in parallel.
+    Assert Context Package for B contains zero mentions of User A's data.
+
+--------------------------------------------------------------------------------
+DOMAIN F: PROACTIVE COMMUNICATION (MP-42 TO MP-48)
+--------------------------------------------------------------------------------
+[ ] MP-42: Accept authorized communication initiation requests.
+    VERIFICATION: Autonomous Activity submits `InitiationRequest` signed by
+    Cognitive Integration. Assert Proactive Handler stages message for delivery.
+[ ] MP-43: Reject initiation requests without valid authorization.
+    VERIFICATION: Autonomous Activity submits `InitiationRequest` with null
+    `authorization_id`. Assert request rejected with status `REJECTED_UNAUTHORIZED`.
+[ ] MP-44: Preserve the originating component and purpose of an initiation request.
+    VERIFICATION: Ingest proactive request. Assert `initiation_requests` row
+    stores `originating_component` and `communication_purpose`.
+[ ] MP-45: Respect recipient and channel restrictions.
+    VERIFICATION: Attempt proactive message to user with `NOTIFICATIONS=MUTED`.
+    Assert Proactive Handler blocks delivery.
+[ ] MP-46: Prevent repeated unwanted notifications.
+    VERIFICATION: Attempt sending 3 proactive messages within 1 hour. Assert rate
+    limiter blocks requests 2 and 3 under anti-spam policy.
+[ ] MP-47: Support cancellation of pending initiated communications.
+    VERIFICATION: Cancel pending proactive message in queue. Assert message removed
+    and marked `CANCELLED`.
+[ ] MP-48: Never treat a thought, emotion, or motivation as authorization by itself.
+    VERIFICATION: Dispatch internal signal directly from Thought Engine requesting
+    outbound message. Assert Authorization Validator rejects with error.
+
+--------------------------------------------------------------------------------
+DOMAIN G: PRIVACY AND SECURITY (MP-49 TO MP-55)
+--------------------------------------------------------------------------------
+[ ] MP-49: Prevent messages from being routed to the wrong recipient.
+    VERIFICATION: Assert Delivery Manager verifies target recipient ID matches
+    registered channel identity before adapter dispatch.
+[ ] MP-50: Enforce content-sharing restrictions.
+    VERIFICATION: Attempt sending message tagged `INTERNAL_ONLY` to external channel.
+    Assert Authorization Validator intercepts and halts transmission.
+[ ] MP-51: Separate internal-only information from approved external content.
+    VERIFICATION: Verify raw system thoughts or internal engine logs never pass
+    into outbound envelopes without explicit redaction/approval tags.
+[ ] MP-52: Prevent unauthorized access to conversation context.
+    VERIFICATION: Request context package for Conversation 1 using credentials of
+    Participant from Conversation 2. Assert request denied.
+[ ] MP-53: Record authorization and delivery events.
+    VERIFICATION: Successfully deliver message. Assert full audit entries in
+    `authorizations`, `delivery_requests`, and `delivery_receipts`.
+[ ] MP-54: Respect consent and communication boundaries.
+    VERIFICATION: User revokes consent. Assert channel status transitions to
+    `BLOCKED` for that participant.
+[ ] MP-55: Never allow an LLM to bypass authorization checks.
+    VERIFICATION: LLM output attempts to emit internal command prefix `[EXECUTE]`.
+    Assert Content Coordinator sanitizes output and blocks unapproved commands.
+
+--------------------------------------------------------------------------------
+DOMAIN H: RELIABILITY AND PERSISTENCE (MP-56 TO MP-64)
+--------------------------------------------------------------------------------
+[ ] MP-56: Recover active sessions after application restart.
+    VERIFICATION: Kill engine process with active sessions. Restart engine.
+    Assert all active sessions restored into memory from SQLite.
+[ ] MP-57: Restore or reconcile pending outbound requests.
+    VERIFICATION: Kill process with outbound request in `GENERATING`. Restart engine.
+    Assert request reconciled and marked `INTERRUPTED`.
+[ ] MP-58: Recover interrupted turns.
+    VERIFICATION: Restart engine mid-turn. Assert Turn Manager flags turn as
+    `INTERRUPTED` and notifies Cognitive Integration for reassessment.
+[ ] MP-59: Apply bounded retry policies.
+    VERIFICATION: Simulate persistent channel 500 errors. Assert Retry Manager
+    halts at exactly attempt #3 and marks receipt `FAILED`.
+[ ] MP-60: Handle channel disconnections without blocking unrelated sessions.
+    VERIFICATION: Disconnect Channel A. Assert ongoing conversation on Channel B
+    continues transmitting with zero degradation.
+[ ] MP-61: Maintain message and event ordering where required.
+    VERIFICATION: Ingest 100 sequential messages. Assert all 100 stored and
+    retrieved with strictly monotonic `sequence_number`.
+[ ] MP-62: Detect invalid state transitions.
+    VERIFICATION: Attempt setting turn from `COMPLETED` back to `GENERATING`.
+    Assert state machine validator rejects transition.
+[ ] MP-63: Preserve operational history and state versions.
+    VERIFICATION: Update conversation status 3 times. Assert `interaction_history`
+    table records all 3 intermediate states with version increments.
+[ ] MP-64: Isolate corrupted session records.
+    VERIFICATION: Manually corrupt session row JSON in SQLite. Restart engine.
+    Assert engine logs error for corrupted session while recovering all other sessions.
+
+--------------------------------------------------------------------------------
+DOMAIN I: ARCHITECTURAL OWNERSHIP (MP-65 TO MP-72)
+--------------------------------------------------------------------------------
+[ ] MP-65: Do not independently interpret incoming message meaning.
+    VERIFICATION: Code audit: Confirm zero semantic parsing or NLP classification
+    logic exists inside Interaction Engine (delegated to Perception).
+[ ] MP-66: Do not own permanent memory.
+    VERIFICATION: Confirm Interaction Engine writes only to `interaction_*` tables,
+    never to `memory_*` or `episodic_*` tables.
+[ ] MP-67: Do not own social relationship models.
+    VERIFICATION: Confirm Interaction Engine queries Social Cognition for profiles,
+    never maintains its own relationship dimension tables.
+[ ] MP-68: Do not own emotions, motivations, or personality.
+    VERIFICATION: Confirm zero emotional update formulas or drive accumulation logic
+    exist in Interaction Engine code.
+[ ] MP-69: Do not independently authorize communication.
+    VERIFICATION: Confirm `AuthorizationRecord` requires `issuing_engine = 'COGNITIVE_INTEGRATION'`.
+[ ] MP-70: Do not execute arbitrary external tasks.
+    VERIFICATION: Confirm Interaction Engine has zero subprocess / tool-execution
+    capabilities (delegated to Execution Infrastructure).
+[ ] MP-71: Use shared LLM infrastructure rather than an independent LLM instance.
+    VERIFICATION: Confirm Content Coordination calls shared LLM gateway API,
+    maintains no private model weights or local LLM instances.
+[ ] MP-72: Use versioned contracts for communication with other engines.
+    VERIFICATION: Assert all 12 inter-engine schemas include `contract_version`
+    header and enforce schema validation.
+
+
+================================================================================
+PART 7 — MANDATORY ARCHITECTURAL WALKTHROUGHS (ALL 20 VERIFICATION SCENARIOS)
+================================================================================
+
+--------------------------------------------------------------------------------
+SCENARIO INT-01: A USER SENDS DIVA HER FIRST MESSAGE
+--------------------------------------------------------------------------------
+1. Initial State: Engine ACTIVE. Zero active sessions for user `user_alpha` on `discord_01`.
+2. Trigger: Discord adapter receives incoming message packet: "Hello Diva!"
+3. Expected Subsystem Interactions:
+   - Channel Adapter Manager receives raw packet from Discord gateway.
+   - Inbound Message Handler assigns `message_id`, computes idempotency hash, verifies unique.
+   - Message Normalizer constructs `MessageEnvelope` (`TEXT_PLAIN`, `direction=INBOUND`).
+   - Conversation Manager checks existing sessions -> None found. Instantiates new `ConversationRecord`.
+   - Participant Manager registers `user_alpha` (`role=PRIMARY_USER`) and `Diva` (`role=DIVA`).
+   - Session Lifecycle Manager creates `InteractionSession` (`status=ACTIVE`).
+   - Turn Manager creates Turn #1 (`status=RECEIVED`).
+   - Interaction Router dispatches envelope to Perception Engine queue.
+4. Expected State Transitions:
+   - Conversation: NULL -> ACTIVE. Session: NULL -> ACTIVE. Turn #1: NULL -> RECEIVED -> PROCESSING.
+5. Expected Persistence Changes:
+   - INSERT into `conversations`, `interaction_sessions`, `participants`, `conversation_turns`,
+     `message_envelopes`, and `interaction_events`.
+6. Ownership-Boundary Checks:
+   - Interaction Engine does NOT interpret "Hello Diva!" as a greeting.
+   - Envelope forwarded to Perception for semantic interpretation.
+7. Expected Result:
+   - Clean conversation initialized. Turn #1 waiting for Cognitive Integration instructions.
+8. Failure Scenario & Recovery Behavior:
+   - If SQLite write fails during session creation: Entire transaction rolled back.
+     Inbound handler returns temporary failure to adapter; adapter retries.
+
+--------------------------------------------------------------------------------
+SCENARIO INT-02: A USER SENDS ANOTHER MESSAGE IN THE SAME CONVERSATION
+--------------------------------------------------------------------------------
+1. Initial State: Conversation $C_1$ is `ACTIVE`, last message arrived 45 seconds ago.
+2. Trigger: User sends "Are you still there?" on same Discord channel.
+3. Expected Subsystem Interactions:
+   - Inbound Message Handler verifies packet integrity and idempotency.
+   - Conversation Manager resolves existing $C_1$ via channel & participant map.
+   - Session Lifecycle Manager updates `last_activity_at` timestamp.
+   - Turn Manager checks active turn: Previous turn was `COMPLETED`. Initializes Turn #2 (`RECEIVED`).
+   - Interaction Router forwards envelope to Perception Engine with $C_1$ context.
+4. Expected State Transitions:
+   - Session: `ACTIVE` -> `PROCESSING`. Turn #2: `CREATED` -> `RECEIVED` -> `PROCESSING`.
+5. Expected Persistence Changes:
+   - UPDATE `interaction_sessions` SET `last_activity_at = T_now`.
+   - INSERT into `conversation_turns` (turn #2), `message_envelopes`.
+6. Ownership-Boundary Checks:
+   - Interaction Engine does not create duplicate conversation record. Context preserved.
+7. Expected Result:
+   - Message correctly ordered as sequence #2 in Conversation $C_1$.
+8. Failure Scenario & Recovery Behavior:
+   - If session had transitioned to `SUSPENDED` seconds earlier: Session Lifecycle Manager
+     resumes session (`SUSPENDED` -> `RESUMING` -> `ACTIVE`) before attaching turn.
+
+--------------------------------------------------------------------------------
+SCENARIO INT-03: TWO USERS MESSAGE DIVA SIMULTANEOUSLY
+--------------------------------------------------------------------------------
+1. Initial State: Engine running with 10 worker threads. User 1 on Discord, User 2 on Web.
+2. Trigger: User 1 sends "Help with math", User 2 sends "What's the weather?" at exact same millisecond.
+3. Expected Subsystem Interactions:
+   - Inbound Handler receives both packets asynchronously.
+   - Message Normalizer generates two distinct envelopes with unique UUIDs.
+   - Conversation Manager assigns Conversation $C_A$ to User 1, Conversation $C_B$ to User 2.
+   - Dispatches to two independent `ConversationActor` queues.
+   - Context Manager constructs isolated context packages for $C_A$ and $C_B$.
+4. Expected State Transitions:
+   - Both conversations transition independently to `PROCESSING` concurrently.
+5. Expected Persistence Changes:
+   - Concurrent atomic INSERTs into SQLite tables under separate transaction handles.
+6. Ownership-Boundary Checks:
+   - Zero cross-talk. Memory buffers, turn states, and participant IDs strictly disjoint.
+7. Expected Result:
+   - Both messages processed in parallel with zero mutual interference or context leakage.
+8. Failure Scenario & Recovery Behavior:
+   - If User 1's processing times out: Only $C_A$ aborts; $C_B$ proceeds without interruption.
+
+--------------------------------------------------------------------------------
+SCENARIO INT-04: A USER SENDS THE SAME EVENT TWICE (DUPLICATE DETECTION)
+--------------------------------------------------------------------------------
+1. Initial State: Conversation $C_1$ active. Message #1 already processed.
+2. Trigger: Network glitch causes Discord gateway to resend Message #1 identical packet.
+3. Expected Subsystem Interactions:
+   - Inbound Message Handler computes SHA-256 hash of (channel_id, channel_message_id, content).
+   - Bloom filter check returns POSITIVE.
+   - Queries `idempotency_records` table -> Match confirmed.
+   - Handler marks event as duplicate; logs entry in `interaction_events`.
+   - Packet dropped before reaching Normalizer, Turn Manager, or Perception.
+4. Expected State Transitions:
+   - No state changes to active conversation or turns.
+5. Expected Persistence Changes:
+   - INSERT into `interaction_events` (`event_type='DUPLICATE_MESSAGE_DROPPED'`).
+6. Ownership-Boundary Checks:
+   - Perception and Cognitive Integration never receive duplicate notification.
+7. Expected Result:
+   - Duplicate silently neutralized. Diva does not formulate a duplicate reply.
+8. Failure Scenario & Recovery Behavior:
+   - If idempotency query fails: Fail-safe rejects packet if hash exists in in-memory cache.
+
+--------------------------------------------------------------------------------
+SCENARIO INT-05: MESSAGES ARRIVE OUT OF ORDER
+--------------------------------------------------------------------------------
+1. Initial State: Fast external network packet reordering occurs.
+2. Trigger: External sequence #2 arrives before sequence #1.
+3. Expected Subsystem Interactions:
+   - Inbound Handler detects gap in channel sequence numbers (expected 1, got 2).
+   - Message #2 is held in Out-of-Order Staging Buffer for max 500ms.
+   - Message #1 arrives 120ms later.
+   - Inbound Handler releases Message #1 to Turn Manager, followed immediately by #2.
+4. Expected State Transitions:
+   - Turn Manager processes #1 (`turn_number=1`), then #2 (`turn_number=2`).
+5. Expected Persistence Changes:
+   - Envelopes persisted with strictly monotonic internal `sequence_number` (1 then 2).
+6. Ownership-Boundary Checks:
+   - Downstream engines receive coherent causal sequence.
+7. Expected Result:
+   - Causal sequence restored without dropping packets.
+8. Failure Scenario & Recovery Behavior:
+   - If Message #1 never arrives (500ms timeout): Release Message #2 with
+     `sequence_gap_detected=True` flag and alert Cognitive Integration.
+
+--------------------------------------------------------------------------------
+SCENARIO INT-06: DIVA IS GENERATING A RESPONSE WHEN THE USER INTERRUPTS
+--------------------------------------------------------------------------------
+1. Initial State: Turn #1 in `GENERATING`. LLM streaming text for response.
+2. Trigger: User sends new message: "Wait, never mind that, I meant Python 3.12!"
+3. Expected Subsystem Interactions:
+   - Inbound Handler envelopes new message, identifies active conversation $C_1$.
+   - Interruption Manager intercepts active turn #1.
+   - Triggers cancellation token for active LLM generation stream.
+   - LLM generation process aborted immediately.
+   - Turn Manager marks Turn #1 as `INTERRUPTED`.
+   - Creates `InterruptionRecord` (`trigger_type=USER_CORRECTION`).
+   - Turn Manager initializes Turn #2, packaging both old interrupted context and new correction.
+   - Notifies Cognitive Integration of user correction mid-generation.
+4. Expected State Transitions:
+   - Turn #1: `GENERATING` -> `INTERRUPTED`. Turn #2: `CREATED` -> `RECEIVED` -> `PROCESSING`.
+5. Expected Persistence Changes:
+   - UPDATE `conversation_turns` (turn #1 status = INTERRUPTED).
+   - INSERT into `interruption_records`, `conversation_turns` (turn #2).
+6. Ownership-Boundary Checks:
+   - Interaction Engine halts mechanics of delivery. Cognitive Integration decides
+     how to answer the combined context.
+7. Expected Result:
+   - Old outdated reply never sent. Diva seamlessly pivots to answering the correction.
+8. Failure Scenario & Recovery Behavior:
+   - If cancel token fails to stop LLM before completion: Delivery Manager blocks
+     dispatch because Turn #1 is already in `INTERRUPTED` state.
+
+--------------------------------------------------------------------------------
+SCENARIO INT-07: THE CHANNEL DISCONNECTS DURING DELIVERY
+--------------------------------------------------------------------------------
+1. Initial State: Turn #1 `DELIVERING`. Message submitted to WebSocket adapter.
+2. Trigger: Client socket drops abruptly before TCP ACK received.
+3. Expected Subsystem Interactions:
+   - Channel Adapter detects socket disconnection; notifies Delivery Manager.
+   - Delivery Manager generates `DeliveryReceipt` (`state=FAILED`, `attempt_count=1`).
+   - Retry and Recovery Manager inspects failure: Classifies as transient.
+   - Computes exponential backoff schedule ($T_{\text{retry}} = 2.0\text{s}$).
+   - Inserts row in `delivery_retries`.
+   - Session Lifecycle Manager marks channel status `DEGRADED`.
+4. Expected State Transitions:
+   - Turn #1: `DELIVERING` -> `FAILED` (retrying).
+5. Expected Persistence Changes:
+   - INSERT into `delivery_receipts`, `delivery_retries`.
+6. Ownership-Boundary Checks:
+   - Retry logic handled purely inside Interaction Engine. Cognitive Integration
+     notified only if all retries fail.
+7. Expected Result:
+   - Automatic retransmission scheduled. Message delivered upon client reconnection.
+8. Failure Scenario & Recovery Behavior:
+   - If client does not reconnect within 3 attempts: Turn marked permanently `FAILED`.
+     Feedback Engine notified of delivery drop.
+
+--------------------------------------------------------------------------------
+SCENARIO INT-08: DIVA RESTARTS WITH ACTIVE CONVERSATIONS
+--------------------------------------------------------------------------------
+1. Initial State: Engine process terminated while 3 conversations were `ACTIVE`.
+2. Trigger: Diva application boots up.
+3. Expected Subsystem Interactions:
+   - Crash Recovery Protocol executes:
+     - Scans SQLite database for non-terminal sessions.
+     - Identifies 3 active sessions.
+     - Inspects active turns: Turn #14 in Conversation A was `GENERATING`.
+     - Reconciles Turn #14: Marks `INTERRUPTED` with `trigger_type=SYSTEM_SHUTDOWN`.
+     - Inspects Turn #5 in Conversation B: Was `WAITING_FOR_INPUT`. Restores state cleanly.
+     - Validates all authorizations: Revokes any unconfirmed pending grants.
+     - Rebuilds in-memory duplicate filter from recent envelopes.
+4. Expected State Transitions:
+   - Sessions restored to `ACTIVE`. Interrupted turns set to `INTERRUPTED`.
+5. Expected Persistence Changes:
+   - UPDATE `conversation_turns` SET `status='INTERRUPTED'` WHERE `status='GENERATING'`.
+   - INSERT into `interaction_events` (`event_type='CRASH_RECOVERY_RECONCILED'`).
+6. Ownership-Boundary Checks:
+   - Interaction restores operational states without modifying Memory Engine tables.
+7. Expected Result:
+   - System recovers to clean operational state. User can resume chatting immediately.
+8. Failure Scenario & Recovery Behavior:
+   - If one session database row is corrupted: Corrupted session flagged `ARCHIVED_CORRUPT`;
+     other 2 sessions load successfully.
+
+--------------------------------------------------------------------------------
+SCENARIO INT-09: AN AUTHORIZED PROACTIVE MESSAGE IS REQUESTED
+--------------------------------------------------------------------------------
+1. Initial State: Diva has had no interaction with user for 6 hours.
+2. Trigger: Autonomous Activity requests outreach; Cognitive Integration issues signed `AuthorizationRecord`.
+3. Expected Subsystem Interactions:
+   - Proactive Communication Handler receives `InitiationRequest` + `AuthorizationRecord`.
+   - Authorization Validator verifies signature and expiry (`valid_until` in future).
+   - Rate limit checker confirms user quiet hours policy respected.
+   - Outbound Message Manager formats `DeliveryRequest`.
+   - Content Coordination renders natural language text via Shared LLM.
+   - Delivery Manager transmits message via target channel adapter.
+   - Delivery Receipt confirmed (`state=DELIVERED`).
+4. Expected State Transitions:
+   - Conversation session created or resumed (`ACTIVE` -> `RESPONDING` -> `WAITING_FOR_INPUT`).
+5. Expected Persistence Changes:
+   - INSERT into `initiation_requests`, `delivery_requests`, `message_envelopes`, `delivery_receipts`.
+6. Ownership-Boundary Checks:
+   - Interaction Engine did NOT decide to contact user. Strictly executed authorized mandate.
+7. Expected Result:
+   - Proactive message delivered cleanly to user.
+8. Failure Scenario & Recovery Behavior:
+   - If user has enabled Do-Not-Disturb: Proactive handler delays dispatch until window opens.
+
+--------------------------------------------------------------------------------
+SCENARIO INT-10: A PROACTIVE MESSAGE LACKS AUTHORIZATION
+--------------------------------------------------------------------------------
+1. Initial State: Internal drive in Motivation Engine is high.
+2. Trigger: Unsanctioned component attempts to invoke Outbound Delivery directly.
+3. Expected Subsystem Interactions:
+   - Authorization Validator inspects request: `authorization_id` is null or invalid.
+   - Request immediately rejected with security fault: `UNAUTHORIZED_PROACTIVE_DISPATCH`.
+   - Event logged in security audit table.
+   - Zero network transmission occurs.
+4. Expected State Transitions:
+   - No state changes to channels, sessions, or turns.
+5. Expected Persistence Changes:
+   - INSERT into `interaction_events` (`event_type='SECURITY_AUTHORIZATION_REJECTED'`).
+6. Ownership-Boundary Checks:
+   - Hard architectural boundary enforced: Thoughts/Drives cannot speak without Cognitive Integration grant.
+7. Expected Result:
+   - Unauthorized communication strictly thwarted.
+8. Failure Scenario & Recovery Behavior:
+   - If repeated violations occur: Emits internal alert to Cognitive Integration.
+
+--------------------------------------------------------------------------------
+SCENARIO INT-11: A USER CHANGES A COMMUNICATION PREFERENCE
+--------------------------------------------------------------------------------
+1. Initial State: User prefers verbose explanations (`RESPONSE_LENGTH=LONG`).
+2. Trigger: User states: "Please keep your answers short and concise from now on."
+3. Expected Subsystem Interactions:
+   - Perception parses preference directive.
+   - Cognitive Integration instructs Interaction Engine to record preference.
+   - Preference Manager updates `communication_preferences` table:
+     `RESPONSE_LENGTH = SHORT`, `source_type = EXPLICIT_USER`, `confidence = 1.0`.
+   - Invalidate cached context packages for this user.
+   - Next turn: Context Manager injects `RESPONSE_LENGTH=SHORT` constraint into Brief.
+4. Expected State Transitions:
+   - Preference record updated.
+5. Expected Persistence Changes:
+   - UPDATE `communication_preferences` SET `preference_value='SHORT'`.
+6. Ownership-Boundary Checks:
+   - Interaction records transport formatting preference; does NOT alter Personality traits.
+7. Expected Result:
+   - All subsequent outbound messages formatted concisely.
+8. Failure Scenario & Recovery Behavior:
+   - If user preference conflicts with safety instructions: Safety instructions take precedence.
+
+--------------------------------------------------------------------------------
+SCENARIO INT-12: A LONG CONVERSATION EXCEEDS AVAILABLE CONTEXT
+--------------------------------------------------------------------------------
+1. Initial State: Conversation has reached 120 turns over 4 days.
+2. Trigger: Turn #121 begins; Cognitive Integration requests context package.
+3. Expected Subsystem Interactions:
+   - Context Manager evaluates total tokens of history: Exceeds 2,048 token limit.
+   - Truncation & Summarization algorithm engages:
+     - Retains full text of last 6 turns (immediate continuity).
+     - Fetches operational summary of turns 1-114 from SQLite history.
+     - Packages active topics, open questions, and participant metadata.
+     - Assembles bounded `InteractionContextPackage` (1,450 tokens total).
+4. Expected State Transitions:
+   - Context package generated without error.
+5. Expected Persistence Changes:
+   - None (read-only query and memory construction).
+6. Ownership-Boundary Checks:
+   - Context Manager constructs operational context; long-term recall queries go to Memory Engine.
+7. Expected Result:
+   - Downstream LLM receives rich, bounded context without exceeding token quotas.
+8. Failure Scenario & Recovery Behavior:
+   - If operational summary missing: Summarizes older turns in background via Shared LLM.
+
+--------------------------------------------------------------------------------
+SCENARIO INT-13: LLM GENERATION FAILS
+--------------------------------------------------------------------------------
+1. Initial State: Turn in `GENERATING`. Brief submitted to Shared LLM.
+2. Trigger: Shared LLM returns HTTP 500 / timeout error.
+3. Expected Subsystem Interactions:
+   - Content Coordination Module catches LLM failure exception.
+   - Evaluates retry budget: Retries once with reduced context.
+   - Second attempt fails.
+   - Content Coordinator aborts generation; does NOT emit random hallucinations or raw error traces.
+   - Turn Manager transitions turn to `FAILED`.
+   - Emits structured error report to Cognitive Integration.
+4. Expected State Transitions:
+   - Turn: `GENERATING` -> `FAILED`.
+5. Expected Persistence Changes:
+   - UPDATE `conversation_turns` SET `status='FAILED'`.
+   - INSERT into `interaction_events` (`event_type='CONTENT_GENERATION_FAILED'`).
+6. Ownership-Boundary Checks:
+   - Interaction reports failure; Cognitive Integration decides whether to apologize or retry.
+7. Expected Result:
+   - Clean failure handling with zero invalid text dispatched to external user.
+8. Failure Scenario & Recovery Behavior:
+   - Cognitive Integration issues fallback directive: "I encountered an internal error, please retry."
+     New authorized turn delivers standard message.
+
+--------------------------------------------------------------------------------
+SCENARIO INT-14: DELIVERY TIMES OUT BUT CHANNEL MAY HAVE ACCEPTED THE MESSAGE
+--------------------------------------------------------------------------------
+1. Initial State: Turn `DELIVERING`. Message dispatched to external webhook.
+2. Trigger: Webhook HTTP connection times out after 10.0 seconds with no response headers.
+3. Expected Subsystem Interactions:
+   - Delivery Manager detects socket read timeout.
+   - Because HTTP POST was sent, external server might have delivered the text.
+   - Enforces Axiom 5: A timeout is NOT proof of non-delivery.
+   - Generates `DeliveryReceipt` with `state=TIMEOUT_UNCERTAIN`.
+   - Blocks automated immediate retransmission to prevent duplicate spamming.
+   - Flags receipt for adapter outbox reconciliation.
+4. Expected State Transitions:
+   - Turn: `DELIVERING` -> `WAITING_FOR_REPLY` (with uncertainty flag).
+5. Expected Persistence Changes:
+   - INSERT into `delivery_receipts` (`state='TIMEOUT_UNCERTAIN'`).
+6. Ownership-Boundary Checks:
+   - Retains uncertainty; Feedback Engine notified to evaluate user response.
+7. Expected Result:
+   - User does not receive annoying duplicate messages.
+8. Failure Scenario & Recovery Behavior:
+   - If user replies normally in next turn: Receipt resolved to `ASSUMED_DELIVERED`.
+
+--------------------------------------------------------------------------------
+SCENARIO INT-15: A MESSAGE CONTAINS PRIVATE INTERNAL INFORMATION
+--------------------------------------------------------------------------------
+1. Initial State: Cognitive Integration prepares a draft response.
+2. Trigger: Due to prompt leak, proposed text contains: `[INTERNAL_STATE: energy=0.12] Hello user!`.
+3. Expected Subsystem Interactions:
+   - Content Coordination Module runs pre-delivery privacy filter.
+   - Privacy Classification validator scans payload against `redaction_rules`.
+   - Detects internal metadata tag pattern `[INTERNAL_*]`.
+   - Halts delivery pipeline immediately.
+   - Refuses to pass payload to Delivery Manager.
+   - Emits `PRIVACY_VIOLATION_INTERCEPTED` fault to Cognitive Integration.
+4. Expected State Transitions:
+   - Turn transitions to `FAILED` (privacy fault).
+5. Expected Persistence Changes:
+   - INSERT into `interaction_events` (`event_type='PRIVACY_LEAK_PREVENTED'`).
+6. Ownership-Boundary Checks:
+   - Hard privacy gate enforces Axiom 8.
+7. Expected Result:
+   - Private internal data completely protected from external exposure.
+8. Failure Scenario & Recovery Behavior:
+   - Cognitive Integration re-generates message without internal tags.
+
+--------------------------------------------------------------------------------
+SCENARIO INT-16: A GROUP CONVERSATION CONTAINS SEVERAL PARTICIPANTS
+--------------------------------------------------------------------------------
+1. Initial State: Discord server channel with 5 active users.
+2. Trigger: User B replies to User A's message, mentioning @Diva.
+3. Expected Subsystem Interactions:
+   - Inbound Handler envelopes message, identifies multi-participant context.
+   - Participant Manager maps User B as sender, User A as `reply_to` participant, Diva as mention.
+   - Turn Manager notes group dynamic: Turn is addressed to Diva within group context.
+   - Context Manager packages recent group turns from all 5 participants.
+   - Outbound reply delivers to channel referencing User B and User A explicitly.
+4. Expected State Transitions:
+   - Group conversation turn transitions to `COMPLETED`.
+5. Expected Persistence Changes:
+   - Message envelope records `recipient_ids` as tuple of all group participant IDs.
+6. Ownership-Boundary Checks:
+   - Social Cognition models group dynamic; Interaction cleanly tracks participant IDs.
+7. Expected Result:
+   - Flawless multi-party turn association without mixing up speakers.
+8. Failure Scenario & Recovery Behavior:
+   - If an unindexed user speaks: Participant Manager dynamically registers them as `EXTERNAL_USER`.
+
+--------------------------------------------------------------------------------
+SCENARIO INT-17: A USER RETURNS TO A SUSPENDED CONVERSATION
+--------------------------------------------------------------------------------
+1. Initial State: Conversation $C_1$ was suspended 48 hours ago (`status=SUSPENDED`).
+2. Trigger: User sends: "I'm back, can we continue what we were discussing?"
+3. Expected Subsystem Interactions:
+   - Inbound Handler matches user and channel to existing $C_1$.
+   - Session Lifecycle Manager evaluates session: Expiration is 7 days, so session valid.
+   - Executes transition `SUSPENDED` -> `RESUMING` -> `ACTIVE`.
+   - Context Manager reconstructs previous turn state and open questions.
+   - Cognitive Integration receives context package showing the previous discussion topic.
+4. Expected State Transitions:
+   - Conversation & Session: `SUSPENDED` -> `ACTIVE`.
+5. Expected Persistence Changes:
+   - UPDATE `conversations` SET `status='ACTIVE'`, `updated_at=T_now`.
+   - INSERT into `interaction_events` (`event_type='SESSION_RESUMED'`).
+6. Ownership-Boundary Checks:
+   - Operational session continuity restored without duplicating Memory recall.
+7. Expected Result:
+   - Diva naturally resumes conversation with zero amnesia.
+8. Failure Scenario & Recovery Behavior:
+   - If session was older than 7 days (`ARCHIVED`): Automatically spawns fresh session
+     and requests historical recap from Memory Engine.
+
+--------------------------------------------------------------------------------
+SCENARIO INT-18: ONE CHANNEL BECOMES UNAVAILABLE
+--------------------------------------------------------------------------------
+1. Initial State: Diva actively chatting on Web UI and Telegram simultaneously.
+2. Trigger: Telegram API goes down (HTTP 502 gateway error).
+3. Expected Subsystem Interactions:
+   - Telegram Channel Adapter reports `connection_status=DISCONNECTED`.
+   - Channel Adapter Manager updates Telegram record in `channel_registry`.
+   - Active Telegram delivery requests paused and queued in Retry Manager.
+   - Web UI adapter operates completely unaffected.
+   - Web UI sessions continue processing turns with normal latency.
+4. Expected State Transitions:
+   - Telegram channel: `CONNECTED` -> `DISCONNECTED`. Web UI channel: `CONNECTED`.
+5. Expected Persistence Changes:
+   - UPDATE `channel_registry` SET `connection_status='DISCONNECTED'`.
+6. Ownership-Boundary Checks:
+   - Enforces Axiom 7: Channel isolation guarantees zero system-wide cascading failures.
+7. Expected Result:
+   - Telegram traffic queued cleanly while Web UI operates at 100% throughput.
+8. Failure Scenario & Recovery Behavior:
+   - When Telegram comes back up: Heartbeat monitor detects recovery; drains queue.
+
+--------------------------------------------------------------------------------
+SCENARIO INT-19: COGNITIVE INTEGRATION CANCELS A PENDING RESPONSE
+--------------------------------------------------------------------------------
+1. Initial State: Outbound request queued in Outbound Message Manager.
+2. Trigger: Executive priority override in Cognitive Integration issues cancellation.
+3. Expected Subsystem Interactions:
+   - Cognitive Integration dispatches `CancelDeliveryRequest(request_id)`.
+   - Outbound Message Manager locates request in queue.
+   - Deletes request from priority queue before adapter dispatch.
+   - Sets Delivery Receipt to `CANCELLED`.
+   - Turn Manager transitions turn to `CANCELLED`.
+4. Expected State Transitions:
+   - Turn: `READY_TO_DELIVER` -> `CANCELLED`.
+5. Expected Persistence Changes:
+   - INSERT into `delivery_receipts` (`state='CANCELLED'`).
+   - UPDATE `conversation_turns` SET `status='CANCELLED'`.
+6. Ownership-Boundary Checks:
+   - Interaction Engine obeys executive cancellation immediately without dispute.
+7. Expected Result:
+   - Outbound message neutralized prior to external transmission.
+8. Failure Scenario & Recovery Behavior:
+   - If message was already handed to network adapter: Interruption Manager logs
+     `CANCEL_TOO_LATE_ALREADY_SENT`.
+
+--------------------------------------------------------------------------------
+SCENARIO INT-20: AN EXTERNAL API OPERATION IS REQUESTED
+--------------------------------------------------------------------------------
+1. Initial State: User asks Diva: "Can you query the weather database and update my record?"
+2. Trigger: Perception extracts request; Cognitive Integration decides to run weather tool.
+3. Expected Subsystem Interactions:
+   - Interaction Engine handles conversational turn with user: "Checking the weather for you now..."
+   - Cognitive Integration dispatches API tool execution request to Shared Execution Infrastructure.
+   - Interaction Engine does NOT attempt to execute the API call, parse HTTP REST tools,
+     or mutate databases.
+   - Execution Infrastructure runs the tool and returns output to Cognitive Integration.
+   - Cognitive Integration authorizes final conversational message with results.
+   - Interaction Engine delivers final conversational message.
+4. Expected State Transitions:
+   - Conversational turns transition cleanly (`DELIVERED` -> `WAITING_FOR_REPLY`).
+5. Expected Persistence Changes:
+   - Only conversational envelopes persisted in Interaction SQLite database.
+6. Ownership-Boundary Checks:
+   - Enforces strict boundary: Tool execution belongs to Shared Execution Infrastructure,
+     never Interaction Engine.
+7. Expected Result:
+   - Perfect separation between talking to user and executing external code.
+8. Failure Scenario & Recovery Behavior:
+   - If execution infrastructure fails: Cognitive Integration authorizes apology message;
+     Interaction Engine delivers apology.
+
+
+================================================================================
+PART 8 — COMPLETION CONDITIONS & 10-PHASE IMPLEMENTATION ROADMAP
+================================================================================
+
+--------------------------------------------------------------------------------
+VERIFICATION OF ALL 15 ARCHITECTURAL COMPLETION CONDITIONS
+--------------------------------------------------------------------------------
+1. All 21 internal logical modules defined with explicit inputs, outputs, state, and algorithms. (SATISFIED)
+2. All ownership boundaries finalized and aligned with the cross-engine boundary matrix. (SATISFIED)
+3. All inbound and outbound communication contracts formally specified with 12 engines. (SATISFIED)
+4. Formal FSM state machines defined for Conversation Sessions (10 states) and Turns (14 states). (SATISFIED)
+5. Comprehensive data dictionary with 20 deeply frozen data structures specified. (SATISFIED)
+6. Channel adapter interface and capability manifest schemas fully defined. (SATISFIED)
+7. Authorization and privacy enforcement rules documented with zero-bypass guarantees. (SATISFIED)
+8. Interruption, race condition, and crash recovery protocols mathematically specified. (SATISFIED)
+9. Multi-conversation concurrency model with actor isolation specified. (SATISFIED)
+10. Complete SQLite relational persistence schema (16 tables) with WAL mode and foreign keys. (SATISFIED)
+11. Shared LLM infrastructure integration points and validation checks defined. (SATISFIED)
+12. All 72 must-pass audit checkpoints (MP-01 through MP-72) accounted for with concrete verification procedures. (SATISFIED)
+13. All 20 mandatory verification scenarios (INT-01 through INT-20) elaborated across 8 structural sections. (SATISFIED)
+14. Explicit error handling, backoff formulas, and failure codes documented. (SATISFIED)
+15. Versioned contracts for every external engine dependency established. (SATISFIED)
+
+--------------------------------------------------------------------------------
+PHASED 10-STAGE ENGINEERING ROADMAP
+--------------------------------------------------------------------------------
+PHASE 1: PERSISTENCE FOUNDATION & SCHEMA DEPLOYMENT
+  - Implement 16 SQLite tables, WAL mode, foreign key enforcement, indexes, and migrations.
+  - Deliverable: Unit tests validating table creation, constraint checks, and WAL performance.
+
+PHASE 2: CHANNEL ADAPTER ABSTRACTION & INGRESS PIPELINE
+  - Implement Channel Adapter Manager, Inbound Message Handler, Message Normalizer.
+  - Deliverable: Ingress tests with mock adapters; message deduplication and normalization verification.
+
+PHASE 3: PARTICIPANT & CONVERSATION MANAGEMENT
+  - Implement Participant Manager, Conversation Manager, and Session Lifecycle Manager.
+  - Deliverable: Multi-user conversation creation, session timeouts, and cross-thread isolation tests.
+
+PHASE 4: TURN MANAGEMENT & STATE MACHINE
+  - Implement Turn Manager and Lifecycle & State Validator FSMs.
+  - Deliverable: 14-state turn transition tests; multi-message turn grouping verification.
+
+PHASE 5: OUTBOUND COMMUNICATION & AUTHORIZATION GATEWAY
+  - Implement Outbound Message Manager, Authorization Validator, and Delivery Manager.
+  - Deliverable: Security audit tests proving zero unauthorized messages leave Diva.
+
+PHASE 6: CONTENT COORDINATION & SHARED LLM INTEGRATION
+  - Implement Content Coordination Module with style adaptation, chunking, and privacy filter.
+  - Deliverable: LLM timeout, streaming cancellation, and privacy leak interception tests.
+
+PHASE 7: CONTEXT MANAGEMENT & OPERATIONAL MEMORY
+  - Implement Context Manager with bounded window construction and token-budget caps.
+  - Deliverable: Context package assembly tests with 100+ turns proving bounded token usage.
+
+PHASE 8: INTERRUPTION, RETRY & RECOVERY ENGINE
+  - Implement Interruption Manager, Retry and Recovery Manager, and crash recovery routines.
+  - Deliverable: Chaos testing: process killing mid-turn and mid-delivery; verify clean recovery.
+
+PHASE 9: PROACTIVE OUTREACH & PREFERENCE MANAGEMENT
+  - Implement Proactive Communication Handler and Preference Manager with quiet hours limits.
+  - Deliverable: Rate-limiting tests and user preference override verification.
+
+PHASE 10: END-TO-END INTEGRATION & VERIFICATION AUDIT
+  - Execute all 20 mandatory verification scenarios (INT-01 to INT-20) against full test harness.
+  - Execute audit suite verifying all 72 must-pass conditions (MP-01 to MP-72).
+  - Deliverable: Production-ready Interaction Engine signed off for full cognitive integration.
+
+================================================================================
+END OF SPECIFICATION — ENGINE 14: INTERACTION ENGINE (DIVA COGNITIVE ARCHITECTURE)
+================================================================================
+
